@@ -5,8 +5,7 @@ library(scales)
 library(extrafont)
 library(ggtext)
 
-dir_proj <- '57-cod_snd'
-blackish_background <- '#1c1c1c'
+blackish_background <- '#191919' # '#1c1c1c'
 gray_points <- '#4d4d4d'
 gray_text <- '#999999'
 
@@ -46,7 +45,7 @@ game_mapping <- c(
   '2020' = 'MW'
 )
 
-rounds <- qs::qread(file.path(dir_proj, 'cod_rounds.qs'))
+rounds <- qs::qread('cod_rounds.qs')
 
 ## offensive win % in "neutral" rounds (1 and 2) ----
 calculate_offensive_round_win_prop <- function(df) {
@@ -94,17 +93,18 @@ summarize_offensive_round_win_prop <- function(.round) {
 
 offensive_win_r1_prop <- summarize_offensive_round_win_prop(1)|> 
   mutate(
-    diff_prop = win_round_prop - other_win_round_prop,
+    diff_prop = other_win_round_prop - win_round_prop,
     dir = factor(sign(diff_prop)),
     is_significant = p_value < 0.05,
     label = sprintf('%s - %s (%s)', map, game, year)
   )
 
-x1_label <- 'Post-Round 1\nOffensive Win%'
-x2_label <- 'Round 1\nOffensive Win%'
+x1_label <- 'Round 1<br/>Offensive Win%'
+x2_label <- 'Post-Round 1<br/>Offensive Win%'
 
 min_offensive_win_r1_prop <- offensive_win_r1_prop |> slice_min(diff_prop, n = 1)
 max_offensive_win_r1_prop <- offensive_win_r1_prop |> slice_max(diff_prop, n = 1)
+minmax_labels <- c(min_offensive_win_r1_prop$label, max_offensive_win_r1_prop$label)
 
 offensive_win_r1_prop_pal <- c(
   `-1` = '#ef426f',
@@ -114,32 +114,6 @@ arw <- arrow(length = unit(5, 'pt'), type = 'closed')
 
 p_offensive_win_r1_prop <- offensive_win_r1_prop |> 
   ggplot() +
-  geom_segment(
-    show.legend = FALSE,
-    aes(
-      x = 1,
-      xend = 2,
-      y = other_win_round_prop,
-      yend = win_round_prop,
-      color = dir,
-      size = is_significant,
-      group = label
-    )
-  ) +
-  geom_text(
-    data = tibble(
-      y = c(0.25, 0.75)
-    ) |> 
-      mutate(
-        lab = sprintf('%s%%', round(100 * y))
-      ),
-    aes(x = 1, y = y, label = lab), 
-    size = 16 / .pt,
-    hjust = 1.05,
-    vjust = -0.25,
-    fontface = 'bold',
-    color = gray_points
-  ) +
   geom_vline(
     data = tibble(),
     aes(xintercept = c(1, 2)), 
@@ -151,21 +125,70 @@ p_offensive_win_r1_prop <- offensive_win_r1_prop |>
     linetype = 2,
     color = gray_points
   ) +
+  geom_segment(
+    data = offensive_win_r1_prop |> 
+      mutate(
+        big_segment = label %in% minmax_labels
+      ),
+    show.legend = FALSE,
+    aes(
+      x = 1,
+      xend = 2,
+      y = win_round_prop,
+      yend = other_win_round_prop,
+      color = dir,
+      size = big_segment,
+      group = label
+    )
+  ) +
+  geom_text(
+    data = tibble(
+      y = c(0.25, 0.75)
+    ) |> 
+      mutate(
+        lab = sprintf('%s%%', round(100 * y))
+      ),
+    aes(x = 2, y = y, label = lab), 
+    size = 16 / .pt,
+    hjust = -0.05,
+    vjust = -0.25,
+    fontface = 'bold',
+    color = 'white'
+  ) +
+  ggtext::geom_richtext(
+    fill = blackish_background, 
+    label.color = NA,
+    data = tibble(
+      x = c(1, 2),
+      y = rep(0.7, 2),
+      lab = c(x1_label, x2_label)
+    ),
+    aes(x = x, y = y, label = lab), 
+    size = 14 / .pt,
+    hjust = 0.5,
+    vjust = 0.5,
+    family = font,
+    fontface = 'bold',
+    color = 'white'
+  ) +
   ggrepel::geom_text_repel(
-    aes(x = 1, y = other_win_round_prop, label = label),
+    data = offensive_win_r1_prop |> 
+      filter(label %in% !!minmax_labels),
+    aes(x = 1, y = win_round_prop, label = label),
     family = font,
     fontface = 'bold',
     color = 'white',
-    size = 11 / .pt,
+    size = 14 / .pt,
     hjust = 'right', 
     nudge_x = -0.1,
     direction = 'y'
   ) +
   ggrepel::geom_text_repel(
-    aes(x = 2, y = win_round_prop, label = label),
+    data = offensive_win_r1_prop |> 
+      filter(!(label %in% !!minmax_labels)),
+    aes(x = 2, y = other_win_round_prop, label = label),
     family = font,
-    fontface = 'bold',
-    color = 'white',
+    color = gray_text,
     size = 11 / .pt,
     hjust = 'left', 
     nudge_x = 0.1,
@@ -173,43 +196,42 @@ p_offensive_win_r1_prop <- offensive_win_r1_prop |>
   ) +
   geom_curve(
     data = tibble(),
-    aes(x = 1.8, y = 0.65, xend = 1.9, yend = 0.63),
-    curvature = -0.2, 
-    color = offensive_win_r1_prop_pal[["1"]], 
-    arrow = arw
-  ) +
-  geom_curve(
-    data = tibble(),
-    aes(x = 1.76, y = 0.27, xend = 1.9, yend = 0.27),
+    aes(x = 1.2, y = 0.65, xend = 1.1, yend = 0.63),
     curvature = 0.2, 
     color = offensive_win_r1_prop_pal[["-1"]], 
     arrow = arw
   ) +
+  geom_curve(
+    data = tibble(),
+    aes(x = 1.24, y = 0.27, xend = 1.1, yend = 0.27),
+    curvature = 0-.2, 
+    color = offensive_win_r1_prop_pal[["1"]], 
+    arrow = arw
+  ) +
   geom_text(
     data = tibble(
-      x = c(1.8, 1.76),
+      x = c(1.2, 1.24),
       y = c(0.65, 0.27),
-      hjust = c(1, 1),
+      hjust = c(0, 0),
       vjust = c(0.5, 0.5),
       lab = c(
         sprintf(
-          'Largest positive percent difference in round 1\nvs. all other round win percentages (%+.0f%%).', 
-          100 * max_offensive_win_r1_prop$diff_prop
+          'Largest negative percent difference in round 1\nvs. all other round win percentages (%+.0f%%).', 
+          100 * min_offensive_win_r1_prop$diff_prop
         ),
         sprintf(
-          'Largest negative percent difference (%+.0f%%).\nOnly significant difference (p value < 0.01).',
-          100 * min_offensive_win_r1_prop$diff_prop
+          'Largest positive percent difference (%+.0f%%).\nOnly significant difference (p value < 0.01).',
+          100 * max_offensive_win_r1_prop$diff_prop
         )
       )
     ),
     color = 'white',
-    size = 11 / .pt,
+    size = 12 / .pt,
     aes(x = x, y = y, hjust = hjust, vjust = vjust, label = lab)
   ) +
   scale_x_continuous(
     position = 'top',
     breaks = c(1, 2),
-    labels = c(x1_label, x2_label),
     expand = expansion(mult = 0.5)
   ) +
   scale_y_continuous(
@@ -228,22 +250,20 @@ p_offensive_win_r1_prop <- offensive_win_r1_prop |>
   theme(
     plot.title = element_text(hjust = 0.5),
     panel.grid.major = element_blank(),
-    axis.text.x = element_text(size = 12, face = 'bold'),
+    axis.text.x = element_blank(),
     axis.text.y = element_blank()
   ) +
   labs(
-    # title = 'Difference in Round 1 and Other Round Offensive Win %',
     x = NULL,
     y = NULL
   )
 p_offensive_win_r1_prop
-
 ggsave(
   p_offensive_win_r1_prop,
-  filename = file.path(dir_proj, 'offensive_win_r1_prop.png'),
+  filename = 'offensive_win_r1_prop.png',
   units = 'in',
   width = 10,
-  height = 10
+  height = 7.5
 )
 
 ## comparing round playouts vs expected if each side has a pre-series win expectation of 50% ----
