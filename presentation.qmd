@@ -1,5 +1,5 @@
 ---
-title: "On Round-Based Games in First-Person-Shooter (FPS) E-Sports"
+title: "Momentum in Round-Based First-Person-Shooter (FPS) E-Sports"
 author: "Tony ElHabr"
 format:
   revealjs:
@@ -121,6 +121,36 @@ offensive_first_blood_win_pct <- rounds |>
 -   Win % when earning first blood: **`r offensive_first_blood_win_pct`**
 :::
 
-## How do teams play in an information-neutral setting (round 1)?
+## What are your chances of winning a round, given the series state?
+
+(This should hint at the 4-4 phenomenon.)
+
+## How does reality compare to expectation?
+
+(This should really highlight the 4-4 phenomenon.)
+
+## What are your chances of going on to win the series, given the series state?
+
+(More of the 4-4 phenomenon. Also should not win %s along the diagonal.)
+
+## Are offensive win %'s different in round 1 (i.e. an "information-neutral" setting)?
 
 ![](offensive_win_r1_prop.png){fig-align="center"}
+
+## Are offensive win %'s different in round 2?
+
+![](offensive_win_r2_prop.png){fig-align="center"}
+
+(Emperically, no)
+
+## What are the most common series winning states?
+
+## How do end states compare to expectation?
+
+(There should be evidence of 6-0's and 6-5's being more frequent than expected given 50-50% chances. Might need to exclude major matchups, so that series are basically random.)
+
+## Is there evidence for the "hot hand"?
+
+![](hot_hand.png){fig-align="center"}
+
+(Need to explain that this is sort of biased by the fact that teams end up winning series in 6 rounds more often than expected.)
