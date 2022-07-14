@@ -5,8 +5,7 @@ library(googlesheets4)
 library(magrittr)
 library(qs)
 
-dir_proj <- '57-cod_snd'
-dir_data <- file.path(dir_proj, 'data')
+dir_data <- 'data'
 dir.create(dir_data, showWarnings = FALSE)
 
 sheets <- list(
@@ -231,4 +230,4 @@ rounds <- series |>
     .before = 1
   )
 rounds
-qs::qsave(rounds, file.path(dir_proj, 'cod_rounds.qs'))
+qs::qsave(rounds, 'cod_rounds.qs')
