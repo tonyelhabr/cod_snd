@@ -1,10 +1,10 @@
 ---
-title: "Tactical Round-Based Games"
+title: "On Round-Based Games in First-Person-Shooter (FPS) E-Sports"
 author: "Tony ElHabr"
 format:
   revealjs:
     incremental: false
-    theme: dark
+    theme: [dark, theme.scss]
 execute: 
   include: false
   echo: false
@@ -17,28 +17,37 @@ library(tibble)
 library(qs)
 library(scales)
 
-dir_proj <- '57-cod_snd'
-
 rounds <- qs::qread(file.path('cod_rounds.qs'))
 ```
 
 ## What?
 
 -   Call of Duty League (CDL)
-    -   Search and Destroy
+    -   Search and Destroy (SnD)
 -   Valorant Pro League
     -   Plant/Defuse
 
-## How do you win SnD?
+## How does a team win a round of SnD?
 
-Several ways to win a round:
+::: fragment
+1.  One team eliminates all members of the other team prior to a bomb plant.
+:::
 
-1.  One team eliminate all members of the other team prior to a bomb plant.
-2.  The offensive team wins if they eliminate all members of the defensive team after a bomb plant.
-3.  The defensive team wins if they defuse the bomb after a bomb plant.[^1]
-4.  The defensive team wins if the offensive team does not make a plant by the time the round timer ends.
+::: fragment
+2.  The offensive team eliminates all members of the defensive team after a bomb plant.
+:::
 
-[^1]: Often the defensive team will try to eliminate all offensive team members prior to making the defuse, but in some cases, they may try to "ninja" defuse.
+::: fragment
+3.  The defensive team defuses the bomb after a bomb plant.
+:::
+
+::: fragment
+Often the defensive team will try to eliminate all offensive team members prior to making the defuse, but in some cases, they may try to "ninja" defuse.
+:::
+
+::: fragment
+4.  The offensive team does not make a plant by the time the round timer ends.
+:::
 
 ## Data set
 
@@ -88,13 +97,30 @@ offensive_first_blood_win_pct <- rounds |>
   scales::percent(accuracy = 1)
 ```
 
+::: fragment
 -   Total series: **`r n_series`**
+:::
+
+::: fragment
 -   Total rounds: **`r n_rounds`**
--   Offensive win %: **`r offensive_win_pct`**
+:::
+
+::: fragment
 -   Offensive sides plant %: **`r plant_pct`**
+:::
+
+::: fragment
+-   Offensive win %: **`r offensive_win_pct`**
+:::
+
+::: fragment
 -   Win % when planting: **`r offensive_plant_and_win_pct`**
+:::
+
+::: fragment
 -   Win % when earning first blood: **`r offensive_first_blood_win_pct`**
+:::
 
 ## How do teams play in an information-neutral setting (round 1)?
 
-![](offensive_win_r1_prop.png)
+![](offensive_win_r1_prop.png){fig-align="center"}

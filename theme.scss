@@ -1,0 +1,18 @@
+/*-- scss:defaults --*/
+
+
+@import url(https://fonts.googleapis.com/css?family=Titillium+Web:400,700,400italic,700italic);
+
+// fonts
+$font-family-sans-serif: 'Titillium Web', sans-serif !default;
+$presentation-font-size-root: 30px;
+$presentation-line-height: 1em;
+$presentation-h1-font-size: 2em;
+$presentation-h2-font-size: 1.25em;
+$presentation-h3-font-size: 1.25em;
+$presentation-h4-font-size: 1.25em;
+
+/*-- scss:rules --*/
+.reveal a {
+  line-height: 1em;
+}
