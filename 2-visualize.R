@@ -266,6 +266,56 @@ ggsave(
   height = 7.5
 )
 
+## win prob after a streak of 2 within first 6 rounds? ----
+## http://keyonvafa.com/hot-hand/
+get_post_streak_prob <- function(n, k, p = 0.5) {
+  tosses <- rbinom(n, 1, p)
+  runs <- rle(tosses)
+  n_neg_after <- length(which(runs$values == 1 & runs$lengths >= k))
+  n_pos_after <- sum(runs$lengths[which(runs$values == 1 & runs$lengths >= k)] - k)
+  
+  ## edge case
+  if (n %in% cumsum(runs$lengths)[which(runs$values == 1 & runs$lengths >= k)]) {
+    n_neg_after <- n_neg_after - 1
+  }
+  
+  n_pos_after / (n_pos_after + n_neg_after)
+}
+
+simulate_post_streak_prob <- function(sims = 1000, ...) {
+  rerun(
+    sims,
+    get_post_streak_prob(...)
+  ) |> 
+    flatten_dbl() |> 
+    mean(na.rm = TRUE)
+}
+
+probs_n6_k2 <- tibble(
+  prob = seq(0.25, 0.75, by = 0.05)
+) |> 
+  mutate(
+    p = map_dbl(prob, ~simulate_post_streak_prob(sims = 10000, n = 6, k = 2, p = .x))
+  )
+probs_n6_k2
+
+streaks_of_3 <- rounds |> 
+  filter(round <= 6) |> 
+  group_by(year, sheet, series, team) |> 
+  mutate(
+    won_prior_round2 = lag(win_round, n = 2, default = NA)
+  ) |> 
+  ungroup() |> 
+  select(year, sheet, series, team, win_round, won_prior_round, won_prior_round2) |> 
+  filter(!is.na(won_prior_round2)) |> 
+  count(win_round, won_prior_round, won_prior_round2, sort = TRUE)
+
+streaks_of_3 |> 
+  filter(won_prior_round, won_prior_round2) |> 
+  mutate(
+    prop = n / sum(n)
+  )
+
 ## comparing round playouts vs expected if each side has a pre-series win expectation of 50% ----
 prior_clinching_round_win_prop <- rounds |> 
   filter(round == (n_rounds - 1L)) |> 

@@ -46,3 +46,27 @@ runs |>
 simulate_post_streak_prob(sims = 1000, n = 11, k = 3, p = 0.6)
 simulate_post_streak_prob(sims = 1000, n = 6, k = 3, p = 0.5)
 simulate_post_streak_prob(sims = 1000, n = 100, k = 3, p = 0.5)
+
+probs_n6_k2 <- tibble(
+  prob = seq(0.1, 0.9, by = 0.1)
+) |> 
+  mutate(
+    p = map_dbl(prob, ~simulate_post_streak_prob(sims = 10000, n = 6, k = 2, p = .x))
+  )
+probs_n6_k2
+
+probs_n6_k3 <- tibble(
+  prob = seq(0.1, 0.9, by = 0.1)
+) |> 
+  mutate(
+    p = map_dbl(prob, ~simulate_post_streak_prob(sims = 10000, n = 6, k = 5, p = .x))
+  )
+probs_n6_k3
+
+probs_n11_k3 <- tibble(
+  prob = seq(0.1, 0.9, by = 0.1)
+) |> 
+  mutate(
+    p = map_dbl(prob, ~simulate_post_streak_prob(sims = 10000, n = 11, k = 2, p = .x))
+  )
+probs_n11_k3
