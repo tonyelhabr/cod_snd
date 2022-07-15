@@ -39,12 +39,6 @@ update_geom_defaults('text', list(family = font, size = 10 / .pt, fontface = 'bo
 update_geom_defaults('point', list(color = 'white'))
 update_geom_defaults('segment', list(color = 'white'))
 
-game_mapping <- c(
-  '2022' = 'Vanguard',
-  '2021' = 'Cold War',
-  '2020' = 'MW'
-)
-
 rounds <- qs::qread('cod_rounds.qs')
 
 ## offensive win % in "neutral" rounds (1 and 2) ----
