@@ -1,5 +1,5 @@
 ---
-title: "Momentum in Round-Based First-Person-Shooter (FPS) E-Sports"
+title: "Streaking and Clutching in Round-Based First Person Shooter (FPS) Esports"
 author: "Tony ElHabr"
 format:
   revealjs:
@@ -279,19 +279,28 @@ save_heatmap <- function(
   )
 }
 
-heatmap_tile <- function(..., .fill = '') {
+heatmap_tile <- function(..., .xmin, .xmax, .ymin, .ymax, .fill) {
   list(
     ...,
     geom_rect(
       color = blackish_background,
       aes(
         fill = .data[[.fill]],
-        xmin = pre_cumu_w, 
-        ymin = pre_cumu_l,
-        xmax = pre_cumu_w + 1,
-        ymax = pre_cumu_l + 1
+        xmin = .data[[.xmin]], 
+        ymin = .data[[.ymin]],
+        xmax = .data[[.xmin]], + 1,
+        ymax = .data[[.ymin]] + 1
       )
     )
+  )
+}
+
+pre_cumu_heatmap_tile <- function(..., .fill) {
+  heatmap_tile(
+    .xmin = 'pre_cumu_w',
+    .ymin = 'pre_cumu_l',
+    .fill = .fill,
+    ...
   )
 }
 
@@ -357,7 +366,7 @@ add_o_round_win_text_layer <- function(..., .emphasize = 'low') {
 p_o_round_win_prop <- o_win_prop |> 
   ggplot() +
   common_heatmap_layers() +
-  heatmap_tile(.fill = 'win_round_prop') +
+  pre_cumu_heatmap_tile(.fill = 'win_round_prop') +
   add_text_layers(.f = add_o_round_win_text_layer) +
   ggsci::scale_fill_material('teal') +
   labs(
@@ -416,7 +425,7 @@ max_diff_win_round_prop <- max(abs(o_win_prop$diff_win_round_prop))
 p_o_round_win_prop_over_expected <- o_win_prop |> 
   ggplot() +
   common_heatmap_layers() +
-  heatmap_tile(.fill = 'diff_win_round_prop') +
+  pre_cumu_heatmap_tile(.fill = 'diff_win_round_prop') +
   add_text_layers(.f = add_o_round_win_over_expected_text_layer) +
   scale_fill_gradient2(
     low = extract_ggsci_mid_color('purple'),
@@ -469,7 +478,7 @@ add_o_series_win_text_layer <- function(..., .emphasize) {
 p_o_series_win_prop <- o_win_prop |> 
   ggplot() +
   common_heatmap_layers() +
-  heatmap_tile(.fill = 'win_series_prop') +
+  pre_cumu_heatmap_tile(.fill = 'win_series_prop') +
   add_text_layers(.f = add_o_series_win_text_layer) +
   ggsci::scale_fill_material('deep-orange') +
   labs(
@@ -514,7 +523,7 @@ max_diff_win_series_prop <- max(abs(o_win_prop$diff_win_series_prop))
 p_o_series_win_prop_over_expected <- o_win_prop |> 
   ggplot() +
   common_heatmap_layers() +
-  heatmap_tile(.fill = 'diff_win_series_prop') +
+  pre_cumu_heatmap_tile(.fill = 'diff_win_series_prop') +
   add_text_layers(.f = add_o_series_win_over_expected_text_layer) +
   scale_fill_gradient2(
     low = extract_ggsci_mid_color('brown'),
@@ -817,9 +826,248 @@ save_slope_chart(
 
 ## How do end states compare to expectation?
 
+```{r}
+#| label: series_outcomes
+prior_clinching_round_win_prop <- rounds |> 
+  filter(round == (n_rounds - 1L)) |> 
+  count(n_rounds, win_series, won_prior_round = win_round) |> 
+  mutate(
+    across(win_series, ~ifelse(.x, 'win', 'loss'))
+  ) |> 
+  pivot_wider(
+    names_from = win_series,
+    values_from = n,
+    values_fill = 0L
+  ) |> 
+  filter(won_prior_round) |> 
+  select(-won_prior_round) |> 
+  mutate(
+    win_series_prop = win / (win + loss),
+    e_win_series_prop = (6L - 1L) / (n_rounds - 1L)
+  )
+
+n_rounds_max <- 11
+n_sims <- 100000
+set.seed(42)
+w <- sample(c(0, 1), size = n_rounds_max * n_sims, replace = TRUE)
+
+sim_rounds <- tibble(
+  i = rep(1:n_sims, each = n_rounds_max),
+  r = rep(1:n_sims, times = n_rounds_max),
+  w = w
+) |> 
+  group_by(i) |> 
+  mutate(
+    cumu_w = cumsum(w),
+    cumu_l = cumsum(w == 0)
+  ) |> 
+  ungroup() |> 
+  mutate(
+    cumu_wl_max = ifelse(cumu_w > cumu_l, cumu_w, cumu_l)
+  ) |> 
+  filter(cumu_wl_max <= 6)
+
+sim_rounds_to_drop <- anti_join(
+  sim_rounds |> 
+    filter(cumu_wl_max == 6L),
+  sim_rounds |> 
+    filter(cumu_wl_max == 6L) |> 
+    group_by(i) |> 
+    slice_min(r, n = 1) |> 
+    ungroup()
+)
+
+sim_rounds <- sim_rounds |> 
+  anti_join(
+    sim_rounds_to_drop
+  )
+
+## always from offensive perspective
+e_series_streaks <- sim_rounds |> 
+  inner_join(
+    sim_rounds |> 
+      filter(cumu_wl_max == 6) |> 
+      mutate(
+        zeros_win = cumu_l == cumu_wl_max
+      ) |> 
+      select(i, zeros_win)
+  ) |> 
+  mutate(
+    across(w, ~ifelse(zeros_win, abs(1 - .x), .x))
+  ) |> 
+  group_by(i) |> 
+  summarize(
+    cumu_w = max(cumu_w),
+    cumu_l = max(cumu_l),
+    ws = paste0(w, collapse = '')
+  ) |> 
+  ungroup() |> 
+  mutate(
+    wins = ifelse(cumu_w == 6, cumu_w, cumu_l),
+    losses = ifelse(cumu_w == 6, cumu_l, cumu_w)
+  ) |> 
+  unite(
+    record, wins, losses, sep = '-'
+  ) |> 
+  count(record, ws, sort = TRUE) |> 
+  mutate(prop = n / sum(n))
+
+actual_series_streaks <- rounds |> 
+  filter(win_series) |> 
+  mutate(across(win_round, as.integer)) |> 
+  group_by(year, event, series) |> 
+  summarize(
+    wins = max(cumu_w),
+    losses = max(cumu_l),
+    ws = paste0(win_round, collapse = '')
+  ) |> 
+  ungroup() |> 
+  unite(
+    record, wins, losses, sep = '-'
+  ) |> 
+  count(record, ws, sort = TRUE) |> 
+  mutate(prop = n / sum(n))
+
+series_streaks <- full_join(
+  actual_series_streaks |> 
+    rename_with(~sprintf('%s_actual', .x), c(n, prop)),
+  e_series_streaks |> 
+    rename_with(~sprintf('%s_expected', .x), c(n, prop))
+) |> 
+  mutate(
+    prop_diff = prop_actual - prop_expected
+  ) |> 
+  arrange(desc(abs(prop_diff)))
+series_streaks |> filter(is.na(n_actual))
+
+## 6-0, 6-1, and some combos of 6-5 occur more often than expected
+series_streaks |> 
+  filter(!is.na(n_actual)) |> 
+  mutate(total_actual = sum(n_actual)) |> 
+  mutate(
+    p = vectorized_prop_test(n_actual, total_actual, n_expected, !!n_sims)
+  ) |> 
+  select(-total_actual) |> 
+  arrange(p$p.value)
+
+## 6-0 and 6-1 occur more often than expected
+series_outcomes <- full_join(
+  actual_series_streaks |> 
+    group_by(record) |> 
+    summarize(
+      across(n, sum)
+    ) |> 
+    mutate(prop = n / sum(n)) |> 
+    rename_with(~sprintf('%s_actual', .x), c(n, prop)),
+  e_series_streaks |> 
+    group_by(record) |> 
+    summarize(
+      across(n, sum)
+    ) |> 
+    mutate(prop = n / sum(n)) |> 
+    rename_with(~sprintf('%s_expected', .x), c(n, prop))
+) |> 
+  mutate(
+    prop_diff = prop_actual - prop_expected
+  ) |> 
+  arrange(desc(abs(prop_diff))) |> 
+  mutate(total_actual = sum(n_actual)) |> 
+  mutate(
+    p = vectorized_prop_test(n_actual, total_actual, n_expected, !!n_sims)
+  ) |> 
+  select(-total_actual) |> 
+  arrange(p$p.value)
+
+series_outcomes |> 
+  select(record, actual = prop_actual, expected = prop_expected, diff = prop_diff) |> 
+  pivot_longer(
+    -record,
+    names_to = 'prop',
+    values_to = 'value'
+  ) |> 
+  mutate(
+    across(
+      prop,
+      factor, 
+      levels = c('actual', 'expected', 'diff')
+    )
+  ) |> 
+  ggplot() +
+  aes(x = record, y = prop) +
+  geom_tile(
+    show.legend = FALSE,
+    aes(fill = value)
+  ) +
+  scale_x_discrete(
+    position = 'top'
+  )
+
+```
+
 ::: notes
 -   There should be evidence of 6-0's and 6-5's being more frequent than expected given 50-50% chances. Might need to exclude major matchups, so that series are basically random.
 :::
+
+## When do back-to-back round wins occur?
+
+```{r}
+summarize_b2b_round_wins <- function(df, ...) {
+  df |> 
+    arrange(year, sheet, series, team, round) |> 
+    group_by(year, sheet, series, team) |> 
+    mutate(
+      b2b_round_wins = win_round & lag(win_round)
+    ) |> 
+    ungroup() |> 
+    filter(round > 1L) |> 
+    count(..., round, b2b_round_wins) |> 
+    group_by(..., round) |> 
+    mutate(total = sum(n), prop = n / total) |> 
+    ungroup() |> 
+    filter(b2b_round_wins) |> 
+    select(-b2b_round_wins)
+}
+
+pre_cumu_heatmap_tile <- function(..., .fill) {
+  heatmap_tile(
+    .xmin = 'n_rounds',
+    .ymin = 'round',
+    .fill = .fill,
+    ...
+  )
+}
+
+## now accounting for number of rounds that end up being played...
+## seems like there is interesting behavior in the last round, regardless `n_rounds`
+b2b_round_win_props <- rounds |> 
+  filter(n_rounds > 6L) |> 
+  summarize_b2b_round_wins(n_rounds)
+
+b2b_round_win_props |> 
+  ggplot() +
+  pre_cumu_heatmap_tile(.fill = 'prop')
+
+b2b_round_win_props |> 
+  filter(n_rounds > 6L) |> 
+  summarize_b2b_round_wins(n_rounds) |> 
+  group_by(n_rounds) |> 
+  mutate(
+    intra_prop = (n - mean(n)) / sd(n)
+  ) |> 
+  ggplot() +
+  aes(x = n_rounds, y = round) +
+  geom_tile(aes(fill = intra_prop))
+
+## now accounting for number of rounds that end up being played AND series winners...
+rounds |> 
+  filter(win_series, n_rounds > 6L) |> 
+  summarize_b2b_round_wins(n_rounds)
+
+## and the losers...
+rounds |> 
+  filter(!win_series) |> 
+  summarize_b2b_round_wins(n_rounds)
+```
 
 ## Is there evidence for the "hot hand"?
 
@@ -922,5 +1170,5 @@ round_win_prop_after_b2b2b_wins <- tibble(
 ## What is the optimal strategy?
 
 ::: notes
--   plant at most prevalent/winningest site? plant at other site? go for kills?
+-   Should you plant at most prevalent/winningest site? plant at other site? Go for kills?
 :::
