@@ -266,6 +266,97 @@ ggsave(
   height = 7.5
 )
 
+## x ----
+map_plant_win_props <- rounds |> 
+  filter(!is.na(plant)) |> 
+  filter(is_offense) |> 
+  group_by(year, game, map, plant) |> 
+  summarize(
+    n = n(),
+    wins = sum(win_round)
+  ) |> 
+  ungroup() |> 
+  mutate(
+    win_prop = wins / n
+  ) |> 
+  group_by(year, game, map) |> 
+  mutate(
+    total = sum(n),
+    rnk = row_number(-n),
+    prop = n / total
+  ) |> 
+  ungroup()
+map_plant_win_props
+
+rounds |> 
+  filter(is_offense) |> 
+  left_join(
+    map_plant_win_props |> 
+      transmute(year, game, map, plant, play = ifelse(rnk == 1, 'pri', 'sec'))
+  ) |> 
+  mutate(
+    play = ifelse(is.na(plant), 'no', play)
+  ) |> 
+  count(play, sort = TRUE) |> 
+  mutate(prop = n / sum(n))
+
+summarize_map_plant_win_props <- function(i) {
+  map_plant_win_props |> 
+    group_by(year, game, map) |> 
+    filter(rnk == !!i) |> 
+    ungroup() |> 
+    summarize(
+      across(c(n, wins, total), sum)
+    ) |> 
+    ungroup() |> 
+    mutate(
+      win_prop = wins / n,
+      prop = n / total
+    )
+}
+
+pri_map_plant_win_props <- summarize_map_plant_win_props(1)
+sec_map_plant_win_props <- summarize_map_plant_win_props(2)
+
+map_plant_win_props |> 
+  ggplot() +
+  aes(x = prop, y = win_prop) +
+  geom_point(aes(color = factor(rnk), size = n)) +
+  geom_segment(
+    data = map_plant_win_props |> 
+      select(year, game, map, rnk, prop, win_prop) |> 
+      pivot_wider(
+        names_from = rnk,
+        values_from = c(prop, win_prop)
+      ),
+    aes(
+      x = prop_1,
+      xend = prop_2,
+      y = win_prop_1,
+      yend = win_prop_2
+    )
+  )
+
+rounds |> 
+  filter(is.na(plant)) |> 
+  filter(is_offense) |> 
+  group_by(year, game, map, plant) |> 
+  summarize(
+    n = n(),
+    wins = sum(win_round)
+  ) |> 
+  ungroup() |> 
+  mutate(
+    win_prop = wins / n
+  ) |> 
+  group_by(year, game, map) |> 
+  mutate(
+    total = sum(n),
+    rnk = row_number(-n),
+    prop = n / total
+  ) |> 
+  ungroup()
+
 ## win prob after a streak of 2 within first 6 rounds? ----
 ## http://keyonvafa.com/hot-hand/
 get_post_streak_prob <- function(n, k, p = 0.5) {
