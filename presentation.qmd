@@ -8,26 +8,80 @@ format:
 execute: 
   include: false
   echo: false
+  eval: false
 ---
 
 ```{r}
 #| label: setup
+#| eval: true
 library(dplyr)
-library(tibble)
+library(dplyr)
 library(qs)
 library(scales)
 
-rounds <- qs::qread(file.path('cod_rounds.qs'))
+rounds <- qs::qread('cod_rounds.qs')
 ```
 
-## What?
+```{r}
+#| label: setup-eval
+library(tidyverse)
+library(extrafont)
+library(ggtext)
+library(ggsci)
+blackish_background <- '#191919' ## to match slide background
+gray_points <- '#4d4d4d'
+gray_text <- '#999999'
 
--   Call of Duty League (CDL)
-    -   Search and Destroy (SnD)
--   Valorant Pro League
-    -   Plant/Defuse
+font <- 'Titillium Web'
+extrafont::loadfonts(quiet = TRUE)
+theme_set(theme_minimal())
+theme_update(
+  text = element_text(family = font),
+  title = element_text(size = 14, color = 'white'),
+  plot.title = element_text(face = 'bold', size = 20, color = 'white'),
+  plot.title.position = 'plot',
+  plot.subtitle = element_text(size = 14, color = '#f1f1f1'),
+  axis.text = element_text(color = 'white', size = 14),
+  axis.title = element_text(size = 14, color = 'white', face = 'bold', hjust = 0.99),
+  axis.line = element_blank(),
+  panel.grid.major = element_line(color = gray_points),
+  panel.grid.minor = element_line(color = gray_points),
+  panel.grid.minor.x = element_blank(),
+  panel.grid.minor.y = element_blank(),
+  strip.text = element_text(color = 'white', size = 16, face = 'bold'),
+  plot.margin = margin(10, 10, 10, 10),
+  plot.background = element_rect(fill = blackish_background, color = blackish_background),
+  plot.caption = element_text(size = 12, color = 'white', hjust = 1),
+  plot.caption.position = 'plot',
+  plot.tag = ggtext::element_markdown(size = 12, color = 'white', hjust = 0),
+  plot.tag.position = c(0.01, 0.01),
+  panel.background = element_rect(fill = blackish_background, color = blackish_background)
+)
+update_geom_defaults('text', list(family = font, size = 10 / .pt, fontface = 'bold'))
+update_geom_defaults('point', list(color = 'white'))
+update_geom_defaults('segment', list(color = 'white'))
+```
 
-## How does a team win a round of SnD?
+## Game types
+
+::: fragment
+-   Search and Destroy (SnD) in Call of Duty (COD)
+    -   2020-2022 Call of Duty League (CDL) matches (qualifiers and majors)
+    -   4v4.
+    -   First to 6 round wins
+    -   Teams swap sides (offense and defense) after every round
+:::
+
+::: fragment
+-   Plant/Defuse in Valorant
+    -   Data from Valorant professional league, updated through January 1, 2022
+    -   5v5
+    -   First to 13 round wins
+    -   One team plays offense in 12 consecutive rounds before swapping sides
+    -   Must win by 2 rounds
+:::
+
+## How does a team win a round of COD SnD / Valorant plant/defuse?
 
 ::: fragment
 1.  One team eliminates all members of the other team prior to a bomb plant.
@@ -42,17 +96,18 @@ rounds <- qs::qread(file.path('cod_rounds.qs'))
 :::
 
 ::: fragment
-Often the defensive team will try to eliminate all offensive team members prior to making the defuse, but in some cases, they may try to "ninja" defuse.
+Often the defensive team will try to eliminate all o team members prior to making the defuse, but in some cases, they may try to "ninja" defuse.
 :::
 
 ::: fragment
 4.  The offensive team does not make a plant by the time the round timer ends.
 :::
 
-## Data set
+## COD SnD data overview
 
 ```{r}
 #| label: descriptive-cod-snd-stats
+#| eval: true
 n_series <- rounds |> 
   distinct(year, sheet, series) |> 
   nrow() |> 
@@ -63,13 +118,13 @@ n_rounds <- rounds |>
   nrow() |> 
   scales::comma()
 
-offensive_win_pct <- rounds |> 
+o_win_prop_const <- rounds |> 
   filter(is_offense) |> 
   count(win_round) |> 
   mutate(prop = n / sum(n)) |> 
   filter(win_round) |> 
-  pull(prop) |> 
-  scales::percent(accuracy = 1)
+  pull(prop)
+o_win_pct <- scales::percent(o_win_prop_const, accuracy = 1)
 
 plant_pct <- rounds |>
   filter(is_offense) |> 
@@ -79,7 +134,7 @@ plant_pct <- rounds |>
   pull(prop) |> 
   scales::percent(accuracy = 1)
 
-offensive_plant_and_win_pct <- rounds |> 
+o_plant_and_win_pct <- rounds |> 
   filter(is_offense, !is.na(plant)) |> 
   count(win_round) |> 
   mutate(prop = n / sum(n)) |> 
@@ -87,7 +142,7 @@ offensive_plant_and_win_pct <- rounds |>
   pull(prop) |> 
   scales::percent(accuracy = 1)
 
-offensive_first_blood_win_pct <- rounds |> 
+o_first_blood_win_pct <- rounds |> 
   filter(!is.na(earned_fb)) |> 
   filter(earned_fb) |> 
   count(win_round) |> 
@@ -106,55 +161,766 @@ offensive_first_blood_win_pct <- rounds |>
 :::
 
 ::: fragment
--   Offensive sides plant %: **`r plant_pct`**
+-   Offensive plant %: **`r plant_pct`**
 :::
 
 ::: fragment
--   Offensive win %: **`r offensive_win_pct`**
+-   Offensive win %: **`r o_win_pct`**
 :::
 
 ::: fragment
--   Win % when planting: **`r offensive_plant_and_win_pct`**
+-   Win % when planting: **`r o_plant_and_win_pct`**
 :::
 
 ::: fragment
--   Win % when earning first blood: **`r offensive_first_blood_win_pct`**
+-   Win % when earning first blood: **`r o_first_blood_win_pct`**
 :::
 
 ## What are your chances of winning a round, given the series state?
 
-(This should hint at the 4-4 phenomenon.)
+```{r}
+#| label: cod_heatmap_prep
+summarize_rounds <- function(rounds, ...) {
+  rounds |> 
+    group_by(pre_cumu_w, pre_cumu_l, ...) |> 
+    summarize(
+      n = n(),
+      across(c(win_round, win_series), sum)
+    ) |> 
+    ungroup() |> 
+    mutate(
+      win_round_prop = win_round / n,
+      win_series_prop = win_series / n
+    )
+}
 
-## How does reality compare to expectation?
+n_rounds_side <- rounds |> summarize_rounds(is_offense)
+o_win_prop <- n_rounds_side |> 
+  filter(is_offense) |> 
+  mutate(
+    diff_win_round_prop = win_round_prop - !!o_win_prop_const
+  )
 
-(This should really highlight the 4-4 phenomenon.)
+e_o_win_series_prop <- crossing(
+  pre_cumu_w = 0:5,
+  pre_cumu_l = 0:5
+) |> 
+  mutate(
+    n_remain_max = 11 - (pre_cumu_w + pre_cumu_l),
+    n_remain_w = 6 - pre_cumu_w,
+    ## can i account for offense in this by rotating?
+    e_win_series_prop = map2_dbl(n_remain_w, n_remain_max, ~sum(dbinom(..1:..2, ..2, 0.5)))
+  )
 
-## What are your chances of going on to win the series, given the series state?
+o_win_prop <- o_win_prop |> 
+  inner_join(
+    e_o_win_series_prop |> select(pre_cumu_w, pre_cumu_l, e_win_series_prop),
+    by = c('pre_cumu_w', 'pre_cumu_l')
+  ) |> 
+  mutate(
+    diff_win_series_prop = win_series_prop - e_win_series_prop
+  )
 
-(More of the 4-4 phenomenon. Also should not win %s along the diagonal.)
+common_heatmap_layers <- function(...) {
+  list(
+    ...,
+    guides(
+      fill = 'none'
+    ),
+    scale_x_continuous(
+      labels = 0:5,
+      breaks = seq(.5, 5.5, by = 1),
+      expand = c(0, 0)
+    ),
+    scale_y_continuous(
+      labels = 0:5,
+      breaks = seq(.5, 5.5, by = 1),
+      expand = c(0, 0),
+      sec.axis = sec_axis(
+        trans = I, 
+        name = ' ', 
+        breaks = seq(0.5, 5.5, by = 1), 
+        labels = rep('', 6)
+      )
+    ),
+    theme(
+      panel.grid.major = element_blank(),
+      axis.title = element_text(hjust = 0.5),
+      plot.title = ggtext::element_markdown(hjust = 0.5),
+      axis.text = element_text(size = 16, face = 'bold')
+    ),
+    labs(
+      caption = 'CDL SnD Major and Weekly matches, 2020 - present',
+      tag = '**Viz**: @TonyElHabr | **Data**: @IOUTurtle',
+      x = "Offensive Team's # of Pre-Round Wins",
+      y = "Defensive Team's # of Pre-Round Wins"
+    )
+  )
+}
 
-## Are offensive win %'s different in round 1 (i.e. an "information-neutral" setting)?
+.dpi <- 300
+save_heatmap <- function(
+    p, 
+    filename = paste0(str_remove(deparse(substitute(p)), '^p_'), '.png'), 
+    width = 6, 
+    height = 6,
+    units = 'px',
+    dpi = .dpi,
+    ...
+) {
+  ggsave(
+    plot = p,
+    filename = filename,
+    width = width * dpi,
+    height = height * dpi,
+    units = units,
+    dpi = dpi,
+    ...
+  )
+}
 
-![](offensive_win_r1_prop.png){fig-align="center"}
+heatmap_tile <- function(..., .fill = '') {
+  list(
+    ...,
+    geom_rect(
+      color = blackish_background,
+      aes(
+        fill = .data[[.fill]],
+        xmin = pre_cumu_w, 
+        ymin = pre_cumu_l,
+        xmax = pre_cumu_w + 1,
+        ymax = pre_cumu_l + 1
+      )
+    )
+  )
+}
+
+heatmap_seq_labeller <- function(.data, .label) {
+  sprintf(
+    '%s\n(%s/%s)', 
+    scales::percent(.data[[.label]], accuracy = 1), 
+    scales::comma(.data$win_round), 
+    scales::comma(.data$n)
+  )
+}
+
+heatmap_text_layer <- function(..., .op, .data, .label, .color, .threshold, .labeller) {
+  list(
+    ...,
+    geom_text(
+      data = .data |> filter(`.op`(.data[[.label]], .threshold)),
+      # family = font,
+      color = .color,
+      size = 11 / .pt,
+      fontface = 'bold',
+      aes(
+        x = pre_cumu_w + 0.5, 
+        y = pre_cumu_l + 0.5,
+        label = .labeller(.data = .data, .label = .label)
+      )
+    )
+  )
+}
+
+add_text_layers <- function(..., .f) {
+  list(
+    ...,
+    .f(.emphasize = 'low'),
+    .f(.emphasize = 'high')
+  )
+}
+```
+
+```{r}
+#| label: p_o_round_win_prop
+add_o_round_win_text_layer <- function(..., .emphasize = 'low') {
+  if(.emphasize == 'low') {
+    op <- `<`
+    .color <- blackish_background
+  } else {
+    op <- `>=`
+    .color <- 'white'
+  }
+  list(
+    ...,
+    heatmap_text_layer(
+      .data = o_win_prop,
+      .op = op,
+      .label = 'win_round_prop',
+      .color = .color,
+      .threshold = 0.52,
+      .labeller = heatmap_seq_labeller
+    )
+  )
+}
+
+p_o_round_win_prop <- o_win_prop |> 
+  ggplot() +
+  common_heatmap_layers() +
+  heatmap_tile(.fill = 'win_round_prop') +
+  add_text_layers(.f = add_o_round_win_text_layer) +
+  ggsci::scale_fill_material('teal') +
+  labs(
+    title = 'Offensive Round Win %'
+  )
+p_o_round_win_prop
+save_heatmap(p_o_round_win_prop, width = 7.5, height = 5)
+```
+
+::: notes
+-   This should hint at what I'm calling the "4-4" phenomenon, where the o round win % is dramatically higher than adjacent scenarios (3-4, 4-3, 5-4, 4-5, and even 3-3 or 5-5).
+-   Note that round win %s are lower than one might expect in 0-5 and 1-5 states.
+:::
+
+![](o_round_win_prop.png){fig-align="center"}
+
+## How do the empirical round results compare to expectation?
+
+```{r}
+#| label: p_o_round_win_prop_over_expected
+heatmap_div_labeller <- function(.data, .label) {
+  sprintf(
+    '%+.0f\n(%s/%s)', 
+    100 * .data[[.label]], 
+    scales::comma(.data$win_round), 
+    scales::comma(.data$n)
+  )
+}
+
+add_o_round_win_over_expected_text_layer <- function(..., .emphasize) {
+  if(.emphasize == 'low') {
+    op <- `<`
+    .color <- 'white'
+  } else {
+    op <- `>=`
+    .color <- blackish_background
+  }
+  list(
+    ...,
+    heatmap_text_layer(
+      .data = o_win_prop,
+      .op = op,
+      .label = 'diff_win_round_prop',
+      .color = .color,
+      .threshold = -0.1,
+      .labeller = heatmap_div_labeller
+    )
+  )
+}
+
+extract_ggsci_mid_color <- function(palette) {
+  ggsci::pal_material(palette, n = 3)(2)[2]
+}
+
+max_diff_win_round_prop <- max(abs(o_win_prop$diff_win_round_prop))
+p_o_round_win_prop_over_expected <- o_win_prop |> 
+  ggplot() +
+  common_heatmap_layers() +
+  heatmap_tile(.fill = 'diff_win_round_prop') +
+  add_text_layers(.f = add_o_round_win_over_expected_text_layer) +
+  scale_fill_gradient2(
+    low = extract_ggsci_mid_color('purple'),
+    high = extract_ggsci_mid_color('green'),
+    mid = 'white',
+    midpoint = 0,
+    limits = c(
+      -max_diff_win_round_prop, 
+      +max_diff_win_round_prop
+    )
+  ) +
+  labs(
+    title = 'Offensive Round Win % Over Expected'
+  )
+p_o_round_win_prop_over_expected
+save_heatmap(p_o_round_win_prop_over_expected, width = 7.5, height = 5)
+```
+
+::: notes
+-   This should emphasize the ends of the spectrum seen on the previous graph.
+:::
+
+![](o_round_win_prop_over_expected.png){fig-align="center"}
+
+## What are your chances of winning the series, given the series state?
+
+```{r}
+#| label: p_o_series_win_prop
+add_o_series_win_text_layer <- function(..., .emphasize) {
+  if(.emphasize == 'low') {
+    op <- `<`
+    .color <- blackish_background
+  } else {
+    op <- `>=`
+    .color <- 'white'
+  }
+  list(
+    ...,
+    heatmap_text_layer(
+      .data = o_win_prop,
+      .op = op,
+      .label = 'win_series_prop',
+      .color = .color,
+      .threshold = 0.52,
+      .labeller = heatmap_seq_labeller
+    )
+  )
+}
+
+p_o_series_win_prop <- o_win_prop |> 
+  ggplot() +
+  common_heatmap_layers() +
+  heatmap_tile(.fill = 'win_series_prop') +
+  add_text_layers(.f = add_o_series_win_text_layer) +
+  ggsci::scale_fill_material('deep-orange') +
+  labs(
+    title = 'Offensive Series Win %'
+  )
+p_o_series_win_prop
+save_heatmap(p_o_series_win_prop, width = 7.5, height = 5)
+```
+
+::: notes
+-   This is mostly just for reference. I think the next slide should have more insight, since it's harder to have a prior understanding about the probability of winning the series given a round state.
+:::
+
+![](o_series_win_prop.png){fig-align="center"}
+
+## How do the empirical series results compare to expectation?
+
+```{r}
+#| label: p_o_series_win_prop_over_expected
+add_o_series_win_over_expected_text_layer <- function(..., .emphasize) {
+  if(.emphasize == 'low') {
+    op <- `<`
+    .color <- blackish_background
+  } else {
+    op <- `>=`
+    .color <- 'white'
+  }
+  list(
+    ...,
+    heatmap_text_layer(
+      .data = o_win_prop,
+      .op = op,
+      .label = 'diff_win_series_prop',
+      .color = .color,
+      .threshold = 0.08,
+      .labeller = heatmap_div_labeller
+    )
+  )
+}
+
+max_diff_win_series_prop <- max(abs(o_win_prop$diff_win_series_prop))
+p_o_series_win_prop_over_expected <- o_win_prop |> 
+  ggplot() +
+  common_heatmap_layers() +
+  heatmap_tile(.fill = 'diff_win_series_prop') +
+  add_text_layers(.f = add_o_series_win_over_expected_text_layer) +
+  scale_fill_gradient2(
+    low = extract_ggsci_mid_color('brown'),
+    high = extract_ggsci_mid_color('cyan'),
+    mid = 'white',
+    midpoint = 0,
+    limits = c(
+      -max_diff_win_series_prop, 
+      +max_diff_win_series_prop
+    )
+  ) +
+  labs(
+    title = 'Offensive Series Win % Over Expected'
+  )
+p_o_series_win_prop_over_expected
+save_heatmap(p_o_series_win_prop_over_expected, width = 7.5, height = 5)
+```
+
+::: notes
+-   Note the 4-4 and 2-4 series win percentages.
+:::
+
+![](o_series_win_prop_over_expected.png){fig-align="center"}
+
+## Are offensive win %'s different in round 1?
+
+```{r}
+#| label: p_o_win_r1_prop
+calculate_o_round_win_prop <- function(df) {
+  df |> 
+    count(year, game, map, is_offense, win_round) |> 
+    group_by(map, is_offense) |> 
+    mutate(total = sum(n), prop = n / total) |> 
+    ungroup() |>
+    filter(win_round, is_offense) |>
+    select(
+      year,
+      game,
+      map,
+      rounds_won = n,
+      total_rounds = total,
+      win_round_prop = prop
+    ) |>
+    arrange(desc(win_round_prop))
+}
+
+devtools::source_url('https://raw.githubusercontent.com/dgrtwo/splittestr/master/R/vectorized-prop-test.R')
+summarize_o_round_win_prop <- function(.round) {
+  
+  specified_round <- rounds |> 
+    filter(round == .round) |> 
+    calculate_o_round_win_prop()
+  
+  post_rounds <- rounds |> 
+    filter(round > .round) |> 
+    calculate_o_round_win_prop()
+  
+  specified_round |> 
+    inner_join(
+      post_rounds |> rename_with(~sprintf('post_%s', .x), -c(year, game, map)),
+      by = c('year', 'game', 'map')
+    ) |> 
+    mutate(round = .round, .after = 'map') |> 
+    arrange(desc(win_round_prop)) |> 
+    mutate(
+      prop_test = vectorized_prop_test(rounds_won, total_rounds, post_rounds_won, post_total_rounds),
+      p_value = prop_test$p.value
+    ) |> 
+    arrange(p_value) |> 
+    mutate(
+      diff_prop = post_win_round_prop - win_round_prop,
+      dir = factor(sign(diff_prop)),
+      is_significant = p_value < 0.05,
+      label = sprintf('%s - %s (%s)', map, game, year)
+    )
+}
+
+o_win_rx_prop_pal <- c(
+  `-1` = extract_ggsci_mid_color('pink'),
+  `1` = extract_ggsci_mid_color('teal')
+)
+
+arw <- arrow(length = unit(5, 'pt'), type = 'closed')
+
+plot_round_vs_post_round_slope_chart <- function(.round) {
+  o_win_rx_prop <- summarize_o_round_win_prop(.round)
+  x1_label <- sprintf('Round %d<br/>o Win %%', .round)
+  x2_label <- sprintf('Post-Round %d<br/>o Win %%', .round)
+  
+  min_o_win_rx_prop <- o_win_rx_prop |> slice_min(diff_prop, n = 1)
+  max_o_win_rx_prop <- o_win_rx_prop |> slice_max(diff_prop, n = 1)
+  minmax_labels <- c(min_o_win_rx_prop$label, max_o_win_rx_prop$label)
+  
+  p <- o_win_rx_prop |> 
+    ggplot() +
+    geom_vline(
+      data = tibble(),
+      aes(xintercept = c(1, 2)), 
+      color = gray_points
+    ) +
+    geom_hline(
+      data = tibble(),
+      aes(yintercept = c(0.25, 0.5, 0.75)), 
+      linetype = 2,
+      color = gray_points
+    ) +
+    geom_segment(
+      data = o_win_rx_prop |> 
+        mutate(
+          big_segment = label %in% minmax_labels
+        ),
+      show.legend = FALSE,
+      aes(
+        x = 1,
+        xend = 2,
+        y = win_round_prop,
+        yend = post_win_round_prop,
+        color = dir,
+        size = big_segment,
+        group = label
+      )
+    ) +
+    geom_text(
+      data = tibble(
+        y = c(0.25, 0.75)
+      ) |> 
+        mutate(
+          lab = sprintf('%s%%', round(100 * y))
+        ),
+      aes(x = 2, y = y, label = lab), 
+      size = 12 / .pt,
+      hjust = -0.05,
+      vjust = -0.25,
+      fontface = 'bold',
+      color = 'white'
+    ) +
+    ggtext::geom_richtext(
+      fill = blackish_background, 
+      label.color = NA,
+      data = tibble(
+        x = c(1, 2),
+        y = rep(0.7, 2),
+        lab = c(x1_label, x2_label)
+      ),
+      aes(x = x, y = y, label = lab), 
+      size = 9 / .pt,
+      hjust = 0.5,
+      vjust = 0.5,
+      family = font,
+      fontface = 'bold',
+      color = 'white'
+    ) +
+    ggrepel::geom_text_repel(
+      data = o_win_rx_prop |> 
+        filter(label %in% !!minmax_labels),
+      aes(x = 1, y = win_round_prop, label = label),
+      family = font,
+      fontface = 'bold',
+      color = 'white',
+      size = 9 / .pt,
+      hjust = 'right', 
+      nudge_x = -0.1,
+      direction = 'y'
+    ) +
+    ggrepel::geom_text_repel(
+      data = o_win_rx_prop |> 
+        filter(!(label %in% !!minmax_labels)),
+      aes(x = 2, y = post_win_round_prop, label = label),
+      family = font,
+      color = gray_text,
+      size = 9 / .pt,
+      hjust = 'left', 
+      nudge_x = 0.1,
+      direction = 'y'
+    ) +
+    scale_x_continuous(
+      position = 'top',
+      breaks = c(1, 2),
+      expand = expansion(mult = 0.5)
+    ) +
+    scale_y_continuous(
+      limits = c(0.25, 0.75)
+    ) +
+    scale_size_manual(
+      values = c(
+        `FALSE` = 0.5,
+        `TRUE` = 2
+      )
+    ) +
+    scale_color_manual(
+      name = NULL,
+      values = o_win_rx_prop_pal
+    ) +
+    theme(
+      plot.title = element_text(hjust = 0.5),
+      panel.grid.major = element_blank(),
+      axis.text.x = element_blank(),
+      axis.text.y = element_blank()
+    ) +
+    labs(
+      x = NULL,
+      y = NULL
+    )
+  list(
+    plot = p,
+    data = o_win_rx_prop,
+    largest_neg_diff_prop = min_o_win_rx_prop$diff_prop,
+    largest_pos_diff_prop = max_o_win_rx_prop$diff_prop
+  )
+}
+
+res_r1 <- plot_round_vs_post_round_slope_chart(1)
+
+p_o_win_r1_vs_post_round_prop <- res_r1$plot +
+  geom_curve(
+    data = tibble(),
+    aes(x = 1.2, y = 0.65, xend = 1.1, yend = 0.63),
+    curvature = 0.2, 
+    color = o_win_rx_prop_pal[["-1"]], 
+    arrow = arw
+  ) +
+  geom_curve(
+    data = tibble(),
+    aes(x = 1.24, y = 0.27, xend = 1.1, yend = 0.27),
+    curvature = 0-.2, 
+    color = o_win_rx_prop_pal[["1"]], 
+    arrow = arw
+  ) +
+  geom_text(
+    data = tibble(
+      x = c(1.2, 1.24),
+      y = c(0.65, 0.27),
+      hjust = c(0, 0),
+      vjust = c(0.5, 0.5),
+      lab = c(
+        sprintf(
+          'Largest negative percent difference in round 1\nvs. all other round win percentages (%+.0f%%).', 
+          100 * res_r1$largest_neg_diff_prop
+        ),
+        sprintf(
+          'Largest positive percent difference (%+.0f%%).\nOnly significant difference (p value < 0.01).',
+          100 * res_r1$largest_pos_diff_prop
+        )
+      )
+    ),
+    color = 'white',
+    size = 9 / .pt,
+    aes(x = x, y = y, hjust = hjust, vjust = vjust, label = lab)
+  )
+p_o_win_r1_vs_post_round_prop
+
+save_slope_chart <- function(
+    p, 
+    filename = paste0(str_remove(deparse(substitute(p)), '^p_'), '.png'), 
+    width = 7.5, 
+    height = 5,
+    units = 'px',
+    dpi = .dpi,
+    ...
+) {
+  
+  ggsave(
+    plot = p,
+    filename = filename,
+    width = 7.5 * .dpi,
+    height = 5 * .dpi,
+    units = units,
+    dpi = dpi,
+    ...
+  )
+}
+
+save_slope_chart(p_o_win_r1_vs_post_round_prop)
+```
+
+![](o_win_r1_vs_post_round_prop.png){fig-align="center"}
+
+::: notes
+-   This might be considered an "information-neutral" setting
+:::
 
 ## Are offensive win %'s different in round 2?
 
-![](offensive_win_r2_prop.png){fig-align="center"}
+```{r}
+res_r2 <- plot_round_vs_post_round_slope_chart(2)
+res_r2$plot
+save_slope_chart(
+  res_r2$plot,
+  filename = 'o_win_r2_vs_post_round_prop.png'
+)
+```
 
-(Emperically, no)
+![](o_win_r2_vs_post_round_prop.png){fig-align="center"}
+
+::: notes
+-   no trend
+:::
 
 ## What are the most common series winning states?
 
 ## How do end states compare to expectation?
 
-(There should be evidence of 6-0's and 6-5's being more frequent than expected given 50-50% chances. Might need to exclude major matchups, so that series are basically random.)
+::: notes
+-   There should be evidence of 6-0's and 6-5's being more frequent than expected given 50-50% chances. Might need to exclude major matchups, so that series are basically random.
+:::
 
 ## Is there evidence for the "hot hand"?
 
-![](hot_hand.png){fig-align="center"}
+```{r}
+#| label: round_win_prop_after_b2b2b_wins
+## http://keyonvafa.com/hot-hand/
+get_post_streak_prob <- function(n, k, p = 0.5) {
+  tosses <- rbinom(n, 1, p)
+  runs <- rle(tosses)
+  n_neg_after <- length(which(runs$values == 1 & runs$lengths >= k))
+  n_pos_after <- sum(runs$lengths[which(runs$values == 1 & runs$lengths >= k)] - k)
+  
+  ## edge case
+  if (n %in% cumsum(runs$lengths)[which(runs$values == 1 & runs$lengths >= k)]) {
+    n_neg_after <- n_neg_after - 1
+  }
+  
+  n_pos_after / (n_pos_after + n_neg_after)
+}
 
-(Need to explain that this is sort of biased by the fact that teams end up winning series in 6 rounds more often than expected.)
+simulate_post_streak_prob <- function(sims = 1000, ...) {
+  rerun(
+    sims,
+    get_post_streak_prob(...)
+  ) |> 
+    flatten_dbl() |> 
+    mean(na.rm = TRUE)
+}
+# prob_n6_k2 <- simulate_post_streak_prob(sims = 10000, n = 6, k = 2, p = 0.5)
+prob_n6_k3 <- simulate_post_streak_prob(sims = 10000, n = 6, k = 3, p = 0.5)
+
+round_streaks <- rounds |> 
+  filter(round <= 6) |> 
+  group_by(year, sheet, series, team) |> 
+  mutate(
+    won_prior_round2 = lag(win_round, n = 2, default = NA),
+    won_prior_round3 = lag(win_round, n = 3, default = NA)
+  ) |> 
+  ungroup() |>
+  select(
+    year,
+    sheet,
+    series,
+    team,
+    is_offense,
+    win_round,
+    won_prior_round,
+    won_prior_round2,
+    won_prior_round3
+  )
+
+round_streaks_after_b2b <- round_streaks |> 
+  filter(!is.na(won_prior_round2)) |> 
+  count(win_round, won_prior_round, won_prior_round2, sort = TRUE)
+
+round_win_prop_after_b2b_wins <- round_streaks_after_b2b |> 
+  filter(won_prior_round, won_prior_round2) |> 
+  mutate(
+    total = sum(n),
+    prop = n / total
+  ) |> 
+  filter(win_round) |> 
+  select(n, total, prop)
+
+round_streaks_after_b2b2b <- round_streaks |> 
+  filter(!is.na(won_prior_round2), !is.na(won_prior_round3)) |> 
+  count(win_round, won_prior_round, won_prior_round2, won_prior_round3, sort = TRUE)
+
+round_win_prop_after_b2b2b_wins <- round_streaks_after_b2b2b |> 
+  filter(won_prior_round, won_prior_round2, won_prior_round3) |> 
+  mutate(
+    total = sum(n),
+    prop = n / total
+  ) |> 
+  filter(win_round) |> 
+  select(n, total, prop)
+```
+
+```{r}
+#| label: round_win_prop_after_b2b2b_wins-eval
+#| eval: true
+prob_n6_k3 <- 0.3838163
+round_win_prop_after_b2b2b_wins <- tibble(
+  n = 352,
+  total = 632
+) |> 
+  mutate(prop = n / total)
+```
+
+::: fragment
+-   Round win % after a streak of 3 round wins:
+    -   Expected: **`r 100 * round(prob_n6_k3, 3)`%**
+    -   Actual: **`r 100 * round(round_win_prop_after_b2b2b_wins$prop, 3)`%** (`r round_win_prop_after_b2b2b_wins$n` / `r round_win_prop_after_b2b2b_wins$total` )
+:::
+
+::: notes
+-   Note this is sort of biased by the fact that teams end up winning series in 6 rounds more often than expected.
+:::
 
 ## What is the optimal strategy?
 
-plant at most prevalent/winningest site? plant at other site? go for kills?
+::: notes
+-   plant at most prevalent/winningest site? plant at other site? go for kills?
+:::
