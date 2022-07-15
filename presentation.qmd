@@ -154,3 +154,7 @@ offensive_first_blood_win_pct <- rounds |>
 ![](hot_hand.png){fig-align="center"}
 
 (Need to explain that this is sort of biased by the fact that teams end up winning series in 6 rounds more often than expected.)
+
+## What is the optimal strategy?
+
+plant at most prevalent/winningest site? plant at other site? go for kills?
