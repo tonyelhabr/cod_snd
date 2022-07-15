@@ -27,20 +27,24 @@ simulate_post_streak_prob <- function(sims = 1000, ...) {
 
 runs <- crossing(
   n = 1:100,
-  k = 1:3
+  k = 1:5,
+  p = c(0.25, 0.5, 0.75)
 ) |> 
   mutate(
-    p = map2_dbl(n, k, ~simulate_post_streak_prob(sims = 10000, n = ..1, k = ..2))
+    next_p = pmap_dbl(list(n, k, p), ~simulate_post_streak_prob(sims = 10000, n = ..1, k = ..2, p = ..3))
   )
 
-runs |>
+p_streaks <- runs |>
   arrange(n, k) |>
   mutate(
-    across(k, factor)
+    across(k, factor),
+    group = sprintf('%s-%s', p, k)
   ) |> 
   ggplot() +
   theme_minimal() +
-  aes(x = n, y = p, color = k, group = k) +
+  aes(x = n, y = next_p, color = k, group = group) +
   geom_step() +
-  geom_hline(aes(yintercept = 0.5)) +
-  geom_smooth()
+  # facet_wrap(~p, scales = 'free_y') +
+  geom_hline(aes( yintercept = p))
+p_streaks
+ggsave(p_streaks, filename = 'research/streaks.png', width = 12, height = 6)
