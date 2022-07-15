@@ -30,7 +30,7 @@ runs <- crossing(
   k = 1:3
 ) |> 
   mutate(
-    p = map2_dbl(n, k, ~simulate_post_streak_prob(sims = 1000, n = ..1, k = ..2))
+    p = map2_dbl(n, k, ~simulate_post_streak_prob(sims = 10000, n = ..1, k = ..2))
   )
 
 runs |>
@@ -44,7 +44,3 @@ runs |>
   geom_step() +
   geom_hline(aes(yintercept = 0.5)) +
   geom_smooth()
-
-simulate_post_streak_prob(sims = 1000, n = 11, k = 3, p = 0.6)
-simulate_post_streak_prob(sims = 1000, n = 6, k = 3, p = 0.5)
-simulate_post_streak_prob(sims = 1000, n = 100, k = 3, p = 0.5)
