@@ -66,19 +66,19 @@ update_geom_defaults('segment', list(color = 'white'))
 
 ::: fragment
 -   Search and Destroy (SnD) in Call of Duty (COD)
--   2020-2022 Call of Duty League (CDL) matches (qualifiers and majors)
--   4v4.
--   First to 6 round wins
--   Teams swap sides (offense and defense) after every round
+    -   2020-2022 Call of Duty League (CDL) matches (qualifiers and majors)
+    -   4v4.
+    -   First to 6 round wins
+    -   Teams swap sides (offense and defense) after every round
 :::
 
 ::: fragment
 -   Plant/Defuse in Valorant
--   Data from Valorant professional league, updated through January 1, 2022
--   5v5
--   First to 13 round wins
--   One team plays offense in 12 consecutive rounds before swapping sides
--   Must win by 2 rounds
+    -   Data from Valorant professional league, updated through January 1, 2022
+    -   5v5
+    -   First to 13 round wins
+    -   One team plays offense in 12 consecutive rounds before swapping sides
+    -   Must win by 2 rounds
 :::
 
 ## How does a team win a round of COD SnD / Valorant plant/defuse?
