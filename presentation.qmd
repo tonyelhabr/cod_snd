@@ -66,19 +66,19 @@ update_geom_defaults('segment', list(color = 'white'))
 
 ::: fragment
 -   Search and Destroy (SnD) in Call of Duty (COD)
-    -   2020-2022 Call of Duty League (CDL) matches (qualifiers and majors)
-    -   4v4.
-    -   First to 6 round wins
-    -   Teams swap sides (offense and defense) after every round
+-   2020-2022 Call of Duty League (CDL) matches (qualifiers and majors)
+-   4v4.
+-   First to 6 round wins
+-   Teams swap sides (offense and defense) after every round
 :::
 
 ::: fragment
 -   Plant/Defuse in Valorant
-    -   Data from Valorant professional league, updated through January 1, 2022
-    -   5v5
-    -   First to 13 round wins
-    -   One team plays offense in 12 consecutive rounds before swapping sides
-    -   Must win by 2 rounds
+-   Data from Valorant professional league, updated through January 1, 2022
+-   5v5
+-   First to 13 round wins
+-   One team plays offense in 12 consecutive rounds before swapping sides
+-   Must win by 2 rounds
 :::
 
 ## How does a team win a round of COD SnD / Valorant plant/defuse?
@@ -180,21 +180,18 @@ o_first_blood_win_pct <- rounds |>
 
 ```{r}
 #| label: cod_heatmap_prep
-summarize_rounds <- function(rounds, ...) {
-  rounds |> 
-    group_by(pre_cumu_w, pre_cumu_l, ...) |> 
-    summarize(
-      n = n(),
-      across(c(win_round, win_series), sum)
-    ) |> 
-    ungroup() |> 
-    mutate(
-      win_round_prop = win_round / n,
-      win_series_prop = win_series / n
-    )
-}
+n_rounds_side <- rounds |> 
+  group_by(pre_cumu_w, pre_cumu_l, is_offense) |> 
+  summarize(
+    n = n(),
+    across(c(win_round, win_series), sum)
+  ) |> 
+  ungroup() |> 
+  mutate(
+    win_round_prop = win_round / n,
+    win_series_prop = win_series / n
+  )
 
-n_rounds_side <- rounds |> summarize_rounds(is_offense)
 o_win_prop <- n_rounds_side |> 
   filter(is_offense) |> 
   mutate(
@@ -221,7 +218,17 @@ o_win_prop <- o_win_prop |>
     diff_win_series_prop = win_series_prop - e_win_series_prop
   )
 
-common_heatmap_layers <- function(...) {
+common_cod_labs <- function(...) {
+  list(
+    ...,
+    labs(
+      caption = 'CDL SnD Major and Weekly matches, 2020 - present',
+      tag = '**Viz**: @TonyElHabr | **Data**: @IOUTurtle'
+    )
+  )
+}
+
+common_cod_heatmap_layers <- function(...) {
   list(
     ...,
     guides(
@@ -229,12 +236,12 @@ common_heatmap_layers <- function(...) {
     ),
     scale_x_continuous(
       labels = 0:5,
-      breaks = seq(.5, 5.5, by = 1),
+      breaks = seq(0.5, 5.5, by = 1),
       expand = c(0, 0)
     ),
     scale_y_continuous(
       labels = 0:5,
-      breaks = seq(.5, 5.5, by = 1),
+      breaks = seq(0.5, 5.5, by = 1),
       expand = c(0, 0),
       sec.axis = sec_axis(
         trans = I, 
@@ -249,9 +256,8 @@ common_heatmap_layers <- function(...) {
       plot.title = ggtext::element_markdown(hjust = 0.5),
       axis.text = element_text(size = 16, face = 'bold')
     ),
+    common_cod_labs(),
     labs(
-      caption = 'CDL SnD Major and Weekly matches, 2020 - present',
-      tag = '**Viz**: @TonyElHabr | **Data**: @IOUTurtle',
       x = "Offensive Team's # of Pre-Round Wins",
       y = "Defensive Team's # of Pre-Round Wins"
     )
@@ -262,8 +268,8 @@ common_heatmap_layers <- function(...) {
 save_heatmap <- function(
     p, 
     filename = paste0(str_remove(deparse(substitute(p)), '^p_'), '.png'), 
-    width = 6, 
-    height = 6,
+    width = 7.5, 
+    height = 5,
     units = 'px',
     dpi = .dpi,
     ...
@@ -279,28 +285,19 @@ save_heatmap <- function(
   )
 }
 
-heatmap_tile <- function(..., .xmin, .xmax, .ymin, .ymax, .fill) {
+heatmap_tile <- function(..., .fill) {
   list(
     ...,
     geom_rect(
       color = blackish_background,
       aes(
         fill = .data[[.fill]],
-        xmin = .data[[.xmin]], 
-        ymin = .data[[.ymin]],
-        xmax = .data[[.xmin]], + 1,
-        ymax = .data[[.ymin]] + 1
+        xmin = pre_cumu_w, 
+        ymin = pre_cumu_l,
+        xmax = pre_cumu_w + 1,
+        ymax = pre_cumu_l + 1
       )
     )
-  )
-}
-
-pre_cumu_heatmap_tile <- function(..., .fill) {
-  heatmap_tile(
-    .xmin = 'pre_cumu_w',
-    .ymin = 'pre_cumu_l',
-    .fill = .fill,
-    ...
   )
 }
 
@@ -331,7 +328,7 @@ heatmap_text_layer <- function(..., .op, .data, .label, .color, .threshold, .lab
   )
 }
 
-add_text_layers <- function(..., .f) {
+heatmap_text_layers <- function(..., .f) {
   list(
     ...,
     .f(.emphasize = 'low'),
@@ -342,7 +339,7 @@ add_text_layers <- function(..., .f) {
 
 ```{r}
 #| label: p_o_round_win_prop
-add_o_round_win_text_layer <- function(..., .emphasize = 'low') {
+o_round_win_text_layer <- function(..., .emphasize = 'low') {
   if(.emphasize == 'low') {
     op <- `<`
     .color <- blackish_background
@@ -365,15 +362,15 @@ add_o_round_win_text_layer <- function(..., .emphasize = 'low') {
 
 p_o_round_win_prop <- o_win_prop |> 
   ggplot() +
-  common_heatmap_layers() +
-  pre_cumu_heatmap_tile(.fill = 'win_round_prop') +
-  add_text_layers(.f = add_o_round_win_text_layer) +
+  common_cod_heatmap_layers() +
+  heatmap_tile(.fill = 'win_round_prop') +
+  heatmap_text_layers(.f = o_round_win_text_layer) +
   ggsci::scale_fill_material('teal') +
   labs(
     title = 'Offensive Round Win %'
   )
 p_o_round_win_prop
-save_heatmap(p_o_round_win_prop, width = 7.5, height = 5)
+save_heatmap(p_o_round_win_prop)
 ```
 
 ::: notes
@@ -396,7 +393,7 @@ heatmap_div_labeller <- function(.data, .label) {
   )
 }
 
-add_o_round_win_over_expected_text_layer <- function(..., .emphasize) {
+o_round_win_over_expected_text_layer <- function(..., .emphasize) {
   if(.emphasize == 'low') {
     op <- `<`
     .color <- 'white'
@@ -424,9 +421,9 @@ extract_ggsci_mid_color <- function(palette) {
 max_diff_win_round_prop <- max(abs(o_win_prop$diff_win_round_prop))
 p_o_round_win_prop_over_expected <- o_win_prop |> 
   ggplot() +
-  common_heatmap_layers() +
+  common_cod_heatmap_layers() +
   pre_cumu_heatmap_tile(.fill = 'diff_win_round_prop') +
-  add_text_layers(.f = add_o_round_win_over_expected_text_layer) +
+  heatmap_text_layers(.f = o_round_win_over_expected_text_layer) +
   scale_fill_gradient2(
     low = extract_ggsci_mid_color('purple'),
     high = extract_ggsci_mid_color('green'),
@@ -441,7 +438,7 @@ p_o_round_win_prop_over_expected <- o_win_prop |>
     title = 'Offensive Round Win % Over Expected'
   )
 p_o_round_win_prop_over_expected
-save_heatmap(p_o_round_win_prop_over_expected, width = 7.5, height = 5)
+save_heatmap(p_o_round_win_prop_over_expected)
 ```
 
 ::: notes
@@ -477,15 +474,15 @@ add_o_series_win_text_layer <- function(..., .emphasize) {
 
 p_o_series_win_prop <- o_win_prop |> 
   ggplot() +
-  common_heatmap_layers() +
+  common_cod_heatmap_layers() +
   pre_cumu_heatmap_tile(.fill = 'win_series_prop') +
-  add_text_layers(.f = add_o_series_win_text_layer) +
+  heatmap_text_layers(.f = add_o_series_win_text_layer) +
   ggsci::scale_fill_material('deep-orange') +
   labs(
     title = 'Offensive Series Win %'
   )
 p_o_series_win_prop
-save_heatmap(p_o_series_win_prop, width = 7.5, height = 5)
+save_heatmap(p_o_series_win_prop)
 ```
 
 ::: notes
@@ -522,9 +519,9 @@ add_o_series_win_over_expected_text_layer <- function(..., .emphasize) {
 max_diff_win_series_prop <- max(abs(o_win_prop$diff_win_series_prop))
 p_o_series_win_prop_over_expected <- o_win_prop |> 
   ggplot() +
-  common_heatmap_layers() +
+  common_cod_heatmap_layers() +
   pre_cumu_heatmap_tile(.fill = 'diff_win_series_prop') +
-  add_text_layers(.f = add_o_series_win_over_expected_text_layer) +
+  heatmap_text_layers(.f = add_o_series_win_over_expected_text_layer) +
   scale_fill_gradient2(
     low = extract_ggsci_mid_color('brown'),
     high = extract_ggsci_mid_color('cyan'),
@@ -539,7 +536,7 @@ p_o_series_win_prop_over_expected <- o_win_prop |>
     title = 'Offensive Series Win % Over Expected'
   )
 p_o_series_win_prop_over_expected
-save_heatmap(p_o_series_win_prop_over_expected, width = 7.5, height = 5)
+save_heatmap(p_o_series_win_prop_over_expected)
 ```
 
 ::: notes
@@ -1005,7 +1002,7 @@ series_outcomes |>
 ```
 
 ::: notes
--   There should be evidence of 6-0's and 6-5's being more frequent than expected given 50-50% chances. Might need to exclude major matchups, so that series are basically random.
+-   There should be evidence of 6-0's and 6-5's being more frequent than expected given 50-50% chances.
 :::
 
 ## When do back-to-back round wins occur?
@@ -1028,46 +1025,155 @@ summarize_b2b_round_wins <- function(df, ...) {
     select(-b2b_round_wins)
 }
 
-pre_cumu_heatmap_tile <- function(..., .fill) {
-  heatmap_tile(
-    .xmin = 'n_rounds',
-    .ymin = 'round',
-    .fill = .fill,
-    ...
-  )
-}
-
 ## now accounting for number of rounds that end up being played...
 ## seems like there is interesting behavior in the last round, regardless `n_rounds`
 b2b_round_win_props <- rounds |> 
   filter(n_rounds > 6L) |> 
-  summarize_b2b_round_wins(n_rounds)
-
-b2b_round_win_props |> 
-  ggplot() +
-  pre_cumu_heatmap_tile(.fill = 'prop')
-
-b2b_round_win_props |> 
-  filter(n_rounds > 6L) |> 
   summarize_b2b_round_wins(n_rounds) |> 
   group_by(n_rounds) |> 
   mutate(
-    intra_prop = (n - mean(n)) / sd(n)
+    z = (n - mean(n)) / sd(n),
+    rnk = row_number(desc(n))
   ) |> 
+  ungroup()
+
+b2b_round_win_props_tile_layer <- function(..., .round, .palette, .is_new = TRUE) {
+  
+  init <- if(!.is_new) {
+    list()
+  } else {
+    ggnewscale::new_scale_fill()
+  }
+  
+  list(
+    ...,
+    init,
+    geom_tile(
+      data = b2b_round_win_props |> filter(n_rounds == .round),
+      color = blackish_background,
+      height = 0.8,
+      show.legend = FALSE,
+      aes(
+        fill = z,
+        x = round + 0.5, 
+        y = n_rounds + 0.5
+      )
+    ),
+    ggsci::scale_fill_material(palette = .palette) 
+  )
+}
+
+b2b_round_win_prop_text_layer <- function(..., .emphasize) {
+  if(.emphasize == 'low') {
+    op <- `>`
+    .color <- blackish_background
+  } else {
+    op <- `==`
+    .color <- 'white'
+  }
+  list(
+    ...,
+    geom_text(
+      data = b2b_round_win_props |> filter(`op`(rnk, 1)),
+      color = .color,
+      size = 11 / .pt,
+      fontface = 'bold',
+      aes(
+        label = sprintf('%s\n(%s)', scales::percent(prop, accuracy = 1), scales::comma(n)),
+        x = round + 0.5, 
+        y = n_rounds + 0.5
+      )
+    )
+  )
+}
+
+b2b_round_win_prop_text_layers <- function(...) {
+  list(
+    ...,
+    b2b_round_win_prop_text_layer(.emphasize = 'low'),
+    b2b_round_win_prop_text_layer(.emphasize = 'high')
+  )
+}
+
+b2b_round_win_props_arws <- tibble(
+  x = c(9.3, 9.4, 9.75, 10),
+  y = c(8.25, 8.5, 8.75, 8.75),
+  xend = c(8.1, 9.1, 9.5, 10.5),
+  yend = c(7.5, 8.5, 9, 10),
+  curvature = c(-0.2, -0.1, 0.1, 0.2)
+) |> 
+  mutate(
+    rn = row_number()
+  )
+
+p_b2b_round_win_props <- b2b_round_win_props |> 
   ggplot() +
-  aes(x = n_rounds, y = round) +
-  geom_tile(aes(fill = intra_prop))
-
-## now accounting for number of rounds that end up being played AND series winners...
-rounds |> 
-  filter(win_series, n_rounds > 6L) |> 
-  summarize_b2b_round_wins(n_rounds)
-
-## and the losers...
-rounds |> 
-  filter(!win_series) |> 
-  summarize_b2b_round_wins(n_rounds)
+  b2b_round_win_props_tile_layer(.round = 7, .palette = 'pink', .is_new = FALSE) +
+  b2b_round_win_props_tile_layer(.round = 8, .palette = 'light-blue') +
+  b2b_round_win_props_tile_layer(.round = 9, .palette = 'light-green') +
+  b2b_round_win_props_tile_layer(.round = 10, .palette = 'amber') +
+  b2b_round_win_props_tile_layer(.round = 11, .palette = 'deep-orange') +
+  b2b_round_win_prop_text_layers() +
+  scale_x_continuous(
+    labels = 2:11,
+    breaks = seq(2.5, 11.5, by = 1),
+    expand = c(0, 0.5)
+  ) +
+  scale_y_continuous(
+    labels = 7:11,
+    breaks = seq(7.5, 11.5, by = 1),
+    expand = c(0, 0)
+  ) +
+  theme(
+    panel.grid.major = element_blank(),
+    axis.title = element_text(hjust = 0.5),
+    plot.title = ggtext::element_markdown(hjust = 0.5),
+    axis.text = element_text(size = 16, face = 'bold')
+  ) +
+  common_cod_labs() +
+  labs(
+    title = 'Back-to-back round win %',
+    x = 'Round',
+    y = '# of Rounds in Complete Series'
+  ) + 
+  geom_text(
+    data = tibble(
+      label = 'Back-to-back wins occur most\nfrequently in the last round.',
+      x = 9.5,
+      y = 8.5
+    ),
+    size = 9 / .pt,
+    fontface = 'bold',
+    color = 'white',
+    hjust = 0,
+    vjust = 0.5,
+    aes(x = x, y = y, label = label)
+  ) +
+  map(
+    b2b_round_win_props_arws |> group_split(rn), 
+    function(.x) {
+      geom_curve(
+        data = data.frame(),
+        color = 'white',
+        arrow = arw,
+        aes(x = .x$x, y = .x$y, xend = .x$xend, yend = .x$yend),
+        curvature = .x$curvature
+      )
+    }
+  )
+save_heatmap(p_b2b_round_win_props)
+# ## now accounting for number of rounds that end up being played AND series winners...
+# rounds |> 
+#   filter(win_series, n_rounds > 6L) |> 
+#   summarize_b2b_round_wins(n_rounds)
+# 
+# ## and the losers...
+# rounds |> 
+#   filter(!win_series) |> 
+#   summarize_b2b_round_wins(n_rounds)
 ```
+
+![](b2b_round_win_props.png){fig-align="center"}
 
 ## Is there evidence for the "hot hand"?
 
@@ -1159,8 +1265,8 @@ round_win_prop_after_b2b2b_wins <- tibble(
 
 ::: fragment
 -   Round win % after a streak of 3 round wins:
-    -   Expected: **`r 100 * round(prob_n6_k3, 3)`%**
-    -   Actual: **`r 100 * round(round_win_prop_after_b2b2b_wins$prop, 3)`%** (`r round_win_prop_after_b2b2b_wins$n` / `r round_win_prop_after_b2b2b_wins$total` )
+-   Expected: **`r 100 * round(prob_n6_k3, 3)`%**
+-   Actual: **`r 100 * round(round_win_prop_after_b2b2b_wins$prop, 3)`%** (`r round_win_prop_after_b2b2b_wins$n` / `r round_win_prop_after_b2b2b_wins$total` )
 :::
 
 ::: notes
