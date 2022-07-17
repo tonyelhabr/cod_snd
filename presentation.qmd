@@ -3,7 +3,9 @@ title: "Streaking and Clutching in Round-Based First Person Shooter Esports"
 author: "Tony ElHabr"
 format:
   revealjs:
+    slide-number: true
     incremental: false
+    logo: images/cdl_gray.png
     theme: [dark, theme.scss]
 execute: 
   include: false
@@ -67,19 +69,19 @@ update_geom_defaults('segment', list(color = 'white'))
 
 ::: fragment
 -   Search and Destroy (SnD) in Call of Duty (COD)
-    -   2020-2022 Call of Duty League (CDL) matches (qualifiers and majors)
-    -   4v4.
-    -   First to 6 round wins
-    -   Teams swap sides (offense and defense) after every round
+-   2020-2022 Call of Duty League (CDL) matches (qualifiers and majors)
+-   4v4.
+-   First to 6 round wins
+-   Teams swap sides (offense and defense) after every round
 :::
 
 ::: fragment
 -   Plant/Defuse in Valorant
-    -   Valorant professional league, updated through January 1, 2022
-    -   5v5
-    -   First to 13 round wins
-    -   One team plays offense in 12 consecutive rounds before swapping sides
-    -   Must win by 2 rounds
+-   Valorant professional league, updated through January 1, 2022
+-   5v5
+-   First to 13 round wins
+-   One team plays offense in 12 consecutive rounds before swapping sides
+-   Must win by 2 rounds
 :::
 
 ## How does a team win a round of COD SnD / Valorant plant/defuse?
@@ -181,7 +183,7 @@ o_first_blood_win_pct <- rounds |>
 
 ```{r}
 #| label: cod_heatmap_prep
-n_rounds_side <- rounds |> 
+round_and_series_win_prop_by_side <- rounds |> 
   group_by(pre_cumu_w, pre_cumu_l, is_offense) |> 
   summarize(
     n = n(),
@@ -193,7 +195,7 @@ n_rounds_side <- rounds |>
     win_series_prop = win_series / n
   )
 
-o_win_prop <- n_rounds_side |> 
+o_win_prop <- round_and_series_win_prop_by_side |> 
   filter(is_offense) |> 
   mutate(
     diff_win_round_prop = win_round_prop - !!o_win_prop_const
@@ -218,6 +220,81 @@ o_win_prop <- o_win_prop |>
   mutate(
     diff_win_series_prop = win_series_prop - e_win_series_prop
   )
+
+# round_and_series_win_prop <- rounds |> 
+#   group_by(pre_cumu_w, pre_cumu_l) |> 
+#   summarize(
+#     n = n(),
+#     across(c(win_round, win_series), sum)
+#   ) |> 
+#   ungroup() |> 
+#   mutate(
+#     win_round_prop = win_round / n,
+#     win_series_prop = win_series / n
+#   )
+# 
+# pluck_round_win_prop <- function(w = 0, l = 0) {
+#   round_and_series_win_prop |> 
+#     filter(pre_cumu_w == w, pre_cumu_l == l) |> 
+#     pull(win_round_prop)
+# }
+# 
+# compute_conditional_probs <- function(
+    #     p00 = 0.5,
+#     p10 = p00,
+#     p20 = p00,
+#     p30 = p00,
+#     p40 = p00,
+#     p50 = p00,
+#     p11 = p00, p21 = p00, p31 = p00, p41 = p00, p51 = p00,
+#     p52 = p00, p53 = p00, p54 = p00
+# ) {
+#   pr6 <- p10 * p20 * p30 * p40 * p50
+#   # pr7 <- p51 * (p10 * p20 * p30 * p40 * (1 - p50) + p10 * p20 * p30 * (1 - p40) * p41 + p10 * p20 * (1 - p30) * p41 + p10 * (1 - p20) * p31 * p41 + (1 - p10) * p21 * p31 * p41)
+#   pr7 <- (
+#     (p00 * p10 * p20 * p30 * p40 * (1 - p50) * p51) +   ## aaaaaba
+#     (p00 * p10 * p20 * p30 * (1 - p40) * p41 * p51) + ## aaaabaa
+#     (p00 * p10 * p20 * (1 - p30) * p31 * p41 * p51) + ## aaabaaa
+#     (p00 * p10 * (1 - p20) * p21 * p31 * p41 * p51) + ## aabaaaa
+#     (p00 * (1 - p10) * p11 * p21 * p31 * p41 * p51) + ## abaaaaa
+#     ((1 - p00) * (1 - p10) * p11 * p21 * p31 * p41 * p51) + ## baaaaaa
+#     
+#     ((1 - p00) * p10 * p20 * p30 * p40 * (1 - p50) * p51) + ## bbbbbab
+#     ((1 - p00) * p10 * p20 * p30 * (1 - p40) * p41 * p51) + ## bbbbabb
+#     ((1 - p00) * p10 * p20 * (1 - p30) * p31 * p41 * p51) + ## bbbabbb
+#     ((1 - p00) * p10 * (1 - p20) * p21 * p31 * p41 * p51) + ## bbabbbb
+#     ((1 - p00) * (1 - p10) * (1 - p11) * p21 * p31 * p41 * p51) + ## babbbbb
+#     (p00 * (1 - p10) * (1 - p11) * p21 * p31 * p41 * p51) ## abbbbbb
+# )
+#   
+#   ## NOTE: pr8 and pr9 are broken. although we can use the simple subtraction of other probabilities for pr10 and pr11 like pr6 and pr7 in a 7 game series, they aren't valid for pr8 and pr9 in an 11 game series.
+#   pr8 <- (1 - pr6 - pr7) * p52
+#   pr9 <- (1 - pr6 - pr7 - pr8) * p53
+#   pr10 <- (1 - pr6 - pr7 - pr8 - pr9) * p54
+#   pr11 <- 1 - pr6 - pr7 - pr8 - pr9 - pr10
+#   tibble(
+#     n_rounds = 6L:11L,
+#     p = c(pr6, pr7, pr8, pr9, pr10, pr11)
+#   )
+# }
+# 
+# ## pr6 and pr7 should match up with what we see later with `possibilities`
+# conditional_series_probs <- compute_conditional_probs(
+#   p00 = pluck_round_win_prop(0, 0),
+#   p10 = pluck_round_win_prop(1, 0),
+#   p20 = pluck_round_win_prop(2, 0),
+#   p30 = pluck_round_win_prop(3, 0),
+#   p40 = pluck_round_win_prop(4, 0),
+#   p50 = pluck_round_win_prop(5, 0),
+#   p11 = pluck_round_win_prop(1, 1),
+#   p21 = pluck_round_win_prop(2, 1),
+#   p31 = pluck_round_win_prop(3, 1),
+#   p41 = pluck_round_win_prop(4, 1),
+#   p51 = pluck_round_win_prop(5, 1),
+#   p52 = pluck_round_win_prop(5, 2),
+#   p53 = pluck_round_win_prop(5, 3),
+#   p54 = pluck_round_win_prop(5, 4)
+# )
 
 common_cod_labs <- function(...) {
   list(
@@ -301,16 +378,16 @@ heatmap_tile <- function(..., .fill) {
   )
 }
 
-heatmap_seq_labeller <- function(.data, .label) {
+heatmap_seq_labeller <- function(.data, .label, .num) {
   sprintf(
     '%s\n(%s/%s)', 
     scales::percent(.data[[.label]], accuracy = 1), 
-    scales::comma(.data$win_round), 
+    scales::comma(.data[[.num]]), 
     scales::comma(.data$n)
   )
 }
 
-heatmap_text_layer <- function(..., .op, .data, .label, .color, .threshold, .labeller) {
+heatmap_text_layer <- function(..., .op, .data, .label, .num, .color, .threshold, .labeller) {
   list(
     ...,
     geom_text(
@@ -322,7 +399,7 @@ heatmap_text_layer <- function(..., .op, .data, .label, .color, .threshold, .lab
       aes(
         x = pre_cumu_w + 0.5, 
         y = pre_cumu_l + 0.5,
-        label = .labeller(.data = .data, .label = .label)
+        label = .labeller(.data = .data, .label = .label, .num)
       )
     )
   )
@@ -339,7 +416,7 @@ heatmap_text_layers <- function(..., .f) {
 
 ```{r}
 #| label: p_o_round_win_prop
-o_round_win_text_layer <- function(..., .emphasize = 'low') {
+o_round_win_text_layer <- function(..., .emphasize) {
   if(.emphasize == 'low') {
     op <- `<`
     .color <- blackish_background
@@ -353,6 +430,7 @@ o_round_win_text_layer <- function(..., .emphasize = 'low') {
       .data = o_win_prop,
       .op = op,
       .label = 'win_round_prop',
+      .num = 'win_round',
       .color = .color,
       .threshold = 0.52,
       .labeller = heatmap_seq_labeller
@@ -380,15 +458,15 @@ save_for_slide(p_o_round_win_prop)
 
 ![](o_round_win_prop.png){fig-align="center"}
 
-## How do the empirical round results compare to expectation?
+## What are your chances of winning a round, given the series state?
 
 ```{r}
 #| label: p_o_round_win_prop_over_expected
-heatmap_div_labeller <- function(.data, .label) {
+# I have no idea why I need to add .num here... keeps erroring otherwise
+heatmap_div_labeller <- function(.data, .label, .num) {
   sprintf(
-    '%+.0f\n(%s/%s)', 
+    '%+.1f\n(%s)', 
     100 * .data[[.label]], 
-    scales::comma(.data$win_round), 
     scales::comma(.data$n)
   )
 }
@@ -465,8 +543,9 @@ add_o_series_win_text_layer <- function(..., .emphasize) {
       .data = o_win_prop,
       .op = op,
       .label = 'win_series_prop',
+      .num = 'win_series',
       .color = .color,
-      .threshold = 0.52,
+      .threshold = 0.8,
       .labeller = heatmap_seq_labeller
     )
   )
@@ -477,7 +556,7 @@ p_o_series_win_prop <- o_win_prop |>
   common_cod_heatmap_layers() +
   heatmap_tile(.fill = 'win_series_prop') +
   heatmap_text_layers(.f = add_o_series_win_text_layer) +
-  ggsci::scale_fill_material('deep-orange') +
+  ggsci::scale_fill_material('orange') +
   labs(
     title = 'Offensive Series Win %'
   )
@@ -491,7 +570,7 @@ save_for_slide(p_o_series_win_prop)
 
 ![](o_series_win_prop.png){fig-align="center"}
 
-## How do the empirical series results compare to expectation?
+## What are your chances of winning the series, given the series state?
 
 ```{r}
 #| label: p_o_series_win_prop_over_expected
@@ -672,8 +751,8 @@ arw <- arrow(length = unit(5, 'pt'), type = 'closed')
 
 plot_round_vs_post_round_slope_chart <- function(.round) {
   o_win_rx_prop <- summarize_o_round_win_prop(.round)
-  x1_label <- sprintf('Round %d<br/>o Win %%', .round)
-  x2_label <- sprintf('Post-Round %d<br/>o Win %%', .round)
+  x1_label <- sprintf('Round %d<br/>offensive win %%', .round)
+  x2_label <- sprintf('Post-round %d<br/>offensive win %%', .round)
   
   min_o_win_rx_prop <- o_win_rx_prop |> slice_min(diff_prop, n = 1)
   max_o_win_rx_prop <- o_win_rx_prop |> slice_max(diff_prop, n = 1)
@@ -988,7 +1067,7 @@ p_series_outcome_prop_over_expected <- long_series_outcome_prop |>
     aes(fill = value)
   ) +
   ggsci::scale_fill_material(
-    palette = 'orange'
+    palette = 'deep-orange'
   ) +
   ggnewscale::new_scale_fill() +
   geom_tile(
@@ -1265,9 +1344,12 @@ simulate_post_streak_prob <- function(sims = 1000, ...) {
 }
 # prob_n6_k2 <- simulate_post_streak_prob(sims = 10000, n = 6, k = 2, p = 0.5)
 prob_n6_k3 <- simulate_post_streak_prob(sims = 10000, n = 6, k = 3, p = 0.5)
+prob_n11_k3 <- simulate_post_streak_prob(sims = 10000, n = 8, k = 3, p = 0.5)
+prob_n11_k3 <- simulate_post_streak_prob(sims = 10000, n = 11, k = 3, p = 0.5)
+prob_n10_k1 <- simulate_post_streak_prob(sims = 10000, n = 10, k = 1, p = 0.5)
 
 round_streaks <- rounds |> 
-  filter(round <= 6) |> 
+  # filter(round <= 6) |> 
   group_by(year, sheet, series, team) |> 
   mutate(
     won_prior_round2 = lag(win_round, n = 2, default = NA),
@@ -1280,24 +1362,12 @@ round_streaks <- rounds |>
     series,
     team,
     is_offense,
+    round,
     win_round,
     won_prior_round,
     won_prior_round2,
     won_prior_round3
   )
-
-round_streaks_after_b2b <- round_streaks |> 
-  filter(!is.na(won_prior_round2)) |> 
-  count(win_round, won_prior_round, won_prior_round2, sort = TRUE)
-
-round_win_prop_after_b2b_wins <- round_streaks_after_b2b |> 
-  filter(won_prior_round, won_prior_round2) |> 
-  mutate(
-    total = sum(n),
-    prop = n / total
-  ) |> 
-  filter(win_round) |> 
-  select(n, total, prop)
 
 round_streaks_after_b2b2b <- round_streaks |> 
   filter(!is.na(won_prior_round2), !is.na(won_prior_round3)) |> 
@@ -1324,11 +1394,68 @@ round_win_prop_after_b2b2b_wins <- tibble(
   mutate(prop = n / total)
 ```
 
+```{r}
+#| label: summarize_and_compare_win_prop_after_wins
+## https://content.iospress.com/articles/journal-of-sports-analytics/jsa200422#app2 suggests that we should look at non-overlapping streaks.
+## "To avoid this problem, we examine only the frequency of winning game three after having won games one and two and the frequency of winning game six after having won games four and five". They sort of deduced that win %s > 50% in the third game might constitute momentum, but didn't make strong statements.
+summarize_win_prop_after_x_wins <- function(round, ...) {
+  round_streaks |> 
+    filter(round == !!round) |> 
+    count(win_round, won_prior_round, won_prior_round2, ..., sort = TRUE) |> 
+    relocate(n) |> 
+    drop_na(last_col()) |> 
+    filter(won_prior_round, won_prior_round2, ...) |> 
+    mutate(
+      total = sum(n),
+      prop = n / total
+    ) |> 
+    filter(win_round) |> 
+    transmute(round = !!round, n, total, prop)
+}
+
+summarize_win_prop_after_b2b_wins <- summarize_win_prop_after_x_wins
+summarize_win_prop_after_b2b2b_wins <- function(round) {
+  summarize_win_prop_after_x_wins(round = round, won_prior_round3)
+}
+
+summarize_and_compare_win_prop_after_wins <- function(ri, add, f) {
+  ra <- f(ri)
+  rb <- f(ri + add)
+  bind_rows(ra, rb)
+}
+
+summarize_and_compare_win_prop_after_b2b_wins <- partial(
+  summarize_and_compare_win_prop_after_wins,
+  add = 3,
+  f = summarize_win_prop_after_b2b_wins,
+  ... = 
+)
+
+summarize_and_compare_win_prop_after_b2b2b_wins <- partial(
+  summarize_and_compare_win_prop_after_wins,
+  add = 4,
+  f = summarize_win_prop_after_b2b2b_wins,
+  ... = 
+)
+
+win_prop_after_b2b_wins <- seq(3, 8, by = 1) |> 
+  map_dfr(
+    summarize_and_compare_win_prop_after_b2b_wins,
+    .id = 'pair_idx'
+  )
+
+win_prop_after_b2b2b_wins <- seq(4, 7, by = 1) |> 
+  map_dfr(
+    summarize_and_compare_win_prop_after_b2b2b_wins,
+    .id = 'pair_idx'
+  )
+```
+
 <br/><br/>
 
 -   Round win % after a streak of 3 round wins:
-    -   Expected: **`r 100 * round(prob_n6_k3, 3)`%**
-    -   Actual: **`r 100 * round(round_win_prop_after_b2b2b_wins$prop, 3)`%** (`r round_win_prop_after_b2b2b_wins$n` / `r round_win_prop_after_b2b2b_wins$total`)
+-   Expected: **`r 100 * round(prob_n6_k3, 3)`%**
+-   Actual: **`r 100 * round(round_win_prop_after_b2b2b_wins$prop, 3)`%** (`r round_win_prop_after_b2b2b_wins$n` / `r round_win_prop_after_b2b2b_wins$total`)
 
 ::: notes
 -   Note this is sort of biased by the fact that teams end up winning series in 6 rounds more often than expected.
