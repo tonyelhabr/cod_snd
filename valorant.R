@@ -46,13 +46,14 @@ teams <- bind_rows(
   distinct(team_id, team) |> 
   arrange(team_id)
 teams
-rounds |> 
+
+cumu_rounds <- rounds |> 
   mutate(
     across(
       score_after_round,
       list(
-        pre_cumu_w = ~str_remove(.x, '-.*$') |> as.integer(),
-        pre_cumu_l = ~str_remove(.x, '^.*-') |> as.integer()
+        cumu_w = ~str_remove(.x, '-.*$') |> as.integer(),
+        cumu_l = ~str_remove(.x, '^.*-') |> as.integer()
       ),
       .names = '{fn}'
     )
@@ -67,9 +68,10 @@ rounds |>
     game_id,
     team_1,
     team_2,
-    pre_cumu_w,
-    pre_cumu_l
+    cumu_w,
+    cumu_l
   )
+cumu_rounds
 
 rounds |> 
   count(score_after_round, sort = TRUE)
