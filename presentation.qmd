@@ -1,5 +1,5 @@
 ---
-title: "Streaking and Clutching in Round-Based First Person Shooter (FPS) Esports"
+title: "Streaking and Clutching in Round-Based First Person Shooter Esports"
 author: "Tony ElHabr"
 format:
   revealjs:
@@ -28,6 +28,7 @@ library(tidyverse)
 library(extrafont)
 library(ggtext)
 library(ggsci)
+library(ggnewscale)
 blackish_background <- '#191919' ## to match slide background
 gray_points <- '#4d4d4d'
 gray_text <- '#999999'
@@ -222,8 +223,7 @@ common_cod_labs <- function(...) {
   list(
     ...,
     labs(
-      caption = 'CDL SnD Major and Weekly matches, 2020 - present',
-      tag = '**Viz**: @TonyElHabr | **Data**: @IOUTurtle'
+      caption = 'CDL SnD Major and Weekly matches, 2020 - present'
     )
   )
 }
@@ -265,11 +265,11 @@ common_cod_heatmap_layers <- function(...) {
 }
 
 .dpi <- 300
-save_heatmap <- function(
+save_for_slide <- function(
     p, 
     filename = paste0(str_remove(deparse(substitute(p)), '^p_'), '.png'), 
     width = 7.5, 
-    height = 5,
+    height = width / 1.5,
     units = 'px',
     dpi = .dpi,
     ...
@@ -370,7 +370,7 @@ p_o_round_win_prop <- o_win_prop |>
     title = 'Offensive Round Win %'
   )
 p_o_round_win_prop
-save_heatmap(p_o_round_win_prop)
+save_for_slide(p_o_round_win_prop)
 ```
 
 ::: notes
@@ -422,7 +422,7 @@ max_diff_win_round_prop <- max(abs(o_win_prop$diff_win_round_prop))
 p_o_round_win_prop_over_expected <- o_win_prop |> 
   ggplot() +
   common_cod_heatmap_layers() +
-  pre_cumu_heatmap_tile(.fill = 'diff_win_round_prop') +
+  heatmap_tile(.fill = 'diff_win_round_prop') +
   heatmap_text_layers(.f = o_round_win_over_expected_text_layer) +
   scale_fill_gradient2(
     low = extract_ggsci_mid_color('purple'),
@@ -438,7 +438,7 @@ p_o_round_win_prop_over_expected <- o_win_prop |>
     title = 'Offensive Round Win % Over Expected'
   )
 p_o_round_win_prop_over_expected
-save_heatmap(p_o_round_win_prop_over_expected)
+save_for_slide(p_o_round_win_prop_over_expected)
 ```
 
 ::: notes
@@ -475,14 +475,14 @@ add_o_series_win_text_layer <- function(..., .emphasize) {
 p_o_series_win_prop <- o_win_prop |> 
   ggplot() +
   common_cod_heatmap_layers() +
-  pre_cumu_heatmap_tile(.fill = 'win_series_prop') +
+  heatmap_tile(.fill = 'win_series_prop') +
   heatmap_text_layers(.f = add_o_series_win_text_layer) +
   ggsci::scale_fill_material('deep-orange') +
   labs(
     title = 'Offensive Series Win %'
   )
 p_o_series_win_prop
-save_heatmap(p_o_series_win_prop)
+save_for_slide(p_o_series_win_prop)
 ```
 
 ::: notes
@@ -520,7 +520,7 @@ max_diff_win_series_prop <- max(abs(o_win_prop$diff_win_series_prop))
 p_o_series_win_prop_over_expected <- o_win_prop |> 
   ggplot() +
   common_cod_heatmap_layers() +
-  pre_cumu_heatmap_tile(.fill = 'diff_win_series_prop') +
+  heatmap_tile(.fill = 'diff_win_series_prop') +
   heatmap_text_layers(.f = add_o_series_win_over_expected_text_layer) +
   scale_fill_gradient2(
     low = extract_ggsci_mid_color('brown'),
@@ -536,7 +536,7 @@ p_o_series_win_prop_over_expected <- o_win_prop |>
     title = 'Offensive Series Win % Over Expected'
   )
 p_o_series_win_prop_over_expected
-save_heatmap(p_o_series_win_prop_over_expected)
+save_for_slide(p_o_series_win_prop_over_expected)
 ```
 
 ::: notes
@@ -548,7 +548,7 @@ save_heatmap(p_o_series_win_prop_over_expected)
 ## Are offensive win %'s different in round 1?
 
 ```{r}
-#| label: p_o_win_r1_prop
+#| label: o_win_r1_vs_post_round_pro
 calculate_o_round_win_prop <- function(df) {
   df |> 
     count(year, game, map, is_offense, win_round) |> 
@@ -567,7 +567,72 @@ calculate_o_round_win_prop <- function(df) {
     arrange(desc(win_round_prop))
 }
 
-devtools::source_url('https://raw.githubusercontent.com/dgrtwo/splittestr/master/R/vectorized-prop-test.R')
+# https://raw.githubusercontent.com/dgrtwo/splittestr/master/R/vectorized-prop-test.R
+vectorized_prop_test_approx <- function(a, b, c, d) {
+  n1 <- a + b
+  n2 <- c + d
+  n <- n1 + n2
+  p <- (a + c) / n
+  E <- cbind(p * n1, (1 - p) * n1, p * n2, (1 - p) * n2)
+  
+  x <- cbind(a, b, c, d)
+  
+  DELTA <- a / n1 - c / n2
+  YATES <- pmin(.5, abs(DELTA) / sum(1 / n1 + 1 / n2))
+  
+  STATISTIC <- rowSums((abs(x - E) - YATES)^2 / E)
+  PVAL <- pchisq(STATISTIC, 1, lower.tail = FALSE)
+  PVAL
+}
+
+vectorized_prop_test_exact <- function(a, b, c, d) {
+  sapply(seq_along(a), function(i) {
+    fisher.test(cbind(c(a[i], c[i]), c(b[i], d[i])))$p.value
+  })
+}
+
+vectorized_prop_test <- function(x1, n1, x2, n2, conf.level = .95) {
+  a <- x1
+  b <- n1 - x1
+  c <- x2
+  d <- n2 - x2
+  
+  # if any values are < 20, use Fisher's exact test
+  exact <- (a < 20 | b < 20 | c < 20 | d < 20)
+  
+  pvalue <- rep(NA, length(a))
+  
+  if (any(exact)) {
+    pvalue[exact] <- vectorized_prop_test_exact(a[exact], b[exact], c[exact], d[exact])
+  }
+  if (any(!exact)) {
+    pvalue[!exact] <- vectorized_prop_test_approx(a[!exact], b[!exact], c[!exact], d[!exact])
+  }
+  
+  mu1 <- a / (a + b)
+  mu2 <- c / (c + d)
+  
+  ## confidence interval
+  alpha2 <- (1 - conf.level) / 2
+  DELTA <- mu2 - mu1
+  WIDTH <- qnorm(alpha2)
+  alpha <- (a + .5) / (a + b + 1)
+  beta <- (c + .5) / (c + d + 1)
+  
+  n <- n1 + n2
+  YATES <- pmin(.5, abs(DELTA) / sum(1 / n1 + 1 / n2))
+  
+  z <- qnorm((1 + conf.level) / 2)
+  WIDTH <- z * sqrt(mu1 * (1 - mu1) / n1 + mu2 * (1 - mu2) / n2)
+  
+  tibble(
+    estimate = DELTA,
+    conf.low = pmax(DELTA - WIDTH, -1),
+    conf.high = pmin(DELTA + WIDTH, 1),
+    p.value = pvalue
+  )
+}
+
 summarize_o_round_win_prop <- function(.round) {
   
   specified_round <- rounds |> 
@@ -771,29 +836,7 @@ p_o_win_r1_vs_post_round_prop <- res_r1$plot +
     aes(x = x, y = y, hjust = hjust, vjust = vjust, label = lab)
   )
 p_o_win_r1_vs_post_round_prop
-
-save_slope_chart <- function(
-    p, 
-    filename = paste0(str_remove(deparse(substitute(p)), '^p_'), '.png'), 
-    width = 7.5, 
-    height = 5,
-    units = 'px',
-    dpi = .dpi,
-    ...
-) {
-  
-  ggsave(
-    plot = p,
-    filename = filename,
-    width = 7.5 * .dpi,
-    height = 5 * .dpi,
-    units = units,
-    dpi = dpi,
-    ...
-  )
-}
-
-save_slope_chart(p_o_win_r1_vs_post_round_prop)
+save_for_slide(p_o_win_r1_vs_post_round_prop)
 ```
 
 ![](o_win_r1_vs_post_round_prop.png){fig-align="center"}
@@ -805,9 +848,10 @@ save_slope_chart(p_o_win_r1_vs_post_round_prop)
 ## Are offensive win %'s different in round 2?
 
 ```{r}
+#| label: o_win_r2_vs_post_round_pro
 res_r2 <- plot_round_vs_post_round_slope_chart(2)
 res_r2$plot
-save_slope_chart(
+save_for_slide(
   res_r2$plot,
   filename = 'o_win_r2_vs_post_round_prop.png'
 )
@@ -821,10 +865,8 @@ save_slope_chart(
 
 ## What are the most common series winning states?
 
-## How do end states compare to expectation?
-
 ```{r}
-#| label: series_outcomes
+#| label: p_series_outcome_prop_over_expected
 prior_clinching_round_win_prop <- rounds |> 
   filter(round == (n_rounds - 1L)) |> 
   count(n_rounds, win_series, won_prior_round = win_round) |> 
@@ -935,10 +977,10 @@ series_streaks <- full_join(
     prop_diff = prop_actual - prop_expected
   ) |> 
   arrange(desc(abs(prop_diff)))
-series_streaks |> filter(is.na(n_actual))
+# series_streaks |> filter(is.na(n_actual))
 
 ## 6-0, 6-1, and some combos of 6-5 occur more often than expected
-series_streaks |> 
+series_streak_props <- series_streaks |> 
   filter(!is.na(n_actual)) |> 
   mutate(total_actual = sum(n_actual)) |> 
   mutate(
@@ -948,7 +990,7 @@ series_streaks |>
   arrange(p$p.value)
 
 ## 6-0 and 6-1 occur more often than expected
-series_outcomes <- full_join(
+series_outcome_prop <- full_join(
   actual_series_streaks |> 
     group_by(record) |> 
     summarize(
@@ -965,49 +1007,127 @@ series_outcomes <- full_join(
     rename_with(~sprintf('%s_expected', .x), c(n, prop))
 ) |> 
   mutate(
-    prop_diff = prop_actual - prop_expected
-  ) |> 
-  arrange(desc(abs(prop_diff))) |> 
-  mutate(total_actual = sum(n_actual)) |> 
-  mutate(
-    p = vectorized_prop_test(n_actual, total_actual, n_expected, !!n_sims)
+    prop_diff = prop_actual - prop_expected,
+    total_actual = sum(n_actual),
+    n_expected_downsampled = round(prop_expected * total_actual),
+    p = vectorized_prop_test(n_actual, total_actual, n_expected_downsampled, total_actual)
   ) |> 
   select(-total_actual) |> 
   arrange(p$p.value)
 
-series_outcomes |> 
-  select(record, actual = prop_actual, expected = prop_expected, diff = prop_diff) |> 
+long_series_outcome_prop <- series_outcome_prop |>
+  unnest(p) |>
+  select(
+    record,
+    n = n_actual,
+    `3` = prop_actual,
+    `2` = prop_expected,
+    `1` = prop_diff
+  ) |> 
   pivot_longer(
-    -record,
-    names_to = 'prop',
+    matches('[123]'),
+    names_to = 'outcome_idx',
     values_to = 'value'
   ) |> 
-  mutate(
-    across(
-      prop,
-      factor, 
-      levels = c('actual', 'expected', 'diff')
-    )
-  ) |> 
+  mutate(across(outcome_idx, as.integer))
+
+max_diff_series_outcome_prop <- long_series_outcome_prop |> 
+  filter(outcome_idx == 1) |> 
+  pull(value) |> 
+  abs() |> 
+  max()
+
+p_series_outcome_prop_over_expected <- long_series_outcome_prop |> 
   ggplot() +
-  aes(x = record, y = prop) +
+  aes(x = record, y = outcome_idx) +
   geom_tile(
+    data = long_series_outcome_prop |> filter(outcome_idx > 1),
     show.legend = FALSE,
+    # height = 0.8,
     aes(fill = value)
   ) +
+  ggsci::scale_fill_material(
+    palette = 'orange'
+  ) +
+  ggnewscale::new_scale_fill() +
+  geom_tile(
+    data = long_series_outcome_prop |> filter(outcome_idx == 1),
+    show.legend = FALSE,
+    height = 0.8,
+    aes(fill = value)
+  ) +
+  scale_fill_gradient2(
+    low = extract_ggsci_mid_color('purple'),
+    high = extract_ggsci_mid_color('green'),
+    mid = 'white',
+    midpoint = 0,
+    limits = c(
+      -max_diff_series_outcome_prop, 
+      +max_diff_series_outcome_prop
+    )
+  ) +
+  geom_text(
+    data = long_series_outcome_prop |> filter(outcome_idx == 3),
+    color = blackish_background,
+    size = 11 / .pt,
+    aes(label = sprintf('%.1f%%\n(%s)', 100 * value, scales::comma(n)))
+  ) +
+  geom_text(
+    data = long_series_outcome_prop |> filter(outcome_idx == 2),
+    color = blackish_background,
+    size = 11 / .pt,
+    aes(label = sprintf('%.1f%%', 100 * value))
+  ) +
+  geom_text(
+    data = long_series_outcome_prop |> filter(outcome_idx == 1) |> filter(abs(value) != max(abs(value))),
+    color = blackish_background,
+    size = 11 / .pt,
+    aes(label = sprintf('%+.1f%%', 100 * value))
+  ) +
+  geom_text(
+    data = long_series_outcome_prop |> filter(outcome_idx == 1) |> filter(abs(value) == max(abs(value))),
+    color = 'white',
+    size = 11 / .pt,
+    
+    aes(label = sprintf('%+.1f%%', 100 * value))
+  ) +
   scale_x_discrete(
-    position = 'top'
-  )
-
+    position = 'top',
+    expand = c(0, 0)
+  ) +
+  scale_y_continuous(
+    labels = c('Diff.', 'Expected', 'Actual'),
+    breaks = 1:3,
+    expand = c(0, 0)
+  ) +
+  theme(
+    panel.grid.major = element_blank(),
+    axis.title = element_text(hjust = 0.5),
+    plot.title = ggtext::element_markdown(hjust = 0.5),
+    axis.text = element_text(size = 16, face = 'bold')
+  ) +
+  labs(
+    title = 'Series outcome %',
+    x = NULL,
+    y = NULL
+  ) +
+  common_cod_labs() 
+p_series_outcome_prop_over_expected
+save_for_slide(p_series_outcome_prop_over_expected)
 ```
 
+![](series_outcome_prop_over_expected.png){fig-align="center"}
+
 ::: notes
--   There should be evidence of 6-0's and 6-5's being more frequent than expected given 50-50% chances.
+-   There should be evidence of 6-0's and 6-1's are more frequent than expected given 50-50% chances.
+-   Notably 6-4's occur less frequently than expected
+-   p-values are not significant for any
 :::
 
 ## When do back-to-back round wins occur?
 
 ```{r}
+#| label: p_b2b_round_win_prop
 summarize_b2b_round_wins <- function(df, ...) {
   df |> 
     arrange(year, sheet, series, team, round) |> 
@@ -1027,7 +1147,7 @@ summarize_b2b_round_wins <- function(df, ...) {
 
 ## now accounting for number of rounds that end up being played...
 ## seems like there is interesting behavior in the last round, regardless `n_rounds`
-b2b_round_win_props <- rounds |> 
+b2b_round_win_prop <- rounds |> 
   filter(n_rounds > 6L) |> 
   summarize_b2b_round_wins(n_rounds) |> 
   group_by(n_rounds) |> 
@@ -1037,7 +1157,7 @@ b2b_round_win_props <- rounds |>
   ) |> 
   ungroup()
 
-b2b_round_win_props_tile_layer <- function(..., .round, .palette, .is_new = TRUE) {
+b2b_round_win_prop_tile_layer <- function(..., .round, .palette, .is_new = TRUE) {
   
   init <- if(!.is_new) {
     list()
@@ -1049,7 +1169,7 @@ b2b_round_win_props_tile_layer <- function(..., .round, .palette, .is_new = TRUE
     ...,
     init,
     geom_tile(
-      data = b2b_round_win_props |> filter(n_rounds == .round),
+      data = b2b_round_win_prop |> filter(n_rounds == .round),
       color = blackish_background,
       height = 0.8,
       show.legend = FALSE,
@@ -1074,7 +1194,7 @@ b2b_round_win_prop_text_layer <- function(..., .emphasize) {
   list(
     ...,
     geom_text(
-      data = b2b_round_win_props |> filter(`op`(rnk, 1)),
+      data = b2b_round_win_prop |> filter(`op`(rnk, 1)),
       color = .color,
       size = 11 / .pt,
       fontface = 'bold',
@@ -1095,7 +1215,7 @@ b2b_round_win_prop_text_layers <- function(...) {
   )
 }
 
-b2b_round_win_props_arws <- tibble(
+b2b_round_win_prop_arws <- tibble(
   x = c(9.3, 9.4, 9.75, 10),
   y = c(8.25, 8.5, 8.75, 8.75),
   xend = c(8.1, 9.1, 9.5, 10.5),
@@ -1106,13 +1226,13 @@ b2b_round_win_props_arws <- tibble(
     rn = row_number()
   )
 
-p_b2b_round_win_props <- b2b_round_win_props |> 
+p_b2b_round_win_prop <- b2b_round_win_prop |> 
   ggplot() +
-  b2b_round_win_props_tile_layer(.round = 7, .palette = 'pink', .is_new = FALSE) +
-  b2b_round_win_props_tile_layer(.round = 8, .palette = 'light-blue') +
-  b2b_round_win_props_tile_layer(.round = 9, .palette = 'light-green') +
-  b2b_round_win_props_tile_layer(.round = 10, .palette = 'amber') +
-  b2b_round_win_props_tile_layer(.round = 11, .palette = 'deep-orange') +
+  b2b_round_win_prop_tile_layer(.round = 7, .palette = 'pink', .is_new = FALSE) +
+  b2b_round_win_prop_tile_layer(.round = 8, .palette = 'light-blue') +
+  b2b_round_win_prop_tile_layer(.round = 9, .palette = 'light-green') +
+  b2b_round_win_prop_tile_layer(.round = 10, .palette = 'amber') +
+  b2b_round_win_prop_tile_layer(.round = 11, .palette = 'deep-orange') +
   b2b_round_win_prop_text_layers() +
   scale_x_continuous(
     labels = 2:11,
@@ -1150,7 +1270,7 @@ p_b2b_round_win_props <- b2b_round_win_props |>
     aes(x = x, y = y, label = label)
   ) +
   map(
-    b2b_round_win_props_arws |> group_split(rn), 
+    b2b_round_win_prop_arws |> group_split(rn), 
     function(.x) {
       geom_curve(
         data = data.frame(),
@@ -1161,7 +1281,7 @@ p_b2b_round_win_props <- b2b_round_win_props |>
       )
     }
   )
-save_heatmap(p_b2b_round_win_props)
+save_for_slide(p_b2b_round_win_prop)
 # ## now accounting for number of rounds that end up being played AND series winners...
 # rounds |> 
 #   filter(win_series, n_rounds > 6L) |> 
@@ -1173,7 +1293,7 @@ save_heatmap(p_b2b_round_win_props)
 #   summarize_b2b_round_wins(n_rounds)
 ```
 
-![](b2b_round_win_props.png){fig-align="center"}
+![](b2b_round_win_prop.png){fig-align="center"}
 
 ## Is there evidence for the "hot hand"?
 
@@ -1274,6 +1394,106 @@ round_win_prop_after_b2b2b_wins <- tibble(
 :::
 
 ## What is the optimal strategy?
+
+```{r}
+#| label: plant_win_prop_proj
+map_plant_win_prop <- rounds |> 
+  filter(!is.na(plant)) |> 
+  filter(is_offense) |> 
+  group_by(year, game, map, plant) |> 
+  summarize(
+    n = n(),
+    wins = sum(win_round)
+  ) |> 
+  ungroup() |> 
+  mutate(
+    win_prop = wins / n
+  ) |> 
+  group_by(year, game, map) |> 
+  mutate(
+    total = sum(n),
+    rnk = row_number(-n),
+    prop = n / total
+  ) |> 
+  ungroup()
+
+plant_win_prop <- map_plant_win_prop |>
+  mutate(site = ifelse(rnk == 1, 'pri', 'sec')) |> 
+  group_by(site) |> 
+  summarize(
+    across(c(n, wins, total), sum)
+  ) |> 
+  ungroup() |> 
+  mutate(
+    win_prop = wins / n,
+    prop = n / total
+  )
+
+plant_win_prop_proj <- plant_win_prop |> 
+  left_join(
+    rounds |> 
+      filter(is_offense) |> 
+      filter(is.na(plant)) |> 
+      summarize(
+        n_no_plant = n(),
+        wins_no_plant = sum(win_round)
+      ),
+    by = character()
+  ) |> 
+  mutate(
+    n_proj = round(n + prop * n_no_plant),
+    wins_proj = round(wins + prop * wins_no_plant),
+    win_prop_proj = wins_proj / n_proj
+  )
+
+plant_site_prop <- plant_win_prop_proj |> 
+  select(site, prop) |> 
+  deframe() |> 
+  scales::percent(accuracy = 0.1)
+
+plant_site_win_prop <- plant_win_prop_proj |> 
+  select(site, win_prop_proj) |> 
+  deframe() |> 
+  scales::percent(accuracy = 0.1)
+```
+
+```{r}
+#| label: plant_win_prop_proj-eval
+#| eval: true
+plant_site_prop <- c(
+  'pri' = '60.9%',
+  'sec' = '39.1%'
+)
+plant_site_win_prop <- c(
+  'pri' = '47.4%',
+  'sec' = '48.5%'
+)
+```
+
+::: columns
+::: {.column width="15%"}
+:::
+
+::: {.column width="30%"}
+| Plant side |                           \% |
+|------------|-----------------------------:|
+| Primary    | `r plant_site_prop[['pri']]` |
+| Secondary  | `r plant_site_prop[['sec']]` |
+:::
+
+::: {.column width="10%"}
+:::
+
+::: {.column width="30%"}
+| Plant side |                            Win % |
+|------------|---------------------------------:|
+| Primary    | `r plant_site_win_prop[['pri']]` |
+| Secondary  |     `r plant_site_prop[['sec']]` |
+:::
+
+::: {.column width="15%"}
+:::
+:::
 
 ::: notes
 -   Should you plant at most prevalent/winningest site? plant at other site? Go for kills?
