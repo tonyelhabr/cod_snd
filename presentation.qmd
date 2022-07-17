@@ -1470,6 +1470,8 @@ plant_site_win_prop <- c(
 )
 ```
 
+<br/><br/>
+
 ::: columns
 ::: {.column width="15%"}
 :::
