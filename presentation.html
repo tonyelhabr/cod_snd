@@ -327,25 +327,21 @@
 <h2>Game types</h2>
 <div class="fragment">
 <ul>
-<li>Search and Destroy (SnD) in Call of Duty (COD)
-<ul>
+<li>Search and Destroy (SnD) in Call of Duty (COD)</li>
 <li>2020-2022 Call of Duty League (CDL) matches (qualifiers and majors)</li>
 <li>4v4.</li>
 <li>First to 6 round wins</li>
 <li>Teams swap sides (offense and defense) after every round</li>
-</ul></li>
 </ul>
 </div>
 <div class="fragment">
 <ul>
-<li>Plant/Defuse in Valorant
-<ul>
+<li>Plant/Defuse in Valorant</li>
 <li>Valorant professional league, updated through January 1, 2022</li>
 <li>5v5</li>
 <li>First to 13 round wins</li>
-<li>One team plays offense in 12 consecutive rounds before swapping sides</li>
-<li>Must win by 2 rounds</li>
-</ul></li>
+<li>One team plays offense in 12 consecutive cod_rounds before swapping sides</li>
+<li>Must win by 2 cod_rounds</li>
 </ul>
 </div>
 </section>
@@ -384,7 +380,7 @@
 </div>
 <div class="fragment">
 <ul>
-<li>Total rounds: <strong>7,179</strong></li>
+<li>Total cod_rounds: <strong>7,179</strong></li>
 </ul>
 </div>
 <div class="fragment">
@@ -428,7 +424,7 @@
       }</style></aside>
 <div class="quarto-figure quarto-figure-center">
 <figure>
-<p><img data-src="o_round_win_prop.png"></p>
+<p><img data-src="cod_o_round_win_prop.png"></p>
 </figure>
 </div>
 </section>
@@ -451,7 +447,7 @@
       }</style></aside>
 <div class="quarto-figure quarto-figure-center">
 <figure>
-<p><img data-src="o_round_win_prop_over_expected.png"></p>
+<p><img data-src="cod_o_round_win_prop_over_expected.png"></p>
 </figure>
 </div>
 </section>
@@ -474,7 +470,7 @@
       }</style></aside>
 <div class="quarto-figure quarto-figure-center">
 <figure>
-<p><img data-src="o_series_win_prop.png"></p>
+<p><img data-src="cod_o_series_win_prop.png"></p>
 </figure>
 </div>
 </section>
@@ -505,7 +501,7 @@
 <h2>Are offensive win %’s different in round 1?</h2>
 <div class="quarto-figure quarto-figure-center">
 <figure>
-<p><img data-src="o_win_r1_vs_post_round_prop.png"></p>
+<p><img data-src="cod_o_win_r1_vs_post_round_prop.png"></p>
 </figure>
 </div>
 <aside class="notes">
@@ -524,34 +520,11 @@
           display:block!important;
       }</style></aside>
 </section>
-<section id="are-offensive-win-s-different-in-round-2" class="slide level2">
-<h2>Are offensive win %’s different in round 2?</h2>
-<div class="quarto-figure quarto-figure-center">
-<figure>
-<p><img data-src="o_win_r2_vs_post_round_prop.png"></p>
-</figure>
-</div>
-<aside class="notes">
-<ul>
-<li>no trend</li>
-</ul>
-<style type="text/css">
-        span.MJX_Assistive_MathML {
-          position:absolute!important;
-          clip: rect(1px, 1px, 1px, 1px);
-          padding: 1px 0 0 0!important;
-          border: 0!important;
-          height: 1px!important;
-          width: 1px!important;
-          overflow: hidden!important;
-          display:block!important;
-      }</style></aside>
-</section>
 <section id="what-are-the-most-common-series-winning-states" class="slide level2">
 <h2>What are the most common series winning states?</h2>
 <div class="quarto-figure quarto-figure-center">
 <figure>
-<p><img data-src="series_outcome_prop_over_expected.png"></p>
+<p><img data-src="cod_series_outcome_prop_over_expected.png"></p>
 </figure>
 </div>
 <aside class="notes">
@@ -575,20 +548,18 @@
 <section id="when-do-back-to-back-round-wins-occur" class="slide level2">
 <h2>When do back-to-back round wins occur?</h2>
 
-<img data-src="b2b_round_win_prop.png" class="r-stretch quarto-figure-center"></section>
+<img data-src="cod_b2b_round_win_prop.png" class="r-stretch quarto-figure-center"></section>
 <section id="is-there-evidence-for-the-hot-hand" class="slide level2">
 <h2>Is there evidence for the “hot hand”?</h2>
 <p><br><br></p>
 <ul>
-<li>Round win % after a streak of 3 round wins:
-<ul>
+<li>Round win % after a streak of 3 round wins:</li>
 <li>Expected: <strong>38.4%</strong></li>
-<li>Actual: <strong>55.7%</strong> (352 / 632)</li>
-</ul></li>
+<li>Actual: <strong>54%</strong> (621 / 1150)</li>
 </ul>
 <aside class="notes">
 <ul>
-<li>Note this is sort of biased by the fact that teams end up winning series in 6 rounds more often than expected.</li>
+<li>Note this is sort of biased by the fact that teams end up winning series in 6 cod_rounds more often than expected.</li>
 </ul>
 <style type="text/css">
         span.MJX_Assistive_MathML {
@@ -652,22 +623,6 @@
 
 </div>
 </div>
-<aside class="notes">
-<ul>
-<li>Should you plant at most prevalent/winningest site? plant at other site? Go for kills?</li>
-</ul>
-<style type="text/css">
-        span.MJX_Assistive_MathML {
-          position:absolute!important;
-          clip: rect(1px, 1px, 1px, 1px);
-          padding: 1px 0 0 0!important;
-          border: 0!important;
-          height: 1px!important;
-          width: 1px!important;
-          overflow: hidden!important;
-          display:block!important;
-      }</style></aside>
-<p><img src="images/cdl_gray.png" class="slide-logo"></p>
 <div class="footer footer-default">
 
 </div>
