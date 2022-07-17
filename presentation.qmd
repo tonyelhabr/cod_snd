@@ -1383,10 +1383,12 @@ round_win_prop_after_b2b2b_wins <- tibble(
   mutate(prop = n / total)
 ```
 
+<br/><br/>
+
 ::: fragment
 -   Round win % after a streak of 3 round wins:
--   Expected: **`r 100 * round(prob_n6_k3, 3)`%**
--   Actual: **`r 100 * round(round_win_prop_after_b2b2b_wins$prop, 3)`%** (`r round_win_prop_after_b2b2b_wins$n` / `r round_win_prop_after_b2b2b_wins$total` )
+    -   Expected: **`r 100 * round(prob_n6_k3, 3)`%**
+    -   Actual: **`r 100 * round(round_win_prop_after_b2b2b_wins$prop, 3)`%** (`r round_win_prop_after_b2b2b_wins$n` / `r round_win_prop_after_b2b2b_wins$total`)
 :::
 
 ::: notes
@@ -1476,8 +1478,8 @@ plant_site_win_prop <- c(
 ::: {.column width="15%"}
 :::
 
-::: {.column width="30%"}
-| Plant side |                           \% |
+::: {.column .fragment width="30%"}
+| Plant site |                           \% |
 |------------|-----------------------------:|
 | Primary    | `r plant_site_prop[['pri']]` |
 | Secondary  | `r plant_site_prop[['sec']]` |
@@ -1486,11 +1488,11 @@ plant_site_win_prop <- c(
 ::: {.column width="10%"}
 :::
 
-::: {.column width="30%"}
-| Plant side |                            Win % |
+::: {.column .fragment width="30%"}
+| Plant site |                            Win % |
 |------------|---------------------------------:|
 | Primary    | `r plant_site_win_prop[['pri']]` |
-| Secondary  |     `r plant_site_prop[['sec']]` |
+| Secondary  | `r plant_site_win_prop[['sec']]` |
 :::
 
 ::: {.column width="15%"}
