@@ -75,7 +75,7 @@ update_geom_defaults('segment', list(color = 'white'))
 
 ::: fragment
 -   Plant/Defuse in Valorant
-    -   Data from Valorant professional league, updated through January 1, 2022
+    -   Valorant professional league, updated through January 1, 2022
     -   5v5
     -   First to 13 round wins
     -   One team plays offense in 12 consecutive rounds before swapping sides
@@ -867,89 +867,15 @@ save_for_slide(
 
 ```{r}
 #| label: p_series_outcome_prop_over_expected
-prior_clinching_round_win_prop <- rounds |> 
-  filter(round == (n_rounds - 1L)) |> 
-  count(n_rounds, win_series, won_prior_round = win_round) |> 
-  mutate(
-    across(win_series, ~ifelse(.x, 'win', 'loss'))
-  ) |> 
-  pivot_wider(
-    names_from = win_series,
-    values_from = n,
-    values_fill = 0L
-  ) |> 
-  filter(won_prior_round) |> 
-  select(-won_prior_round) |> 
-  mutate(
-    win_series_prop = win / (win + loss),
-    e_win_series_prop = (6L - 1L) / (n_rounds - 1L)
-  )
+# https://content.iospress.com/articles/journal-of-sports-analytics/jsa200422
+prob_of_series_lasting_n_games <- function(n, p = 0.5, max_rounds = 11) {
+  s <- ceiling(max_rounds / 2)
+  (factorial(n - 1) / (factorial(s - 1) * factorial(n - s))) * (p^s * (1 - p)^(n - s) + p^(n - s) * (1 - p)^s)
+}
 
-n_rounds_max <- 11
-n_sims <- 100000
-set.seed(42)
-w <- sample(c(0, 1), size = n_rounds_max * n_sims, replace = TRUE)
-
-sim_rounds <- tibble(
-  i = rep(1:n_sims, each = n_rounds_max),
-  r = rep(1:n_sims, times = n_rounds_max),
-  w = w
-) |> 
-  group_by(i) |> 
-  mutate(
-    cumu_w = cumsum(w),
-    cumu_l = cumsum(w == 0)
-  ) |> 
-  ungroup() |> 
-  mutate(
-    cumu_wl_max = ifelse(cumu_w > cumu_l, cumu_w, cumu_l)
-  ) |> 
-  filter(cumu_wl_max <= 6)
-
-sim_rounds_to_drop <- anti_join(
-  sim_rounds |> 
-    filter(cumu_wl_max == 6L),
-  sim_rounds |> 
-    filter(cumu_wl_max == 6L) |> 
-    group_by(i) |> 
-    slice_min(r, n = 1) |> 
-    ungroup()
-)
-
-sim_rounds <- sim_rounds |> 
-  anti_join(
-    sim_rounds_to_drop
-  )
-
-## always from offensive perspective
-e_series_streaks <- sim_rounds |> 
-  inner_join(
-    sim_rounds |> 
-      filter(cumu_wl_max == 6) |> 
-      mutate(
-        zeros_win = cumu_l == cumu_wl_max
-      ) |> 
-      select(i, zeros_win)
-  ) |> 
-  mutate(
-    across(w, ~ifelse(zeros_win, abs(1 - .x), .x))
-  ) |> 
-  group_by(i) |> 
-  summarize(
-    cumu_w = max(cumu_w),
-    cumu_l = max(cumu_l),
-    ws = paste0(w, collapse = '')
-  ) |> 
-  ungroup() |> 
-  mutate(
-    wins = ifelse(cumu_w == 6, cumu_w, cumu_l),
-    losses = ifelse(cumu_w == 6, cumu_l, cumu_w)
-  ) |> 
-  unite(
-    record, wins, losses, sep = '-'
-  ) |> 
-  count(record, ws, sort = TRUE) |> 
-  mutate(prop = n / sum(n))
+possibilities_of_outcomes <- function(m, n) {
+  factorial(m + n) / (factorial(m) * factorial(n))
+}
 
 actual_series_streaks <- rounds |> 
   filter(win_series) |> 
@@ -961,17 +887,33 @@ actual_series_streaks <- rounds |>
     ws = paste0(win_round, collapse = '')
   ) |> 
   ungroup() |> 
+  mutate(n_rounds = wins + losses) |> 
   unite(
     record, wins, losses, sep = '-'
   ) |> 
-  count(record, ws, sort = TRUE) |> 
+  count(n_rounds, record, ws, sort = TRUE) |> 
   mutate(prop = n / sum(n))
 
-series_streaks <- full_join(
+possibilities <- tibble(
+  n_rounds = 6L:11L
+) |> 
+  mutate(
+    series_prop = map_dbl(n_rounds, prob_of_series_lasting_n_games),
+    possibilities = map2_dbl(6, n_rounds - 6, possibilities_of_outcomes)
+  ) |> 
+  transmute(
+    n_rounds,
+    series_prop,
+    record = sprintf('6-%d', n_rounds - 6),
+    prop = series_prop / possibilities
+  )
+
+series_streaks <- inner_join(
   actual_series_streaks |> 
     rename_with(~sprintf('%s_actual', .x), c(n, prop)),
-  e_series_streaks |> 
-    rename_with(~sprintf('%s_expected', .x), c(n, prop))
+  possibilities |> 
+    rename_with(~sprintf('%s_expected', .x), prop),
+  by = 'n_rounds'
 ) |> 
   mutate(
     prop_diff = prop_actual - prop_expected
@@ -982,12 +924,15 @@ series_streaks <- full_join(
 ## 6-0, 6-1, and some combos of 6-5 occur more often than expected
 series_streak_props <- series_streaks |> 
   filter(!is.na(n_actual)) |> 
-  mutate(total_actual = sum(n_actual)) |> 
   mutate(
-    p = vectorized_prop_test(n_actual, total_actual, n_expected, !!n_sims)
+    prop_diff = prop_actual - prop_expected,
+    total_actual = sum(n_actual),
+    n_expected = round(prop_expected * total_actual),
+    p = vectorized_prop_test(n_actual, total_actual, n_expected, total_actual)
   ) |> 
   select(-total_actual) |> 
-  arrange(p$p.value)
+  unnest_wider(p) |> 
+  arrange(p.value)
 
 ## 6-0 and 6-1 occur more often than expected
 series_outcome_prop <- full_join(
@@ -998,25 +943,21 @@ series_outcome_prop <- full_join(
     ) |> 
     mutate(prop = n / sum(n)) |> 
     rename_with(~sprintf('%s_actual', .x), c(n, prop)),
-  e_series_streaks |> 
-    group_by(record) |> 
-    summarize(
-      across(n, sum)
-    ) |> 
-    mutate(prop = n / sum(n)) |> 
-    rename_with(~sprintf('%s_expected', .x), c(n, prop))
+  possibilities |> 
+    select(record, prop_expected = series_prop),
+  by = 'record'
 ) |> 
   mutate(
     prop_diff = prop_actual - prop_expected,
     total_actual = sum(n_actual),
-    n_expected_downsampled = round(prop_expected * total_actual),
-    p = vectorized_prop_test(n_actual, total_actual, n_expected_downsampled, total_actual)
+    n_expected = round(prop_expected * total_actual),
+    p = vectorized_prop_test(n_actual, total_actual, n_expected, total_actual)
   ) |> 
   select(-total_actual) |> 
-  arrange(p$p.value)
+  unnest_wider(p) |> 
+  arrange(p.value)
 
 long_series_outcome_prop <- series_outcome_prop |>
-  unnest(p) |>
   select(
     record,
     n = n_actual,
@@ -1385,17 +1326,15 @@ round_win_prop_after_b2b2b_wins <- tibble(
 
 <br/><br/>
 
-::: fragment
 -   Round win % after a streak of 3 round wins:
     -   Expected: **`r 100 * round(prob_n6_k3, 3)`%**
     -   Actual: **`r 100 * round(round_win_prop_after_b2b2b_wins$prop, 3)`%** (`r round_win_prop_after_b2b2b_wins$n` / `r round_win_prop_after_b2b2b_wins$total`)
-:::
 
 ::: notes
 -   Note this is sort of biased by the fact that teams end up winning series in 6 rounds more often than expected.
 :::
 
-## What is the optimal strategy?
+## Is planting at one site better than the other?
 
 ```{r}
 #| label: plant_win_prop_proj
