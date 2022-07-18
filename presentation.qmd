@@ -1,6 +1,6 @@
 ---
-title: "Streaking and Clutching in Round-Based First Person Shooter Esports"
-author: "Tony ElHabr"
+title: '"Turned on!": Momentum in Round-Based First Person Shooter Esports'
+author: 'Tony ElHabr'
 format:
   revealjs:
     slide-number: true
