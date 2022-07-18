@@ -215,7 +215,7 @@ val_o_win_pct <- scales::percent(val_o_win_prop_const, accuracy = 1)
 -   Offensive win %: **`r val_o_win_pct`**
 :::
 
-## What are your chances of winning a round, given the series state in COD SnD?
+## What are your chances of winning a round, given the series state in [COD SnD]{.cod}?
 
 ```{r}
 #| label: cod_heatmap_prep
@@ -516,11 +516,11 @@ save_for_slide(p_cod_o_round_win_prop)
 
 ![](cod_o_round_win_prop.png){fig-align="center"}
 
-## What are your chances of winning a round, given the series state in COD SnD?
+## What are your chances of winning a round, given the series state in [COD SnD]{.cod}?
 
 ```{r}
 #| label: p_cod_o_round_win_prop_over_expected
-heatmap_div_labeller <- function(.df, .label, .num) {
+cod_heatmap_div_labeller <- function(.df, .label, .num) {
   sprintf(
     '%+.1f\n(%s)', 
     100 * .df[[.label]], 
@@ -569,7 +569,7 @@ p_cod_o_round_win_prop_over_expected <- cod_o_win_prop |>
     .df = cod_o_win_prop, 
     .f = o_round_win_over_expected_text_layer,
     .threshold = -0.1,
-    .labeller = heatmap_div_labeller
+    .labeller = cod_heatmap_div_labeller
   ) +
   scale_fill_gradient2(
     low = extract_ggsci_mid_color('purple'),
@@ -594,7 +594,7 @@ save_for_slide(p_cod_o_round_win_prop_over_expected)
 
 ![](cod_o_round_win_prop_over_expected.png){fig-align="center"}
 
-## What are your chances of winning a round, given the series state in Valorant?
+## What are your chances of winning a round, given the series state in [Valorant]{.valorant}?
 
 ```{r}
 val_round_and_series_win_prop_by_side <- val_rounds |> 
@@ -614,6 +614,36 @@ val_o_win_prop <- val_round_and_series_win_prop_by_side |>
   mutate(
     diff_win_round_prop = win_round_prop - !!val_o_win_prop_const
   )
+
+drop_25th_round <- function(df) {
+  df |> 
+    filter(
+      !(pre_cumu_w == 12 & pre_cumu_l == 12)
+    )
+}
+
+val_e_o_win_series_prop <- crossing(
+  pre_cumu_w = 0:12,
+  pre_cumu_l = 0:12
+) |> 
+  drop_25th_round() |> 
+  mutate(
+    n_remain_max = 25 - (pre_cumu_w + pre_cumu_l),
+    n_remain_w = 13 - pre_cumu_w,
+    ## can i account for offense in this by rotating?
+    e_win_series_prop = map2_dbl(n_remain_w, n_remain_max, ~sum(dbinom(..1:..2, ..2, 0.5)))
+  )
+
+val_o_win_prop <- val_o_win_prop |> 
+  inner_join(
+    val_e_o_win_series_prop |> select(pre_cumu_w, pre_cumu_l, e_win_series_prop),
+    by = c('pre_cumu_w', 'pre_cumu_l')
+  ) |> 
+  mutate(
+    diff_win_series_prop = win_series_prop - e_win_series_prop
+  ) |> 
+  filter(pre_cumu_w <= 12, pre_cumu_l <= 12) |> 
+  drop_25th_round()
 
 # Joshua Broas, vlr.gg
 common_val_labs <- function(...) {
@@ -668,10 +698,7 @@ val_heatmap_seq_labeller <- function(.df, .label, .num) {
   )
 }
 
-filt_val_o_win_prop <- val_o_win_prop |> 
-  filter(pre_cumu_w <= 12, pre_cumu_l <= 12)
-
-val_pre_swap_rounds <- filt_val_o_win_prop |> 
+val_pre_swap_rounds <- val_o_win_prop |> 
   mutate(pre_cumu_wl = pre_cumu_w + pre_cumu_l) |> 
   filter(pre_cumu_wl == 12)
 
@@ -694,7 +721,7 @@ val_pre_swap_round_segments <- val_pre_swap_rounds |>
     pre_cumu_l = 0
   )
 
-p_val_o_round_win_prop <- filt_val_o_win_prop |> 
+p_val_o_round_win_prop <- val_o_win_prop |> 
   ggplot() +
   common_val_heatmap_layers() +
   heatmap_tile(.fill = 'win_round_prop') +
@@ -708,9 +735,8 @@ p_val_o_round_win_prop <- filt_val_o_win_prop |>
     )
   ) +
   heatmap_text_layers(
-    .df = filt_val_o_win_prop, 
+    .df = val_o_win_prop, 
     .f = o_round_win_text_layer,
-    .num = NULL,
     .threshold = 0.8,
     .labeller = val_heatmap_seq_labeller
   ) +
@@ -729,7 +755,7 @@ save_for_slide(p_val_o_round_win_prop)
 
 ![](val_o_round_win_prop.png){fig-align="center"}
 
-## What are your chances of winning the series, given the series state?
+## What are your chances of winning the series, given the series state in [COD SnD]{.cod}?
 
 ```{r}
 #| label: p_cod_o_series_win_prop
@@ -785,7 +811,7 @@ save_for_slide(p_cod_o_series_win_prop)
 
 ![](cod_o_series_win_prop.png){fig-align="center"}
 
-## What are your chances of winning the series, given the series state?
+## What are your chances of winning the series, given the series state in [COD SnD]{.cod}?
 
 ```{r}
 #| label: p_cod_o_series_win_prop_over_expected
@@ -828,7 +854,7 @@ p_cod_o_series_win_prop_over_expected <- cod_o_win_prop |>
     .df = cod_o_win_prop, 
     .f = o_series_win_over_expected_text_layer,
     .threshold = 0.08,
-    .labeller = heatmap_div_labeller
+    .labeller = cod_heatmap_div_labeller
   ) +
   scale_fill_gradient2(
     low = extract_ggsci_mid_color('brown'),
@@ -852,6 +878,82 @@ save_for_slide(p_cod_o_series_win_prop_over_expected)
 :::
 
 ![](cod_o_series_win_prop_over_expected.png){fig-align="center"}
+
+## What are your chances of winning the series, given the series state in [Valorant]{.valorant}?
+
+```{r}
+#| label: p_val_o_series_win_prop
+p_val_o_series_win_prop <- val_o_win_prop |> 
+  ggplot() +
+  common_val_heatmap_layers() +
+  heatmap_tile(.fill = 'win_series_prop') +
+  geom_path(
+    data = val_pre_swap_round_segments,
+    color = 'white',
+    size = 1.5,
+    aes(
+      x = pre_cumu_w, 
+      y = pre_cumu_l
+    )
+  ) +
+  heatmap_text_layers(
+    .df = val_o_win_prop, 
+    .f = o_series_win_text_layer,
+    .threshold = 0.8,
+    .labeller = val_heatmap_seq_labeller
+  ) +
+  ggsci::scale_fill_material('orange') +
+  labs(
+    title = 'Offensive Series Win %'
+  )
+p_val_o_series_win_prop
+save_for_slide(p_val_o_series_win_prop)
+```
+
+![](val_o_series_win_prop.png){fig-align="center"}
+
+## What are your chances of winning the series, given the series state in [Valorant]{.valorant}?
+
+```{r}
+#| label: p_val_o_series_win_prop_over_expected
+val_heatmap_div_labeller <- function(.df, .label, .num) {
+  sprintf(
+    '%+.1f', 
+    100 * .df[[.label]]
+  )
+}
+
+val_max_diff_win_series_prop <- max(abs(val_o_win_prop$diff_win_series_prop))
+p_val_o_series_win_prop_over_expected <- val_o_win_prop |> 
+  ggplot() +
+  common_val_heatmap_layers() +
+  heatmap_tile(
+    .fill = 'diff_win_series_prop'
+  ) +
+  heatmap_text_layers(
+    .df = val_o_win_prop, 
+    .f = o_series_win_over_expected_text_layer,
+    .threshold = 0.2,
+    .labeller = val_heatmap_div_labeller
+  ) +
+  scale_fill_gradient2(
+    low = extract_ggsci_mid_color('brown'),
+    high = extract_ggsci_mid_color('cyan'),
+    mid = 'white',
+    limits = c(
+      -val_max_diff_win_series_prop,
+      +val_max_diff_win_series_prop
+    ),
+    midpoint = 0
+  ) +
+  labs(
+    title = 'Offensive Series Win % Over Expected'
+  )
+p_val_o_series_win_prop_over_expected
+save_for_slide(p_val_o_series_win_prop_over_expected)
+```
+
+![](val_o_series_win_prop_over_expected.png){fig-align="center"}
 
 ## Are offensive win %'s different in round 1?
 
