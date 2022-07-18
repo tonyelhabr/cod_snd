@@ -21,6 +21,7 @@ library(qs)
 library(scales)
 
 cod_rounds <- qs::qread('cod_rounds.qs')
+val_rounds <- qs::qread('valorant_rounds.qs')
 ```
 
 ```{r}
@@ -79,7 +80,7 @@ update_geom_defaults('segment', list(color = 'white'))
 -   Valorant professional league, updated through January 1, 2022
 -   5v5
 -   First to 13 round wins
--   One team plays offense in 12 consecutive cod_rounds before swapping sides
+-   One team plays offense in 12 consecutive rounds before swapping sides
 -   Must win by 2 cod_rounds
 :::
 
@@ -159,7 +160,7 @@ cod_o_first_blood_win_pct <- cod_rounds |>
 :::
 
 ::: fragment
--   Total cod_rounds: **`r cod_n_rounds`**
+-   Total rounds: **`r cod_n_rounds`**
 :::
 
 ::: fragment
@@ -178,7 +179,43 @@ cod_o_first_blood_win_pct <- cod_rounds |>
 -   Win % when earning first blood: **`r cod_o_first_blood_win_pct`**
 :::
 
-## What are your chances of winning a round, given the series state?
+## Valorant data overview
+
+```{r}
+#| label: descriptive-val-snd-stats
+#| eval: true
+val_n_series <- val_rounds |> 
+  distinct(game_id) |> 
+  nrow() |> 
+  scales::comma()
+
+val_n_rounds <- val_rounds |> 
+  distinct(game_id, round) |> 
+  nrow() |> 
+  scales::comma()
+
+val_o_win_prop_const <- val_rounds |> 
+  filter(is_offense) |> 
+  count(win_round) |> 
+  mutate(prop = n / sum(n)) |> 
+  filter(win_round) |> 
+  pull(prop)
+val_o_win_pct <- scales::percent(val_o_win_prop_const, accuracy = 1)
+```
+
+::: fragment
+-   Total series: **`r val_n_series`**
+:::
+
+::: fragment
+-   Total rounds: **`r val_n_rounds`**
+:::
+
+::: fragment
+-   Offensive win %: **`r val_o_win_pct`**
+:::
+
+## What are your chances of winning a round, given the series state in COD SnD?
 
 ```{r}
 #| label: cod_heatmap_prep
@@ -377,7 +414,7 @@ heatmap_tile <- function(..., .fill) {
   )
 }
 
-heatmap_seq_labeller <- function(.df, .label, .num) {
+cod_heatmap_seq_labeller <- function(.df, .label, .num) {
   sprintf(
     '%s\n(%s/%s)',
     scales::percent(.df[[.label]], accuracy = 1),
@@ -420,12 +457,17 @@ heatmap_text_layers <- function(
     .f(.df = .df, .threshold = .threshold, .labeller = .labeller, .emphasize = 'high')
   )
 }
+```
 
+```{r}
+#| label: p_cod_o_round_win_prop
 o_round_win_text_layer <- function(
     ..., 
     .df,
     .threshold,
-    .labeller, 
+    .labeller,
+    .label = 'win_round_prop',
+    .num = 'win_round',
     .emphasize
 ) {
   if(.emphasize == 'low') {
@@ -440,8 +482,8 @@ o_round_win_text_layer <- function(
     heatmap_text_layer(
       .df = .df,
       .op = op,
-      .label = 'win_round_prop',
-      .num = 'win_round',
+      .label = .label,
+      .num = .num,
       .color = .color,
       .threshold = .threshold,
       .labeller = .labeller
@@ -457,7 +499,7 @@ p_cod_o_round_win_prop <- cod_o_win_prop |>
     .df = cod_o_win_prop,
     .f = o_round_win_text_layer,
     .threshold = 0.52,
-    .labeller = heatmap_seq_labeller
+    .labeller = cod_heatmap_seq_labeller
   ) +
   ggsci::scale_fill_material('teal') +
   labs(
@@ -474,11 +516,10 @@ save_for_slide(p_cod_o_round_win_prop)
 
 ![](cod_o_round_win_prop.png){fig-align="center"}
 
-## What are your chances of winning a round, given the series state?
+## What are your chances of winning a round, given the series state in COD SnD?
 
 ```{r}
 #| label: p_cod_o_round_win_prop_over_expected
-# I have no idea why I need to add .num here... keeps erroring otherwise
 heatmap_div_labeller <- function(.df, .label, .num) {
   sprintf(
     '%+.1f\n(%s)', 
@@ -553,6 +594,141 @@ save_for_slide(p_cod_o_round_win_prop_over_expected)
 
 ![](cod_o_round_win_prop_over_expected.png){fig-align="center"}
 
+## What are your chances of winning a round, given the series state in Valorant?
+
+```{r}
+val_round_and_series_win_prop_by_side <- val_rounds |> 
+  group_by(pre_cumu_w, pre_cumu_l, is_offense) |> 
+  summarize(
+    n = n(),
+    across(c(win_round, win_series), sum)
+  ) |> 
+  ungroup() |> 
+  mutate(
+    win_round_prop = win_round / n,
+    win_series_prop = win_series / n
+  )
+
+val_o_win_prop <- val_round_and_series_win_prop_by_side |> 
+  filter(is_offense) |> 
+  mutate(
+    diff_win_round_prop = win_round_prop - !!val_o_win_prop_const
+  )
+
+# Joshua Broas, vlr.gg
+common_val_labs <- function(...) {
+  list(
+    ...,
+    labs(
+      caption = 'Pro Valorant matches, 2020 - Jan 1, 2022'
+    )
+  )
+}
+
+common_val_heatmap_layers <- function(...) {
+  list(
+    ...,
+    guides(
+      fill = 'none'
+    ),
+    scale_x_continuous(
+      labels = 0:12,
+      breaks = seq(0.5, 12.5, by = 1),
+      expand = c(0, 0)
+    ),
+    scale_y_continuous(
+      labels = 0:12,
+      breaks = seq(0.5, 12.5, by = 1),
+      expand = c(0, 0),
+      sec.axis = sec_axis(
+        trans = I, 
+        name = ' ', 
+        breaks = seq(0.5, 12.5, by = 1), 
+        labels = rep('', 13)
+      )
+    ),
+    theme(
+      panel.grid.major = element_blank(),
+      axis.title = element_text(hjust = 0.5),
+      plot.title = ggtext::element_markdown(hjust = 0.5),
+      axis.text = element_text(size = 16, face = 'bold')
+    ),
+    common_val_labs(),
+    labs(
+      x = "Offensive Team's # of Pre-Round Wins",
+      y = "Defensive Team's # of Pre-Round Wins"
+    )
+  )
+}
+
+val_heatmap_seq_labeller <- function(.df, .label, .num) {
+  sprintf(
+    '%s', 
+    scales::percent(.df[[.label]], accuracy = 1)
+  )
+}
+
+filt_val_o_win_prop <- val_o_win_prop |> 
+  filter(pre_cumu_w <= 12, pre_cumu_l <= 12)
+
+val_pre_swap_rounds <- filt_val_o_win_prop |> 
+  mutate(pre_cumu_wl = pre_cumu_w + pre_cumu_l) |> 
+  filter(pre_cumu_wl == 12)
+
+val_pre_swap_round_segments <- val_pre_swap_rounds |> 
+  transmute(
+    pre_cumu_w,
+    across(pre_cumu_l, ~.x + 1),
+    i = row_number(),
+    n = 2
+  ) |> 
+  uncount(n) |> 
+  group_by(i) |> 
+  mutate(rn = row_number()) |> 
+  ungroup() |> 
+  mutate(
+    across(pre_cumu_w, ~ifelse(rn == 2, .x + 1, .x))
+  ) |> 
+  add_row(
+    pre_cumu_w = 13,
+    pre_cumu_l = 0
+  )
+
+p_val_o_round_win_prop <- filt_val_o_win_prop |> 
+  ggplot() +
+  common_val_heatmap_layers() +
+  heatmap_tile(.fill = 'win_round_prop') +
+  geom_path(
+    data = val_pre_swap_round_segments,
+    color = 'white',
+    size = 1.5,
+    aes(
+      x = pre_cumu_w, 
+      y = pre_cumu_l
+    )
+  ) +
+  heatmap_text_layers(
+    .df = filt_val_o_win_prop, 
+    .f = o_round_win_text_layer,
+    .num = NULL,
+    .threshold = 0.8,
+    .labeller = val_heatmap_seq_labeller
+  ) +
+  ggsci::scale_fill_material('teal') +
+  labs(
+    title = 'Offensive Round Win %'
+  )
+p_val_o_round_win_prop
+save_for_slide(p_val_o_round_win_prop)
+```
+
+::: notes
+-   Big difference compared to COD. Lower/higher percentages in the corners are probably more indicative of gaps in team skill.
+-   1-0, 1-1, 3-0, 3-1 seem to b e the biggest outliers.
+:::
+
+![](val_o_round_win_prop.png){fig-align="center"}
+
 ## What are your chances of winning the series, given the series state?
 
 ```{r}
@@ -593,7 +769,7 @@ p_cod_o_series_win_prop <- cod_o_win_prop |>
     .df = cod_o_win_prop, 
     .f = o_series_win_text_layer,
     .threshold = 0.8,
-    .labeller = heatmap_seq_labeller
+    .labeller = cod_heatmap_seq_labeller
   ) +
   ggsci::scale_fill_material('orange') +
   labs(
@@ -675,7 +851,7 @@ save_for_slide(p_cod_o_series_win_prop_over_expected)
 -   Note the 4-4 and 2-4 series win percentages.
 :::
 
-![](o_series_win_prop_over_expected.png){fig-align="center"}
+![](cod_o_series_win_prop_over_expected.png){fig-align="center"}
 
 ## Are offensive win %'s different in round 1?
 
@@ -1102,7 +1278,7 @@ p_cod_series_outcome_prop_over_expected <- cod_long_series_outcome_prop |>
     aes(fill = value)
   ) +
   ggsci::scale_fill_material(
-    palette = 'orange'
+    palette = 'light-blue'
   ) +
   ggnewscale::new_scale_fill() +
   geom_tile(

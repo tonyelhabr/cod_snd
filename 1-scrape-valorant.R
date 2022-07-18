@@ -1,10 +1,11 @@
 library(tidyverse)
+library(RSQLite)
 library(DBI)
 library(janitor)
 library(jsonlite)
 
 ## https://www.kaggle.com/datasets/visualize25/valorant-pro-matches-full-data?resource=download
-con <- dbConnect(RSQLite::SQLite(), 'c:/users/antho/downloads/valorant.sqlite')
+con <- dbConnect(RSQLite::SQLite(), 'data/valorant.sqlite')
 query_db <- function(conn, statement) {
   DBI::dbGetQuery(conn = conn, statement = statement) |> 
     tibble() |> 
@@ -199,108 +200,3 @@ val_rounds <- bind_rows(
 ) |> 
   arrange(game_id, round, is_offense)
 qs::qsave(val_rounds, 'valorant_rounds.qs')
-
-val_o_win_prop_const <- val_rounds |> 
-  filter(is_offense) |> 
-  count(win_round) |> 
-  mutate(prop = n / sum(n)) |> 
-  filter(win_round) |> 
-  pull(prop)
-
-val_round_and_series_win_prop_by_side <- val_rounds |> 
-  group_by(pre_cumu_w, pre_cumu_l, is_offense) |> 
-  summarize(
-    n = n(),
-    across(c(win_round, win_series), sum)
-  ) |> 
-  ungroup() |> 
-  mutate(
-    win_round_prop = win_round / n,
-    win_series_prop = win_series / n
-  )
-
-val_o_win_prop <- val_round_and_series_win_prop_by_side |> 
-  filter(is_offense) |> 
-  mutate(
-    diff_win_round_prop = win_round_prop - !!val_o_win_prop_const
-  )
-
-common_val_heatmap_layers <- function(...) {
-  list(
-    ...,
-    guides(
-      fill = 'none'
-    ),
-    scale_x_continuous(
-      labels = 0:12,
-      breaks = seq(0.5, 12.5, by = 1),
-      expand = c(0, 0)
-    ),
-    scale_y_continuous(
-      labels = 0:12,
-      breaks = seq(0.5, 12.5, by = 1),
-      expand = c(0, 0),
-      sec.axis = sec_axis(
-        trans = I, 
-        name = ' ', 
-        breaks = seq(0.5, 12.5, by = 1), 
-        labels = rep('', 13)
-      )
-    ),
-    theme(
-      panel.grid.major = element_blank(),
-      axis.title = element_text(hjust = 0.5),
-      plot.title = ggtext::element_markdown(hjust = 0.5),
-      axis.text = element_text(size = 16, face = 'bold')
-    ),
-    # common_cod_labs(),
-    labs(
-      x = "Offensive Team's # of Pre-Round Wins",
-      y = "Defensive Team's # of Pre-Round Wins"
-    )
-  )
-}
-
-filt_val_o_win_prop <- val_o_win_prop |> 
-  filter((pre_cumu_w < 13) & (pre_cumu_l < 13)) |> 
-  arrange(desc(abs(diff_win_round_prop)))
-
-val_heatmap_seq_labeller <- function(.data, .label, .num) {
-  sprintf(
-    '%s', 
-    scales::percent(.data[[.label]], accuracy = 1)
-  )
-}
-
-val_o_round_win_text_layer <- function(..., .df = filt_val_o_win_prop, .emphasize) {
-  if(.emphasize == 'low') {
-    op <- `<`
-    .color <- blackish_background
-  } else {
-    op <- `>=`
-    .color <- 'white'
-  }
-  list(
-    ...,
-    heatmap_text_layer(
-      .data = .df,
-      .op = op,
-      .label = 'win_round_prop',
-      .num = 'win_round',
-      .color = .color,
-      .threshold = .8,
-      .labeller = val_heatmap_seq_labeller
-    )
-  )
-}
-
-p_val_o_win_prop <- filt_val_o_win_prop |> 
-  ggplot() +
-  common_val_heatmap_layers() +
-  heatmap_tile(.fill = 'win_round_prop') +
-  heatmap_text_layers(.df = filt_val_o_win_prop, .f = val_o_round_win_text_layer) +
-  ggsci::scale_fill_material('teal') +
-  labs(
-    title = 'Offensive Round Win %'
-  )
-save_for_slide(p_val_o_win_prop)
