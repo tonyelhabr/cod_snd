@@ -77,7 +77,7 @@ update_geom_defaults('segment', list(color = 'white'))
 
 ::: fragment
 -   Plant/Defuse in Valorant
--   Valorant professional league, updated through January 1, 2022
+-   Valorant Champions Tour (VCT) matches (qualifiers and majors), through November 11, 2021
 -   5v5
 -   First to 13 round wins
 -   One team plays offense in 12 consecutive rounds before swapping sides
@@ -650,7 +650,7 @@ common_val_labs <- function(...) {
   list(
     ...,
     labs(
-      caption = 'Pro Valorant matches, 2020 - Jan 1, 2022'
+      caption = '2021 VCT matches'
     )
   )
 }
