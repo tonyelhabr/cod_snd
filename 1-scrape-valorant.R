@@ -14,10 +14,39 @@ query_db <- function(conn, statement) {
 
 ## for some reason there is no mapping of team ids -> team_abbrv, which is needed to identify round winners properly.
 ## we have to make it ourselves (see `team_mapping`)
-init_val_games <- query_db(con, 'select * from Games')
-val_matches <- query_db(con, 'select * from Matches')
-val_scoreboard <- query_db(con, 'select * from Game_Scoreboard')
-raw_val_rounds <- query_db(con, 'select * from Game_Rounds')
+val_games <- query_db(con, 'select * from Games') |> 
+  mutate(
+    across(c(game_id, match_id), as.integer)
+  )
+
+val_matches <- query_db(
+  con, 
+  "
+  select * from Matches
+  where eventName like '%Champions Tour%'
+  "
+) |> 
+  mutate(
+    across(c(match_id, event_id), as.integer),
+    across(date, ~lubridate::ymd_hms(.x) |> lubridate::date())
+  )
+
+val_scoreboard <- query_db(
+  con, 
+  'select * from Game_Scoreboard'
+) |> 
+  mutate(
+    across(c(game_id, player_id), as.integer)
+  )
+
+raw_val_rounds <- query_db(
+  con, 
+  'select * from Game_Rounds'
+) |> 
+  mutate(
+    across(game_id, as.integer)
+  )
+dbDisconnect(con)
 
 clean_val_json <- function(x) {
   x |> 
@@ -28,6 +57,14 @@ clean_val_json <- function(x) {
 possibly_clean_json <- possibly(clean_val_json, otherwise = NULL)
 
 init_val_rounds <- raw_val_rounds |> 
+  inner_join(
+    val_games |> distinct(game_id, match_id),
+    by = 'game_id'
+  ) |> 
+  semi_join(
+    val_matches |> distinct(match_id),
+    by = 'match_id'
+  ) |> 
   mutate(
     round_history = map(round_history, possibly_clean_json)
   ) |> 
@@ -54,36 +91,20 @@ init_val_rounds <- raw_val_rounds |>
     )
   )
 
-init_val_series_outcomes <- init_val_rounds |> 
-  group_by(game_id) |> 
-  slice_max(round, n = 1, with_ties = FALSE) |> 
-  ungroup() |> 
-  select(game_id, round, cumu_w, cumu_l) |> 
+val_series_outcomes <- init_val_rounds |>
+  group_by(game_id) |>
+  slice_max(round, n = 1, with_ties = FALSE) |>
+  ungroup() |>
+  select(game_id, round, series_winner = round_winner, cumu_w, cumu_l) |>
   mutate(
     max_cumu_wl = ifelse(cumu_w > cumu_l, cumu_w, cumu_l),
     min_cumu_wl = ifelse(cumu_w > cumu_l, cumu_l, cumu_w)
   )
 
-weird_val_series_outcomes <- init_val_series_outcomes |> 
+weird_val_series_outcomes <- val_series_outcomes |>
   filter(max_cumu_wl > 13 & (min_cumu_wl < (max_cumu_wl - 2)))
 
-val_series_outcomes <- init_val_series_outcomes |> 
-  anti_join(
-    weird_val_series_outcomes |> select(game_id),
-    by = 'game_id'
-  )
-
-val_games <- init_val_games |> 
-  inner_join(
-    val_series_outcomes |> select(game_id),
-    by = 'game_id'
-  )
-
 val_team_abbrvs <- val_scoreboard |> 
-  inner_join(
-    val_series_outcomes |> select(game_id),
-    by = 'game_id'
-  ) |> 
   distinct(game_id, team_abbrv = team_abbreviation) |> 
   mutate(across(team_abbrv, ~toupper(.x) |> str_squish()))
 
@@ -103,14 +124,44 @@ raw_val_team_mapping <- bind_rows(
   ungroup() |> 
   arrange(desc(n))
 
-val_team_mapping <- raw_val_team_mapping |> 
-  filter(team_abbrv != '', n >= 5)
+# val_team_mapping <- raw_val_team_mapping |> 
+#   filter(team_abbrv != '', n >= 5)
+val_team_mapping <- raw_val_team_mapping
+
+val_games |> 
+  inner_join(
+    val_team_mapping |> distinct(winner = team, winner_abbrv = team_abbrv),
+    by = 'winner'
+  ) |> 
+  count(game_id, match_id, winner, winner_abbrv, sort = TRUE)
+
+val_games |> 
+  transmute(
+    game_id,
+    team1,
+    team2,
+    team1_side_first_half,
+    total_rounds = team1_total_rounds + team2_total_rounds
+  ) |> 
+  inner_join(
+    val_series_outcomes |> 
+      select(game_id, last_round = round, series_winner) |> 
+      inner_join(
+        val_team_mapping |> select(team, series_winner = team_abbrv), 
+        by = 'series_winner'
+      ),
+    by = 'game_id'
+  )
+
+## note that i've decided to use val_rounds -> val_series_outcomes for determining the last round
+##   instead of val_matches. this is more self coherent and i think val_matches has some errors.
+##   when there is a discrepancy in the last round between val_series_outcomes and val_matches, 
+##   i'm relying on vlr.gg instead of liquepedia as the source of truth.
+##   liquepedia (https://liquipedia.net/valorant/VALORANT_Champions_Tour/2021/Southeast_Asia/Stage_2/Challengers_3/Malaysia_and_Singapore) has this as ending in 17 rounds, as well as val_matches.
+##   but vlr.gg (https://www.vlr.gg/14384/paper-rex-vs-team-smg-champions-tour-malaysia-singapore-stage-2-challengers-3-main-event-grand/?game=25724&tab=overview) has this as ending in 19 rounds, as well as val_rounds.
+# init_val_rounds |> filter(game_id == 25726)
 
 init_val_rounds_side <- init_val_rounds |> 
-  inner_join(
-    val_series_outcomes |> select(game_id),
-    by = 'game_id'
-  ) |> 
   inner_join(
     val_team_mapping |> select(team1id = team_id, team_1 = team_abbrv), 
     by = 'team1id'
@@ -120,41 +171,55 @@ init_val_rounds_side <- init_val_rounds |>
     by = 'team2id'
   ) |> 
   inner_join(
-    val_games |> 
-      inner_join(
-        val_team_mapping |> select(winner = team, winner_abbrv = team_abbrv),
-        by = 'winner'
-      ) |> 
+    val_matches |> 
       transmute(
-        game_id, 
-        map,
-        team1_side_first_half,
-        total_rounds = team1_total_rounds + team2_total_rounds,
-        series_winner = winner_abbrv
-      ) |> 
-      distinct(),
+        match_id,
+        team1id,
+        team2id,
+        team_1_series_w = team1_map_score,
+        team_2_series_w = team2_map_score
+      ),
+    by = c('match_id', 'team1id', 'team2id')
+  ) |> 
+  inner_join(
+    val_series_outcomes |> 
+      select(
+        game_id,
+        total_rounds = round,
+        series_winner
+      ),
     by = 'game_id'
+  ) |> 
+  inner_join(
+    val_games |> 
+      transmute(
+        game_id,
+        match_id,
+        map,
+        team1_side_first_half
+      ),
+    by = c('game_id', 'match_id')
   ) |> 
   transmute(
     game_id,
+    match_id,
     team_1,
     team_2,
     map,
     round,
     cumu_w,
     cumu_l,
-    team1_side_first_half,
-    score_after_round,
-    # round_winner,
-    # series_winner,
-    # total_rounds,
+    total_rounds,
     is_offense_1 = case_when(
       round <= 13 & team1_side_first_half == 'attack' ~ TRUE,
       round > 13 & team1_side_first_half == 'defend' ~ TRUE,
+      round > 24 & ((round %% 2) == 1) & team1_side_first_half == 'attack' ~ TRUE,
       TRUE ~ FALSE
     ),
     win_round_1 = team_1 == round_winner,
-    win_series_1 = team_1 == series_winner
+    win_series_1 = team_1 == series_winner,
+    team_1_series_w,
+    team_2_series_w
   ) |> 
   arrange(game_id, round) |> 
   group_by(game_id) |> 
@@ -168,6 +233,7 @@ val_rounds <- bind_rows(
   init_val_rounds_side |> 
     select(
       game_id,
+      match_id,
       team = team_1,
       opponent = team_2,
       map,
@@ -179,10 +245,13 @@ val_rounds <- bind_rows(
       pre_cumu_l,
       cumu_w,
       cumu_l,
+      team_series_w = team_1_series_w,
+      opponent_series_w = team_2_series_w
     ),
   init_val_rounds_side |> 
     transmute(
       game_id,
+      match_id,
       team = team_2,
       opponent = team_1,
       map,
@@ -191,12 +260,48 @@ val_rounds <- bind_rows(
       win_round = !win_round_1,
       win_series = !win_series_1,
       pre_cumu_w = pre_cumu_l,
-      cumu_w = cumu_l
+      cumu_w = cumu_l,
+      team_series_w = team_2_series_w,
+      opponent_series_w = team_1_series_w
     ) |> 
     mutate(
       pre_cumu_l = round - pre_cumu_w,
       cumu_l = round - cumu_w
     )
 ) |> 
-  arrange(game_id, round, is_offense)
+  inner_join(
+    val_matches |> 
+      transmute(
+        match_id,
+        event_id,
+        event_name,
+        event_stage,
+        date,
+        team_1_series_w = team1_map_score,
+        team_2_series_w = team2_map_score
+      ),
+    by = 'match_id'
+  ) |> 
+  arrange(date, game_id, round, is_offense) |> 
+  select(
+    game_id,
+    match_id,
+    event_id,
+    event_name,
+    event_stage,
+    date,
+    map,
+    team,
+    opponent,
+    round,
+    is_offense,
+    win_round,
+    win_series,
+    pre_cumu_w,
+    pre_cumu_l,
+    cumu_w,
+    cumu_l,
+    team_series_w,
+    opponent_series_w
+  )
 qs::qsave(val_rounds, 'valorant_rounds.qs')
