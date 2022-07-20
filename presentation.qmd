@@ -862,46 +862,6 @@ save_for_slide(p_val_o_series_win_prop_over_expected)
 
 ![](val_o_series_win_prop_over_expected.png){fig-align="center"}
 
-## What are your chances of winning the series, given the series state in [Valorant]{.valorant}?
-
-```{r}
-#| label: p_filt_val_o_series_win_prop_over_expected
-filt_val_o_win_prop <- val_o_win_prop |> 
-  filter(
-    pre_cumu_w >= 3, pre_cumu_l >= 3
-  )
-filt_val_max_diff_win_series_prop <- max(abs(filt_val_o_win_prop$diff_win_series_prop))
-p_filt_val_o_series_win_prop_over_expected <- filt_val_o_win_prop |> 
-  ggplot() +
-  common_val_heatmap_layers() +
-  heatmap_tile(
-    .fill = 'diff_win_series_prop'
-  ) +
-  heatmap_text_layers(
-    .df = filt_val_o_win_prop, 
-    .f = o_series_win_over_expected_text_layer,
-    .threshold = 0.1,
-    .labeller = val_heatmap_div_labeller
-  ) +
-  scale_fill_gradient2(
-    low = extract_ggsci_mid_color('brown'),
-    high = extract_ggsci_mid_color('cyan'),
-    mid = 'white',
-    limits = c(
-      -filt_val_max_diff_win_series_prop,
-      +filt_val_max_diff_win_series_prop
-    ),
-    midpoint = 0
-  ) +
-  labs(
-    title = 'Offensive Series Win % Over Expected'
-  )
-p_filt_val_o_series_win_prop_over_expected
-save_for_slide(p_val_o_series_win_prop_over_expected)
-```
-
-![](val_o_series_win_prop_over_expected.png){fig-align="center"}
-
 ## Are offensive win %'s different in round 1?
 
 ```{r}
