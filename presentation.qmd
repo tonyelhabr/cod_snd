@@ -200,7 +200,7 @@ val_o_win_prop_const <- val_rounds |>
   mutate(prop = n / sum(n)) |> 
   filter(win_round) |> 
   pull(prop)
-val_o_win_pct <- scales::percent(val_o_win_prop_const, accuracy = 1)
+val_o_win_pct <- scales::percent(val_o_win_prop_const, accuracy = 0.1)
 ```
 
 ::: fragment

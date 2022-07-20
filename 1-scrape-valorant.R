@@ -56,7 +56,7 @@ clean_val_json <- function(x) {
 }
 possibly_clean_json <- possibly(clean_val_json, otherwise = NULL)
 
-init_val_rounds <- raw_val_rounds |> 
+init_val_rounds_side <- raw_val_rounds |> 
   inner_join(
     val_games |> distinct(game_id, match_id),
     by = 'game_id'
@@ -91,7 +91,7 @@ init_val_rounds <- raw_val_rounds |>
     )
   )
 
-val_series_outcomes <- init_val_rounds |>
+val_series_outcomes <- init_val_rounds_side |>
   group_by(game_id) |>
   slice_max(round, n = 1, with_ties = FALSE) |>
   ungroup() |>
@@ -159,9 +159,9 @@ val_games |>
 ##   i'm relying on vlr.gg instead of liquepedia as the source of truth.
 ##   liquepedia (https://liquipedia.net/valorant/VALORANT_Champions_Tour/2021/Southeast_Asia/Stage_2/Challengers_3/Malaysia_and_Singapore) has this as ending in 17 rounds, as well as val_matches.
 ##   but vlr.gg (https://www.vlr.gg/14384/paper-rex-vs-team-smg-champions-tour-malaysia-singapore-stage-2-challengers-3-main-event-grand/?game=25724&tab=overview) has this as ending in 19 rounds, as well as val_rounds.
-# init_val_rounds |> filter(game_id == 25726)
+# init_val_rounds_side |> filter(game_id == 25726)
 
-init_val_rounds_side <- init_val_rounds |> 
+val_rounds_side <- init_val_rounds_side |> 
   inner_join(
     val_team_mapping |> select(team1id = team_id, team_1 = team_abbrv), 
     by = 'team1id'
@@ -228,9 +228,13 @@ init_val_rounds_side <- init_val_rounds |>
     pre_cumu_l = lag(cumu_l, default = 0L)
   ) |> 
   ungroup()
+val_rounds_side |> 
+  filter(!is_offense_1) |> 
+  filter(cumu_l == 1, cumu_w == 0) |> 
+  count(win_round_1)
 
 val_rounds <- bind_rows(
-  init_val_rounds_side |> 
+  val_rounds_side |> 
     select(
       game_id,
       match_id,
@@ -248,7 +252,7 @@ val_rounds <- bind_rows(
       team_series_w = team_1_series_w,
       opponent_series_w = team_2_series_w
     ),
-  init_val_rounds_side |> 
+  val_rounds_side |> 
     transmute(
       game_id,
       match_id,
@@ -259,15 +263,27 @@ val_rounds <- bind_rows(
       is_offense = !is_offense_1,
       win_round = !win_round_1,
       win_series = !win_series_1,
-      pre_cumu_w = pre_cumu_l,
-      cumu_w = cumu_l,
+      pre_cumu_w,
+      pre_cumu_l,
+      cumu_w,
+      cumu_l,
       team_series_w = team_2_series_w,
       opponent_series_w = team_1_series_w
     ) |> 
     mutate(
-      pre_cumu_l = round - pre_cumu_w,
-      cumu_l = round - cumu_w
-    )
+      pre_cumu_z = pre_cumu_l,
+      cumu_z = cumu_l
+    ) |> 
+    select(-c(pre_cumu_l, cumu_l)) |> 
+    mutate(
+      pre_cumu_l = pre_cumu_w,
+      cumu_l = cumu_w
+    ) |> 
+    mutate(
+      pre_cumu_w = pre_cumu_z,
+      cumu_w = cumu_z
+    ) |> 
+    select(-c(pre_cumu_z, cumu_z))
 ) |> 
   inner_join(
     val_matches |> 
