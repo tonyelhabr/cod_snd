@@ -326,18 +326,21 @@
 <section id="game-types" class="slide level2">
 <h2>Game types</h2>
 <div class="fragment">
+<!-- -->
+<h3 id="search-and-destroy-snd-in-call-of-duty-cod">Search and Destroy (SnD) in Call of Duty (COD)</h3>
 <ul>
-<li>Search and Destroy (SnD) in Call of Duty (COD)</li>
 <li>2020-2022 Call of Duty League (CDL) matches (qualifiers and majors)</li>
 <li>4v4.</li>
 <li>First to 6 round wins</li>
 <li>Teams swap sides (offense and defense) after every round</li>
 </ul>
 </div>
+<p><br></p>
 <div class="fragment">
+<!-- -->
+<h3 id="a-plantdefuse-in-valorant">A Plant/Defuse in Valorant</h3>
 <ul>
-<li>Plant/Defuse in Valorant</li>
-<li>Valorant professional league, updated through January 1, 2022</li>
+<li>Valorant Champions Tour (VCT) matches (qualifiers and majors), through November 11, 2021</li>
 <li>5v5</li>
 <li>First to 13 round wins</li>
 <li>One team plays offense in 12 consecutive rounds before swapping sides</li>
@@ -408,137 +411,40 @@
 <h2>Valorant data overview</h2>
 <div class="fragment">
 <ul>
-<li>Total series: <strong>12,043</strong></li>
+<li>Total series: <strong>5,333</strong></li>
 </ul>
 </div>
 <div class="fragment">
 <ul>
-<li>Total rounds: <strong>250,507</strong></li>
+<li>Total rounds: <strong>108,789</strong></li>
 </ul>
 </div>
 <div class="fragment">
 <ul>
-<li>Offensive win %: <strong>49%</strong></li>
+<li>Offensive win %: <strong>49.8%</strong></li>
 </ul>
 </div>
 </section>
 <section id="what-are-your-chances-of-winning-a-round-given-the-series-state-in-cod-snd" class="slide level2">
 <h2>What are your chances of winning a round, given the series state in <span class="cod">COD SnD</span>?</h2>
-<aside class="notes">
-<ul>
-<li>This should hint at what I’m calling the “4-4” phenomenon, where the o round win % is dramatically higher than adjacent scenarios (3-4, 4-3, 5-4, 4-5, and even 3-3 or 5-5).</li>
-<li>Note that round win %s are lower than one might expect in 0-5 and 1-5 states.</li>
-</ul>
-<style type="text/css">
-        span.MJX_Assistive_MathML {
-          position:absolute!important;
-          clip: rect(1px, 1px, 1px, 1px);
-          padding: 1px 0 0 0!important;
-          border: 0!important;
-          height: 1px!important;
-          width: 1px!important;
-          overflow: hidden!important;
-          display:block!important;
-      }</style></aside>
-<div class="quarto-figure quarto-figure-center">
-<figure>
-<p><img data-src="cod_o_round_win_prop.png"></p>
-</figure>
-</div>
-</section>
+
+<img data-src="cod_o_round_win_prop.png" class="r-stretch quarto-figure-center"></section>
 <section id="what-are-your-chances-of-winning-a-round-given-the-series-state-in-cod-snd-1" class="slide level2">
 <h2>What are your chances of winning a round, given the series state in <span class="cod">COD SnD</span>?</h2>
-<aside class="notes">
-<ul>
-<li>This should emphasize the ends of the spectrum seen on the previous graph.</li>
-</ul>
-<style type="text/css">
-        span.MJX_Assistive_MathML {
-          position:absolute!important;
-          clip: rect(1px, 1px, 1px, 1px);
-          padding: 1px 0 0 0!important;
-          border: 0!important;
-          height: 1px!important;
-          width: 1px!important;
-          overflow: hidden!important;
-          display:block!important;
-      }</style></aside>
-<div class="quarto-figure quarto-figure-center">
-<figure>
-<p><img data-src="cod_o_round_win_prop_over_expected.png"></p>
-</figure>
-</div>
-</section>
+
+<img data-src="cod_o_round_win_prop_over_expected.png" class="r-stretch quarto-figure-center"></section>
 <section id="what-are-your-chances-of-winning-a-round-given-the-series-state-in-valorant" class="slide level2">
 <h2>What are your chances of winning a round, given the series state in <span class="valorant">Valorant</span>?</h2>
-<aside class="notes">
-<ul>
-<li>Big difference compared to COD. Lower/higher percentages in the corners are probably more indicative of gaps in team skill.</li>
-<li>1-0, 1-1, 3-0, 3-1 seem to b e the biggest outliers.</li>
-</ul>
-<style type="text/css">
-        span.MJX_Assistive_MathML {
-          position:absolute!important;
-          clip: rect(1px, 1px, 1px, 1px);
-          padding: 1px 0 0 0!important;
-          border: 0!important;
-          height: 1px!important;
-          width: 1px!important;
-          overflow: hidden!important;
-          display:block!important;
-      }</style></aside>
-<div class="quarto-figure quarto-figure-center">
-<figure>
-<p><img data-src="val_o_round_win_prop.png"></p>
-</figure>
-</div>
-</section>
+
+<img data-src="val_o_round_win_prop.png" class="r-stretch quarto-figure-center"></section>
 <section id="what-are-your-chances-of-winning-the-series-given-the-series-state-in-cod-snd" class="slide level2">
 <h2>What are your chances of winning the series, given the series state in <span class="cod">COD SnD</span>?</h2>
-<aside class="notes">
-<ul>
-<li>This is mostly just for reference. I think the next slide should have more insight, since it’s harder to have a prior understanding about the probability of winning the series given a round state.</li>
-</ul>
-<style type="text/css">
-        span.MJX_Assistive_MathML {
-          position:absolute!important;
-          clip: rect(1px, 1px, 1px, 1px);
-          padding: 1px 0 0 0!important;
-          border: 0!important;
-          height: 1px!important;
-          width: 1px!important;
-          overflow: hidden!important;
-          display:block!important;
-      }</style></aside>
-<div class="quarto-figure quarto-figure-center">
-<figure>
-<p><img data-src="cod_o_series_win_prop.png"></p>
-</figure>
-</div>
-</section>
+
+<img data-src="cod_o_series_win_prop.png" class="r-stretch quarto-figure-center"></section>
 <section id="what-are-your-chances-of-winning-the-series-given-the-series-state-in-cod-snd-1" class="slide level2">
 <h2>What are your chances of winning the series, given the series state in <span class="cod">COD SnD</span>?</h2>
-<aside class="notes">
-<ul>
-<li>Note the 4-4 and 2-4 series win percentages.</li>
-</ul>
-<style type="text/css">
-        span.MJX_Assistive_MathML {
-          position:absolute!important;
-          clip: rect(1px, 1px, 1px, 1px);
-          padding: 1px 0 0 0!important;
-          border: 0!important;
-          height: 1px!important;
-          width: 1px!important;
-          overflow: hidden!important;
-          display:block!important;
-      }</style></aside>
-<div class="quarto-figure quarto-figure-center">
-<figure>
-<p><img data-src="cod_o_series_win_prop_over_expected.png"></p>
-</figure>
-</div>
-</section>
+
+<img data-src="cod_o_series_win_prop_over_expected.png" class="r-stretch quarto-figure-center"></section>
 <section id="what-are-your-chances-of-winning-the-series-given-the-series-state-in-valorant" class="slide level2">
 <h2>What are your chances of winning the series, given the series state in <span class="valorant">Valorant</span>?</h2>
 
@@ -547,54 +453,18 @@
 <h2>What are your chances of winning the series, given the series state in <span class="valorant">Valorant</span>?</h2>
 
 <img data-src="val_o_series_win_prop_over_expected.png" class="r-stretch quarto-figure-center"></section>
+<section id="what-are-your-chances-of-winning-the-series-given-the-series-state-in-valorant-2" class="slide level2">
+<h2>What are your chances of winning the series, given the series state in <span class="valorant">Valorant</span>?</h2>
+
+<img data-src="val_o_series_win_prop_over_expected.png" class="r-stretch quarto-figure-center"></section>
 <section id="are-offensive-win-s-different-in-round-1" class="slide level2">
 <h2>Are offensive win %’s different in round 1?</h2>
-<div class="quarto-figure quarto-figure-center">
-<figure>
-<p><img data-src="cod_o_win_r1_vs_post_round_prop.png"></p>
-</figure>
-</div>
-<aside class="notes">
-<ul>
-<li>This might be considered an “information-neutral” setting</li>
-</ul>
-<style type="text/css">
-        span.MJX_Assistive_MathML {
-          position:absolute!important;
-          clip: rect(1px, 1px, 1px, 1px);
-          padding: 1px 0 0 0!important;
-          border: 0!important;
-          height: 1px!important;
-          width: 1px!important;
-          overflow: hidden!important;
-          display:block!important;
-      }</style></aside>
-</section>
+
+<img data-src="cod_o_win_r1_vs_post_round_prop.png" class="r-stretch quarto-figure-center"></section>
 <section id="what-are-the-most-common-series-winning-states" class="slide level2">
 <h2>What are the most common series winning states?</h2>
-<div class="quarto-figure quarto-figure-center">
-<figure>
-<p><img data-src="cod_series_outcome_prop_over_expected.png"></p>
-</figure>
-</div>
-<aside class="notes">
-<ul>
-<li>There should be evidence of 6-0’s and 6-1’s are more frequent than expected given 50-50% chances.</li>
-<li>Notably 6-4’s occur less frequently than expected</li>
-<li>p-values are not significant for any</li>
-</ul>
-<style type="text/css">
-        span.MJX_Assistive_MathML {
-          position:absolute!important;
-          clip: rect(1px, 1px, 1px, 1px);
-          padding: 1px 0 0 0!important;
-          border: 0!important;
-          height: 1px!important;
-          width: 1px!important;
-          overflow: hidden!important;
-          display:block!important;
-      }</style></aside>
-</section>
+
+<img data-src="cod_series_outcome_prop_over_expected.png" class="r-stretch quarto-figure-center"></section>
 <section id="when-do-back-to-back-round-wins-occur" class="slide level2">
 <h2>When do back-to-back round wins occur?</h2>
 
@@ -602,26 +472,11 @@
 <section id="is-there-evidence-for-the-hot-hand" class="slide level2">
 <h2>Is there evidence for the “hot hand”?</h2>
 <p><br><br></p>
+<p>Round win % after a streak of 3 round wins:</p>
 <ul>
-<li>Round win % after a streak of 3 round wins:</li>
 <li>Expected: <strong>38.4%</strong></li>
 <li>Actual: <strong>54%</strong> (621 / 1150)</li>
 </ul>
-<aside class="notes">
-<ul>
-<li>Note this is sort of biased by the fact that teams end up winning series in 6 cod_rounds more often than expected.</li>
-</ul>
-<style type="text/css">
-        span.MJX_Assistive_MathML {
-          position:absolute!important;
-          clip: rect(1px, 1px, 1px, 1px);
-          padding: 1px 0 0 0!important;
-          border: 0!important;
-          height: 1px!important;
-          width: 1px!important;
-          overflow: hidden!important;
-          display:block!important;
-      }</style></aside>
 </section>
 <section id="is-planting-at-one-site-better-than-the-other" class="slide level2">
 <h2>Is planting at one site better than the other?</h2>

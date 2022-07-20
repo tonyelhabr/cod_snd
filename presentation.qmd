@@ -68,16 +68,20 @@ update_geom_defaults('segment', list(color = 'white'))
 ## Game types
 
 ::: fragment
--   Search and Destroy (SnD) in Call of Duty (COD)
+### Search and Destroy (SnD) in Call of Duty (COD)
+
 -   2020-2022 Call of Duty League (CDL) matches (qualifiers and majors)
 -   4v4.
 -   First to 6 round wins
 -   Teams swap sides (offense and defense) after every round
 :::
 
+<br/>
+
 ::: fragment
--   Plant/Defuse in Valorant
--   Valorant Champions Tour (VCT) matches (qualifiers and majors), through November 11, 2021
+### A Plant/Defuse in Valorant
+
+-   2021 Valorant Champions Tour (VCT) matches (qualifiers and majors)
 -   5v5
 -   First to 13 round wins
 -   One team plays offense in 12 consecutive rounds before swapping sides
@@ -509,11 +513,6 @@ p_cod_o_round_win_prop
 save_for_slide(p_cod_o_round_win_prop)
 ```
 
-::: notes
--   This should hint at what I'm calling the "4-4" phenomenon, where the o round win % is dramatically higher than adjacent scenarios (3-4, 4-3, 5-4, 4-5, and even 3-3 or 5-5).
--   Note that round win %s are lower than one might expect in 0-5 and 1-5 states.
-:::
-
 ![](cod_o_round_win_prop.png){fig-align="center"}
 
 ## What are your chances of winning a round, given the series state in [COD SnD]{.cod}?
@@ -587,10 +586,6 @@ p_cod_o_round_win_prop_over_expected <- cod_o_win_prop |>
 p_cod_o_round_win_prop_over_expected
 save_for_slide(p_cod_o_round_win_prop_over_expected)
 ```
-
-::: notes
--   This should emphasize the ends of the spectrum seen on the previous graph.
-:::
 
 ![](cod_o_round_win_prop_over_expected.png){fig-align="center"}
 
@@ -748,11 +743,6 @@ p_val_o_round_win_prop
 save_for_slide(p_val_o_round_win_prop)
 ```
 
-::: notes
--   Big difference compared to COD. Lower/higher percentages in the corners are probably more indicative of gaps in team skill.
--   1-0, 1-1, 3-0, 3-1 seem to b e the biggest outliers.
-:::
-
 ![](val_o_round_win_prop.png){fig-align="center"}
 
 ## What are your chances of winning the series, given the series state in [COD SnD]{.cod}?
@@ -804,10 +794,6 @@ p_cod_o_series_win_prop <- cod_o_win_prop |>
 p_cod_o_series_win_prop
 save_for_slide(p_cod_o_series_win_prop)
 ```
-
-::: notes
--   This is mostly just for reference. I think the next slide should have more insight, since it's harder to have a prior understanding about the probability of winning the series given a round state.
-:::
 
 ![](cod_o_series_win_prop.png){fig-align="center"}
 
@@ -872,10 +858,6 @@ p_cod_o_series_win_prop_over_expected <- cod_o_win_prop |>
 p_cod_o_series_win_prop_over_expected
 save_for_slide(p_cod_o_series_win_prop_over_expected)
 ```
-
-::: notes
--   Note the 4-4 and 2-4 series win percentages.
-:::
 
 ![](cod_o_series_win_prop_over_expected.png){fig-align="center"}
 
@@ -1291,10 +1273,6 @@ save_for_slide(p_cod_o_win_r1_vs_post_round_prop)
 
 ![](cod_o_win_r1_vs_post_round_prop.png){fig-align="center"}
 
-::: notes
--   This might be considered an "information-neutral" setting
-:::
-
 ## What are the most common series winning states?
 
 ```{r}
@@ -1489,12 +1467,6 @@ save_for_slide(p_cod_series_outcome_prop_over_expected)
 ```
 
 ![](cod_series_outcome_prop_over_expected.png){fig-align="center"}
-
-::: notes
--   There should be evidence of 6-0's and 6-1's are more frequent than expected given 50-50% chances.
--   Notably 6-4's occur less frequently than expected
--   p-values are not significant for any
-:::
 
 ## When do back-to-back round wins occur?
 
@@ -1827,13 +1799,10 @@ cod_win_prop_after_b2b2b_wins <- seq(4, 7, by = 1) |>
 
 <br/><br/>
 
--   Round win % after a streak of 3 round wins:
+Round win % after a streak of 3 round wins:
+
 -   Expected: **`r 100 * round(prob_n6_k3, 3)`%**
 -   Actual: **`r 100 * round(cod_round_win_prop_after_b2b2b_wins$prop, 3)`%** (`r cod_round_win_prop_after_b2b2b_wins$n` / `r cod_round_win_prop_after_b2b2b_wins$total`)
-
-::: notes
--   Note this is sort of biased by the fact that teams end up winning series in 6 cod_rounds more often than expected.
-:::
 
 ## Is planting at one site better than the other?
 
