@@ -31,6 +31,8 @@ library(extrafont)
 library(ggtext)
 library(ggsci)
 library(ggnewscale)
+library(magick)
+
 blackish_background <- '#191919' ## to match slide background
 gray_points <- '#4d4d4d'
 gray_text <- '#999999'
@@ -63,6 +65,60 @@ theme_update(
 update_geom_defaults('text', list(family = font, size = 10 / .pt, fontface = 'bold'))
 update_geom_defaults('point', list(color = 'white'))
 update_geom_defaults('segment', list(color = 'white'))
+
+add_logo <- function(
+    path,
+    path_logo,
+    idx_x,
+    idx_y,
+    logo_scale = 0.1,
+    adjust_x = TRUE,
+    adjust_y = TRUE,
+    path_suffix = '_w_logo',
+    delete = TRUE
+) {
+  
+  plot <- magick::image_read(path)
+  logo_raw <- magick::image_read(path_logo)
+  
+  plot_height <- magick::image_info(plot)$height
+  plot_width <- magick::image_info(plot)$width
+  
+  logo <- magick::image_scale(logo_raw, as.character(round(plot_width * logo_scale)))
+  
+  info <- magick::image_info(logo)
+  logo_width <- info$width
+  logo_height <- info$height
+  
+  x_pos <- plot_width - idx_x * plot_width
+  y_pos <- plot_height - idx_y * plot_height
+  
+  if (adjust_x) {
+    x_pos <- x_pos - logo_width
+  }
+  
+  if (adjust_y) {
+    y_pos <- y_pos - logo_height
+  }
+  
+  offset <- paste0('+', x_pos, '+', y_pos)
+  
+  img <- magick::image_composite(plot, logo, offset = offset)
+  ext <- tools::file_ext(path)
+  rgx_ext <- sprintf('[.]%s$', ext)
+  
+  res <- magick::image_write(
+    img,
+    gsub(rgx_ext, sprintf('%s.%s', path_suffix, ext), path)
+  )
+  
+  if (!delete) {
+    return(res)
+  }
+  unlink(path, recursive = TRUE, force = TRUE)
+  res
+}
+
 ```
 
 ## Game types
@@ -219,7 +275,7 @@ val_o_win_pct <- scales::percent(val_o_win_prop_const, accuracy = 0.1)
 -   Offensive win %: **`r val_o_win_pct`**
 :::
 
-## What are your chances of winning a round, given the series state in [COD SnD]{.cod}?
+## What are your chances of winning the next round ([COD SnD]{.cod})?
 
 ```{r}
 #| label: cod_heatmap_prep
@@ -307,16 +363,18 @@ common_cod_heatmap_layers <- function(...) {
 }
 
 .dpi <- 300
-save_for_slide <- function(
+save_plot_for_slide <- function(
     p, 
     filename = paste0(str_remove(deparse(substitute(p)), '^p_'), '.png'), 
     width = 7.5, 
     height = width / 1.5,
     units = 'px',
     dpi = .dpi,
+    # game = c('cod', 'val'),
     ...
 ) {
-  ggsave(
+
+  path <- ggsave(
     plot = p,
     filename = filename,
     width = width * dpi,
@@ -324,6 +382,19 @@ save_for_slide <- function(
     units = units,
     dpi = dpi,
     ...
+  )
+  is_cod <- filename |> str_detect('cod_')
+  game <- ifelse(is_cod, 'cod', 'val')
+  logo_scale <- ifelse(is_cod, 0.15, 0.07)
+  add_logo(
+    path,
+    path_logo = file.path('images', sprintf('%s.png', game)),
+    delete = FALSE,
+    path_suffix = '',
+    logo_scale = logo_scale,
+    idx_x = 0.99,
+    idx_y = 0.01,
+    adjust_x = FALSE
   )
 }
 
@@ -435,12 +506,12 @@ p_cod_o_round_win_prop <- cod_o_win_prop |>
     title = 'Offensive Round Win %'
   )
 p_cod_o_round_win_prop
-save_for_slide(p_cod_o_round_win_prop)
+save_plot_for_slide(p_cod_o_round_win_prop)
 ```
 
 ![](cod_o_round_win_prop.png){fig-align="center"}
 
-## What are your chances of winning a round, given the series state in [COD SnD]{.cod}?
+## What are your chances of winning the next round ([COD SnD]{.cod})?
 
 ```{r}
 #| label: p_cod_o_round_win_prop_over_expected
@@ -509,12 +580,12 @@ p_cod_o_round_win_prop_over_expected <- cod_o_win_prop |>
     title = 'Offensive Round Win % Over Expected'
   )
 p_cod_o_round_win_prop_over_expected
-save_for_slide(p_cod_o_round_win_prop_over_expected)
+save_plot_for_slide(p_cod_o_round_win_prop_over_expected)
 ```
 
 ![](cod_o_round_win_prop_over_expected.png){fig-align="center"}
 
-## What are your chances of winning a round, given the series state in [Valorant]{.valorant}?
+## What are your chances of winning the next round ([Valorant]{.valorant})?
 
 ```{r}
 val_round_and_series_win_prop_by_side <- val_rounds |> 
@@ -665,12 +736,12 @@ p_val_o_round_win_prop <- val_o_win_prop |>
     title = 'Offensive Round Win %'
   )
 p_val_o_round_win_prop
-save_for_slide(p_val_o_round_win_prop)
+save_plot_for_slide(p_val_o_round_win_prop)
 ```
 
 ![](val_o_round_win_prop.png){fig-align="center"}
 
-## What are your chances of winning the series, given the series state in [COD SnD]{.cod}?
+## What are your chances of winning the series ([COD SnD]{.cod})?
 
 ```{r}
 #| label: p_cod_o_series_win_prop
@@ -717,12 +788,12 @@ p_cod_o_series_win_prop <- cod_o_win_prop |>
     title = 'Offensive Series Win %'
   )
 p_cod_o_series_win_prop
-save_for_slide(p_cod_o_series_win_prop)
+save_plot_for_slide(p_cod_o_series_win_prop)
 ```
 
 ![](cod_o_series_win_prop.png){fig-align="center"}
 
-## What are your chances of winning the series, given the series state in [COD SnD]{.cod}?
+## What are your chances of winning the series ([COD SnD]{.cod})?
 
 ```{r}
 #| label: p_cod_o_series_win_prop_over_expected
@@ -781,12 +852,12 @@ p_cod_o_series_win_prop_over_expected <- cod_o_win_prop |>
     title = 'Offensive Series Win % Over Expected'
   )
 p_cod_o_series_win_prop_over_expected
-save_for_slide(p_cod_o_series_win_prop_over_expected)
+save_plot_for_slide(p_cod_o_series_win_prop_over_expected)
 ```
 
 ![](cod_o_series_win_prop_over_expected.png){fig-align="center"}
 
-## What are your chances of winning the series, given the series state in [Valorant]{.valorant}?
+## What are your chances of winning the series ([Valorant]{.valorant})?
 
 ```{r}
 #| label: p_val_o_series_win_prop
@@ -814,12 +885,12 @@ p_val_o_series_win_prop <- val_o_win_prop |>
     title = 'Offensive Series Win %'
   )
 p_val_o_series_win_prop
-save_for_slide(p_val_o_series_win_prop)
+save_plot_for_slide(p_val_o_series_win_prop)
 ```
 
 ![](val_o_series_win_prop.png){fig-align="center"}
 
-## What are your chances of winning the series, given the series state in [Valorant]{.valorant}?
+## What are your chances of winning the series ([Valorant]{.valorant})?
 
 ```{r}
 #| label: p_val_o_series_win_prop_over_expected
@@ -857,12 +928,12 @@ p_val_o_series_win_prop_over_expected <- val_o_win_prop |>
     title = 'Offensive Series Win % Over Expected'
   )
 p_val_o_series_win_prop_over_expected
-save_for_slide(p_val_o_series_win_prop_over_expected)
+save_plot_for_slide(p_val_o_series_win_prop_over_expected)
 ```
 
 ![](val_o_series_win_prop_over_expected.png){fig-align="center"}
 
-## Are offensive win %'s different in round 1?
+## Are offensive win %'s different in round 1 ([COD SnD]{.cod}?
 
 ```{r}
 #| label: p_cod_o_win_r1_vs_post_round_prop
@@ -1153,7 +1224,7 @@ p_cod_o_win_r1_vs_post_round_prop <- cod_res_r1$plot +
     aes(x = x, y = y, hjust = hjust, vjust = vjust, label = lab)
   )
 p_cod_o_win_r1_vs_post_round_prop
-save_for_slide(p_cod_o_win_r1_vs_post_round_prop)
+save_plot_for_slide(p_cod_o_win_r1_vs_post_round_prop)
 ```
 
 ![](cod_o_win_r1_vs_post_round_prop.png){fig-align="center"}
@@ -1348,7 +1419,7 @@ p_cod_series_outcome_prop_over_expected <- cod_long_series_outcome_prop |>
   ) +
   common_cod_labs() 
 p_cod_series_outcome_prop_over_expected
-save_for_slide(p_cod_series_outcome_prop_over_expected)
+save_plot_for_slide(p_cod_series_outcome_prop_over_expected)
 ```
 
 ![](cod_series_outcome_prop_over_expected.png){fig-align="center"}
@@ -1532,7 +1603,7 @@ p_cod_b2b_round_win_prop <- cod_b2b_round_win_prop |>
     }
   )
 p_cod_b2b_round_win_prop
-save_for_slide(p_cod_b2b_round_win_prop)
+save_plot_for_slide(p_cod_b2b_round_win_prop)
 # ## now accounting for number of cod_rounds that end up being played AND series winners...
 # cod_rounds |> 
 #   filter(win_series, n_rounds > 6L) |> 
