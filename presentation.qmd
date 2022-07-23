@@ -245,12 +245,12 @@ cod_o_first_blood_win_pct <- cod_rounds |>
 #| label: descriptive-val-snd-stats
 #| eval: true
 val_n_series <- val_rounds |> 
-  distinct(game_id) |> 
+  distinct(series_id) |> 
   nrow() |> 
   scales::comma()
 
 val_n_rounds <- val_rounds |> 
-  distinct(game_id, round) |> 
+  distinct(series_id, round) |> 
   nrow() |> 
   scales::comma()
 
@@ -373,7 +373,7 @@ save_plot_for_slide <- function(
     # game = c('cod', 'val'),
     ...
 ) {
-
+  
   path <- ggsave(
     plot = p,
     filename = filename,
@@ -712,19 +712,26 @@ val_pre_swap_round_segments <- val_pre_swap_rounds |>
     pre_cumu_l = 0
   )
 
+val_swap_path <- function(...) {
+  list(
+    ...,
+    geom_path(
+      data = val_pre_swap_round_segments,
+      color = 'white',
+      size = 1.5,
+      aes(
+        x = pre_cumu_w, 
+        y = pre_cumu_l
+      )
+    )
+  )
+}
+
 p_val_o_round_win_prop <- val_o_win_prop |> 
   ggplot() +
   common_val_heatmap_layers() +
   heatmap_tile(.fill = 'win_round_prop') +
-  geom_path(
-    data = val_pre_swap_round_segments,
-    color = 'white',
-    size = 1.5,
-    aes(
-      x = pre_cumu_w, 
-      y = pre_cumu_l
-    )
-  ) +
+  val_swap_path() +
   heatmap_text_layers(
     .df = val_o_win_prop, 
     .f = o_round_win_text_layer,
@@ -865,15 +872,7 @@ p_val_o_series_win_prop <- val_o_win_prop |>
   ggplot() +
   common_val_heatmap_layers() +
   heatmap_tile(.fill = 'win_series_prop') +
-  geom_path(
-    data = val_pre_swap_round_segments,
-    color = 'white',
-    size = 1.5,
-    aes(
-      x = pre_cumu_w, 
-      y = pre_cumu_l
-    )
-  ) +
+  val_swap_path() +
   heatmap_text_layers(
     .df = val_o_win_prop, 
     .f = o_series_win_text_layer,
@@ -914,6 +913,7 @@ p_val_o_series_win_prop_over_expected <- val_o_win_prop |>
     .threshold = 0.2,
     .labeller = val_heatmap_div_labeller
   ) +
+  val_swap_path() +
   scale_fill_gradient2(
     low = extract_ggsci_mid_color('brown'),
     high = extract_ggsci_mid_color('cyan'),
@@ -933,28 +933,64 @@ save_plot_for_slide(p_val_o_series_win_prop_over_expected)
 
 ![](val_o_series_win_prop_over_expected.png){fig-align="center"}
 
+## What are your chances of winning the series ([Valorant]{.valorant})?
+
+```{r}
+#| label: p_filt_val_o_series_win_prop_over_expected
+filt_val_o_win_prop <- val_o_win_prop |> 
+  mutate(
+    across(
+      diff_win_series_prop,
+      ~case_when(
+        pre_cumu_w <= 3 & pre_cumu_l <= 3 ~ NA_real_,
+        TRUE ~ .x
+      )
+    )
+  )
+filt_val_max_diff_win_series_prop <- max(abs(filt_val_o_win_prop$diff_win_series_prop))
+
+p_filt_val_o_series_win_prop_over_expected <- filt_val_o_win_prop |> 
+  ggplot() +
+  common_val_heatmap_layers() +
+  heatmap_tile(
+    .fill = 'diff_win_series_prop'
+  ) +
+  # geom_abline(
+  #   color = 'white',
+  #   linetype = 2,
+  #   aes(
+  #     slope = 1,
+  #     intercept = 0
+  #   )
+  # ) +
+  heatmap_text_layers(
+    .df = filt_val_o_win_prop, 
+    .f = o_series_win_over_expected_text_layer,
+    .threshold = 0.1,
+    .labeller = val_heatmap_div_labeller
+  ) +
+  val_swap_path() +
+  scale_fill_gradient2(
+    low = extract_ggsci_mid_color('brown'),
+    high = extract_ggsci_mid_color('cyan'),
+    mid = 'white',
+    limits = c(
+      -filt_val_max_diff_win_series_prop,
+      +filt_val_max_diff_win_series_prop
+    ),
+    midpoint = 0
+  ) +
+  labs(
+    title = 'Offensive Series Win % Over Expected'
+  )
+p_filt_val_o_series_win_prop_over_expected
+save_plot_for_slide(p_val_o_series_win_prop_over_expected)
+```
+
 ## Are offensive win %'s different in round 1 ([COD SnD]{.cod}?
 
 ```{r}
 #| label: p_cod_o_win_r1_vs_post_round_prop
-calculate_cod_o_round_win_prop <- function(df) {
-  df |> 
-    count(year, game, map, is_offense, win_round) |> 
-    group_by(map, is_offense) |> 
-    mutate(total = sum(n), prop = n / total) |> 
-    ungroup() |>
-    filter(win_round, is_offense) |>
-    select(
-      year,
-      game,
-      map,
-      rounds_won = n,
-      total_rounds = total,
-      win_round_prop = prop
-    ) |>
-    arrange(desc(win_round_prop))
-}
-
 # https://raw.githubusercontent.com/dgrtwo/splittestr/master/R/vectorized-prop-test.R
 vectorized_prop_test_approx <- function(a, b, c, d) {
   n1 <- a + b
@@ -1021,20 +1057,36 @@ vectorized_prop_test <- function(x1, n1, x2, n2, conf.level = .95) {
   )
 }
 
-summarize_cod_o_round_win_prop <- function(.round) {
+calculate_map_o_round_win_prop <- function(df) {
+  df |> 
+    count(map, is_offense, win_round) |> 
+    group_by(map, is_offense) |> 
+    mutate(total = sum(n), prop = n / total) |> 
+    ungroup() |>
+    filter(win_round, is_offense) |>
+    select(
+      map,
+      rounds_won = n,
+      total_rounds = total,
+      win_round_prop = prop
+    ) |>
+    arrange(desc(win_round_prop))
+}
+
+summarize_map_o_round_win_prop <- function(df, .round) {
   
-  specified_round <- cod_rounds |> 
+  specified_round <- df |> 
     filter(round == .round) |> 
-    calculate_cod_o_round_win_prop()
+    calculate_map_o_round_win_prop()
   
-  post_rounds <- cod_rounds |> 
+  post_rounds <- df |> 
     filter(round > .round) |> 
-    calculate_cod_o_round_win_prop()
+    calculate_map_o_round_win_prop()
   
   specified_round |> 
     inner_join(
-      post_rounds |> rename_with(~sprintf('post_%s', .x), -c(year, game, map)),
-      by = c('year', 'game', 'map')
+      post_rounds |> rename_with(~sprintf('post_%s', .x), -c(map)),
+      by = 'map'
     ) |> 
     mutate(round = .round, .after = 'map') |> 
     arrange(desc(win_round_prop)) |> 
@@ -1046,8 +1098,7 @@ summarize_cod_o_round_win_prop <- function(.round) {
     mutate(
       diff_prop = post_win_round_prop - win_round_prop,
       dir = factor(sign(diff_prop)),
-      is_significant = p_value < 0.05,
-      label = sprintf('%s - %s (%s)', map, game, year)
+      is_significant = p_value < 0.05
     )
 }
 
@@ -1058,14 +1109,24 @@ o_win_rx_prop_pal <- c(
 
 arw <- arrow(length = unit(5, 'pt'), type = 'closed')
 
-plot_cod_round_vs_post_round_slope_chart <- function(.round) {
-  o_win_rx_prop <- summarize_cod_o_round_win_prop(.round)
+plot_round_vs_post_round_slope_chart <- function(df, .round, game = c('cod', 'val')) {
+  game <- match.arg(game)
+  o_win_rx_prop <- summarize_map_o_round_win_prop(df, .round)
   x1_label <- sprintf('Round %d<br/>offensive win %%', .round)
   x2_label <- sprintf('Post-round %d<br/>offensive win %%', .round)
   
   min_o_win_rx_prop <- o_win_rx_prop |> slice_min(diff_prop, n = 1)
   max_o_win_rx_prop <- o_win_rx_prop |> slice_max(diff_prop, n = 1)
-  minmax_labels <- c(min_o_win_rx_prop$label, max_o_win_rx_prop$label)
+  minmax_maps <- c(min_o_win_rx_prop$map, max_o_win_rx_prop$map)
+  
+  is_cod <- game == 'cod'
+  if (is_cod) {
+    y_lo <- 0.25
+    y_hi <- 0.75
+  } else {
+    y_lo <- 0.45
+    y_hi <- 0.55
+  }
   
   p <- o_win_rx_prop |> 
     ggplot() +
@@ -1076,14 +1137,14 @@ plot_cod_round_vs_post_round_slope_chart <- function(.round) {
     ) +
     geom_hline(
       data = tibble(),
-      aes(yintercept = c(0.25, 0.5, 0.75)), 
+      aes(yintercept = c(y_lo, 0.5, y_hi)), 
       linetype = 2,
       color = gray_points
     ) +
     geom_segment(
       data = o_win_rx_prop |> 
         mutate(
-          big_segment = label %in% minmax_labels
+          big_segment = map %in% minmax_maps
         ),
       show.legend = FALSE,
       aes(
@@ -1093,12 +1154,12 @@ plot_cod_round_vs_post_round_slope_chart <- function(.round) {
         yend = post_win_round_prop,
         color = dir,
         size = big_segment,
-        group = label
+        group = map
       )
     ) +
     geom_text(
       data = tibble(
-        y = c(0.25, 0.75)
+        y = c(y_lo, y_hi)
       ) |> 
         mutate(
           lab = sprintf('%s%%', round(100 * y))
@@ -1128,8 +1189,8 @@ plot_cod_round_vs_post_round_slope_chart <- function(.round) {
     ) +
     ggrepel::geom_text_repel(
       data = o_win_rx_prop |> 
-        filter(label %in% !!minmax_labels),
-      aes(x = 1, y = win_round_prop, label = label),
+        filter(map %in% !!minmax_maps),
+      aes(x = 1, y = win_round_prop, label = map),
       family = font,
       fontface = 'bold',
       color = 'white',
@@ -1140,8 +1201,8 @@ plot_cod_round_vs_post_round_slope_chart <- function(.round) {
     ) +
     ggrepel::geom_text_repel(
       data = o_win_rx_prop |> 
-        filter(!(label %in% !!minmax_labels)),
-      aes(x = 2, y = post_win_round_prop, label = label),
+        filter(!(map %in% !!minmax_maps)),
+      aes(x = 2, y = post_win_round_prop, label = map),
       family = font,
       color = gray_text,
       size = 9 / .pt,
@@ -1155,7 +1216,7 @@ plot_cod_round_vs_post_round_slope_chart <- function(.round) {
       expand = expansion(mult = 0.5)
     ) +
     scale_y_continuous(
-      limits = c(0.25, 0.75)
+      limits = c(y_lo, y_hi)
     ) +
     scale_size_manual(
       values = c(
@@ -1185,7 +1246,11 @@ plot_cod_round_vs_post_round_slope_chart <- function(.round) {
   )
 }
 
-cod_res_r1 <- plot_cod_round_vs_post_round_slope_chart(1)
+cod_res_r1 <- cod_rounds |> 
+  mutate(
+    map = sprintf('%s - %s (%s)', map, game, year)
+  ) |> 
+  plot_round_vs_post_round_slope_chart(1, game = 'cod')
 
 p_cod_o_win_r1_vs_post_round_prop <- cod_res_r1$plot +
   geom_curve(
@@ -1222,108 +1287,161 @@ p_cod_o_win_r1_vs_post_round_prop <- cod_res_r1$plot +
     color = 'white',
     size = 9 / .pt,
     aes(x = x, y = y, hjust = hjust, vjust = vjust, label = lab)
-  )
+  ) +
+  common_cod_labs()
 p_cod_o_win_r1_vs_post_round_prop
 save_plot_for_slide(p_cod_o_win_r1_vs_post_round_prop)
 ```
 
 ![](cod_o_win_r1_vs_post_round_prop.png){fig-align="center"}
 
+## Are offensive win %'s different in round 1 ([Valorant]{.valorant}?
+
+```{r}
+#| label: p_val_o_win_r1_vs_post_round_prop
+p_val_o_win_r1_vs_post_round_prop <- val_rounds |> 
+  plot_round_vs_post_round_slope_chart(1, game = 'val') |> 
+  pluck('plot') +
+  common_val_labs()
+save_plot_for_slide(p_val_o_win_r1_vs_post_round_prop)
+```
+
+![](val_o_win_r1_vs_post_round_prop.png){fig-align="center"}
+
 ## What are the most common series winning states?
 
 ```{r}
 #| label: p_cod_series_outcome_prop_over_expected
 # https://content.iospress.com/articles/journal-of-sports-analytics/jsa200422
-prob_of_series_lasting_n_games <- function(n, p = 0.5, max_rounds = 11) {
-  s <- ceiling(max_rounds / 2)
+prob_of_series_lasting_n_games <- function(n, p = 0.5, max_round) {
+  s <- ceiling(max_round / 2)
   (factorial(n - 1) / (factorial(s - 1) * factorial(n - s))) * (p^s * (1 - p)^(n - s) + p^(n - s) * (1 - p)^s)
 }
 
-possibilities_of_outcomes <- function(m, n) {
+expected_series_streaks_of_outcomes <- function(m, n) {
   factorial(m + n) / (factorial(m) * factorial(n))
 }
 
-cod_actual_series_streaks <- cod_rounds |> 
-  filter(win_series) |> 
-  mutate(across(win_round, as.integer)) |> 
-  group_by(year, event, series) |> 
-  summarize(
-    wins = max(cumu_w),
-    losses = max(cumu_l),
-    ws = paste0(win_round, collapse = '')
-  ) |> 
-  ungroup() |> 
-  mutate(n_rounds = wins + losses) |> 
-  unite(
-    record, wins, losses, sep = '-'
-  ) |> 
-  count(n_rounds, record, ws, sort = TRUE) |> 
-  mutate(prop = n / sum(n))
-
-cod_possibilities <- tibble(
-  n_rounds = 6L:11L
-) |> 
-  mutate(
-    series_prop = map_dbl(n_rounds, prob_of_series_lasting_n_games),
-    possibilities = map2_dbl(6, n_rounds - 6, possibilities_of_outcomes)
-  ) |> 
-  transmute(
-    n_rounds,
-    series_prop,
-    record = sprintf('6-%d', n_rounds - 6),
-    prop = series_prop / possibilities
-  )
-
-cod_series_streaks <- inner_join(
-  cod_actual_series_streaks |> 
-    rename_with(~sprintf('%s_actual', .x), c(n, prop)),
-  cod_possibilities |> 
-    rename_with(~sprintf('%s_expected', .x), prop),
-  by = 'n_rounds'
-) |> 
-  mutate(
-    prop_diff = prop_actual - prop_expected
-  ) |> 
-  arrange(desc(abs(prop_diff)))
-# series_streaks |> filter(is.na(n_actual))
-
-## 6-0, 6-1, and some combos of 6-5 occur more often than expected
-cod_series_streak_props <- cod_series_streaks |> 
-  filter(!is.na(n_actual)) |> 
-  mutate(
-    prop_diff = prop_actual - prop_expected,
-    total_actual = sum(n_actual),
-    n_expected = round(prop_expected * total_actual),
-    p = vectorized_prop_test(n_actual, total_actual, n_expected, total_actual)
-  ) |> 
-  select(-total_actual) |> 
-  unnest_wider(p) |> 
-  arrange(p.value)
-
-## 6-0 and 6-1 occur more often than expected
-cod_series_outcome_prop <- full_join(
-  cod_actual_series_streaks |> 
-    group_by(record) |> 
+summarize_streaks <- function(rounds, game = c('cod', 'val')) {
+  rounds <- val_rounds
+  game = 'val'
+  .max_round <- ifelse(game == 'cod', 11, 25)
+  
+  sudden_death_rounds <- rounds |> 
+    filter(max_round > .max_round)
+  
+  rounds1 <- rounds
+  ## should only happen in val
+  if(nrow(sudden_death_rounds) > 0) {
+    
+    sudden_death_series_ids <- sudden_death_rounds |> 
+      distinct(series_id)
+    
+    imputed_suddent_death_rounds <- sudden_death_rounds |> 
+      mutate(
+        round = .max_round
+      ) |> 
+      select(series_id, round, is_offense) |> 
+      inner_join(
+        rounds,
+        by = c('series_id', 'round', 'is_offense')
+      )
+    
+    rounds <- bind_rows(
+      rounds |> 
+        filter(max_round <= .max_round),
+      imputed_suddent_death_rounds
+    )
+  }
+  
+  cutoff <- (.max_round + 1) / 2
+  
+  actual_round_streaks <- rounds |> 
+    filter(round <= .max_round) |> 
+    filter(win_series) |> 
+    mutate(across(win_round, as.integer)) |> 
+    group_by(series_id) |> 
     summarize(
-      across(n, sum)
+      wins = max(cumu_w),
+      losses = max(cumu_l),
+      ws = paste0(win_round, collapse = '')
     ) |> 
-    mutate(prop = n / sum(n)) |> 
-    rename_with(~sprintf('%s_actual', .x), c(n, prop)),
-  cod_possibilities |> 
-    select(record, prop_expected = series_prop),
-  by = 'record'
-) |> 
-  mutate(
-    prop_diff = prop_actual - prop_expected,
-    total_actual = sum(n_actual),
-    n_expected = round(prop_expected * total_actual),
-    p = vectorized_prop_test(n_actual, total_actual, n_expected, total_actual)
+    ungroup() |> 
+    mutate(n_rounds = wins + losses) |> 
+    unite(
+      record, wins, losses, sep = '-'
+    ) |>
+    count(record, n_rounds, ws, sort = TRUE) |> 
+    mutate(prop = n / sum(n))
+  
+  expected_round_streaks <- tibble(
+    n_rounds = cutoff:.max_round
   ) |> 
-  select(-total_actual) |> 
-  unnest_wider(p) |> 
-  arrange(p.value)
+    mutate(
+      series_prop = map_dbl(n_rounds, ~prob_of_series_lasting_n_games(.x, max_round = .max_round)),
+      n_expected_series_streaks = map2_dbl(cutoff, n_rounds - cutoff, expected_series_streaks_of_outcomes)
+    ) |> 
+    transmute(
+      n_rounds,
+      series_prop,
+      prop = series_prop / n_expected_series_streaks
+    )
+  
+  round_streaks <- full_join(
+    actual_round_streaks |> 
+      rename_with(~sprintf('%s_actual', .x), c(n, prop)),
+    expected_round_streaks |> 
+      rename_with(~sprintf('%s_expected', .x), prop),
+    by = 'n_rounds'
+  )
+  
+  round_streak_prop <- round_streaks |> 
+    drop_na() |> 
+    mutate(
+      prop_diff = prop_actual - prop_expected,
+      total_actual = sum(n_actual),
+      n_expected = round(prop_expected * total_actual),
+      p = vectorized_prop_test(n_actual, total_actual, n_expected, total_actual)
+    ) |> 
+    select(-total_actual) |> 
+    unnest_wider(p) |> 
+    arrange(p.value)
+  
+  series_outcomes <- full_join(
+    actual_round_streaks |> 
+      group_by(record, n_rounds) |> 
+      summarize(
+        across(n, sum)
+      ) |> 
+      ungroup() |> 
+      mutate(prop = n / sum(n)) |> 
+      rename_with(~sprintf('%s_actual', .x), c(n, prop)),
+    expected_round_streaks |> 
+      select(n_rounds, prop_expected = series_prop),
+    by = 'n_rounds'
+  )
+  
+  series_outcome_prop <- series_outcomes |> 
+    drop_na() |> 
+    mutate(
+      prop_diff = prop_actual - prop_expected,
+      total_actual = sum(n_actual),
+      n_expected = round(prop_expected * total_actual),
+      p = vectorized_prop_test(n_actual, total_actual, n_expected, total_actual)
+    ) |> 
+    select(-total_actual) |> 
+    unnest_wider(p) |> 
+    arrange(p.value)
+  
+  list(
+    rounds = series_streak_prop,
+    series = series_outcome_prop
+  )
+}
 
-cod_long_series_outcome_prop <- cod_series_outcome_prop |>
+cod_streaks_res <- cod_rounds |> summarize_streaks(game = 'cod')
+val_streaks_res <- val_rounds |> summarize_streaks(game = 'val')
+cod_long_series_outcome_prop <- cod_streaks_res$series |>
   select(
     record,
     n = n_actual,
