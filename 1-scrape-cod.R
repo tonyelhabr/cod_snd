@@ -8,27 +8,36 @@ library(qs)
 dir_data <- 'data'
 dir.create(dir_data, showWarnings = FALSE)
 
-sheets <- list(
-  '2022' = crossing(
-    s = c(1, 2, 3, 4),
-    raw_series = c(1, 2, 3, 4)
+generate_cod_sheets <- function(year = c('2021', '2022')) {
+  year <- match.arg(year)
+  is_2022 <- year == '2022'
+  if (is_2022) {
+    max_s <- 4
+    prefix <- 'Wk'
+  } else {
+    max_s <- 5
+    prefix <- 'HS'
+  }
+  
+  labs <- crossing(
+    s = 1:max_s,
+    series = 1:4
   ) |> 
     mutate(
-      label = sprintf('S%d %s', s, ifelse(raw_series == 4, 'Major', sprintf('Wk%d', raw_series)))
+      label = sprintf('S%d %s', s, ifelse(series == 4, 'Major', sprintf('%s%d', !!prefix, series)))
     ) |> 
-    pull(label) %>%
-    .[1:14],
-  '2021' = c(
-    'Champs', 
-    crossing(
-      s = c(1, 2, 3, 4, 5),
-      raw_series = c(1, 2, 3, 4)
-    ) |> 
-      mutate(
-        label = sprintf('S%d %s', s, ifelse(raw_series == 4, 'Major', sprintf('HS%d', raw_series)))
-      ) |> 
-      pull(label)
-  ),
+    pull(label)
+  
+  if(is_2022) {
+    return(labs)
+  }
+  
+  c('Champs', labs)
+}
+
+cod_sheets <- list(
+  '2022' = generate_cod_sheets('2022'),
+  '2021' =  generate_cod_sheets('2021'),
   '2020' = sprintf(
     '%s_SnD',
     c('CHAMPS', 'LAUNCH', 'LON', 'ATL', 'LA', 'DAL', 'CHI', 'FLA', 'SEA', 'MIN', 'PAR', 'NY', 'LON2', 'TOR')
@@ -147,13 +156,13 @@ read_snd_sheet <- function(year, sheet, overwrite = FALSE) {
   res
 }
 
-raw_series <- sheets |> 
+raw_cod_series <- cod_sheets |> 
   mutate(
-    data = map2(year, sheet, read_snd_sheet, overwrite = F)
+    data = map2(year, sheet, read_snd_sheet, overwrite = FALSE)
   ) |> 
   unnest(data)
 
-fixed_rounds <- tibble(
+fixed_cod_rounds <- tibble(
   year = rep(2020L, 6),
   sheet = c(rep('LON_SnD', 4), rep('LA_SnD', 2)),
   series = c(rep(8L, 2), rep(17L, 2), rep(15L, 2)),
@@ -165,17 +174,17 @@ fixed_rounds <- tibble(
   map = c(rep('Arklov Peak', 4), rep('St. Petrograd', 2))
 )
 
-series <- raw_series |> 
+cod_series <- raw_cod_series |> 
   anti_join(
-    fixed_rounds |> 
+    fixed_cod_rounds |> 
       distinct(year, sheet, series, team, round), 
     by = c('year', 'sheet', 'series', 'team', 'round')
   ) |> 
   bind_rows(
-    fixed_rounds |> 
+    fixed_cod_rounds |> 
       mutate(
         event = sprintf('%s - %s', year, sheet) |> 
-          factor(levels = sheets$event)
+          factor(levels = cod_sheets$event)
       )
   ) |> 
   mutate(
@@ -186,13 +195,13 @@ series <- raw_series |>
   ) |> 
   arrange(event, series, round, team)
 
-game_mapping <- c(
+cod_game_mapping <- c(
   '2022' = 'Vanguard',
   '2021' = 'Cold War',
   '2020' = 'MW'
 )
 
-rounds <- series |> 
+cod_rounds <- cod_series |> 
   group_by(year, sheet, series, team) |> 
   mutate(
     cumu_w = cumsum(win_round),
@@ -204,13 +213,17 @@ rounds <- series |>
   ) |> 
   ungroup() |> 
   inner_join(
-    series |> 
+    cod_series |> 
       filter(round == 1L) |> 
-      distinct(year, sheet, series, team, starts_as_offense = is_offense), 
+      distinct(year, sheet, series, team, starts_as_offense = is_offense) |> 
+      mutate(
+        series_id = row_number(),
+        .before = 1
+      ), 
     by = c('year', 'sheet', 'series', 'team')
   ) |> 
   inner_join(
-    series |> 
+    cod_series |> 
       group_by(year, sheet, series, team) |> 
       slice_max(round, n = 1, with_ties = FALSE) |> 
       ungroup() |> 
@@ -226,8 +239,11 @@ rounds <- series |>
     by = c('year', 'sheet', 'series', 'team')
   ) |> 
   mutate(
-    game = game_mapping[as.character(year)],
+    game = cod_game_mapping[as.character(year)],
     .before = 1
+  ) |> 
+  mutate(
+    map = sprintf('%s - %s (%s)', map, game, year)
   )
-rounds
-qs::qsave(rounds, 'cod_rounds.qs')
+cod_rounds
+qs::qsave(cod_rounds, 'cod_rounds.qs')
