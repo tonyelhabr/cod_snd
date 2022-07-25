@@ -23,7 +23,10 @@ slim_logs <- logs %>%
   )
 slim_logs
 
-sked |> 
+sked <- hoopR::nba_schedule(2021) |> 
+  janitor::clean_names()
+
+clean_sked <- sked |> 
   filter(series_type == 'playoff', series_title == 'Playoff Series') |> 
   select(game_id, season, home = home_abbreviation, away = away_abbreviation, series_summary) |> 
   mutate(
@@ -36,3 +39,9 @@ sked |>
       .names = '{fn}'
     )
   )
+first_games <- clean_sked |> 
+  filter(line == '1-0' | line == '0-1')
+first_games
+
+cod_rounds |> 
+  group_by(cumu_w, cumu_l)
