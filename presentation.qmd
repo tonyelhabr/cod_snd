@@ -1,5 +1,5 @@
 ---
-title: '"Turned on!": Momentum in Round-Based First Person Shooter Esports'
+title: "They're on Fire: Team Momentum in Round-Based First Person Shooter Esports"
 author: 'Tony ElHabr'
 format:
   revealjs:
@@ -370,13 +370,12 @@ save_plot_for_slide <- function(
     height = width / 1.5,
     units = 'px',
     dpi = .dpi,
-    # game = c('cod', 'val'),
     ...
 ) {
   
   path <- ggsave(
     plot = p,
-    filename = filename,
+    filename = file.path('plots', filename),
     width = width * dpi,
     height = height * dpi,
     units = units,
@@ -509,7 +508,7 @@ p_cod_o_round_win_prop
 save_plot_for_slide(p_cod_o_round_win_prop)
 ```
 
-![](cod_o_round_win_prop.png){fig-align="center"}
+![](plots/cod_o_round_win_prop.png){fig-align="center"}
 
 ## What are your chances of winning the next round ([COD SnD]{.cod})?
 
@@ -583,7 +582,7 @@ p_cod_o_round_win_prop_over_expected
 save_plot_for_slide(p_cod_o_round_win_prop_over_expected)
 ```
 
-![](cod_o_round_win_prop_over_expected.png){fig-align="center"}
+![](plots/cod_o_round_win_prop_over_expected.png){fig-align="center"}
 
 ## What are your chances of winning the next round ([Valorant]{.valorant})?
 
@@ -746,7 +745,7 @@ p_val_o_round_win_prop
 save_plot_for_slide(p_val_o_round_win_prop)
 ```
 
-![](val_o_round_win_prop.png){fig-align="center"}
+![](plots/val_o_round_win_prop.png){fig-align="center"}
 
 ## What are your chances of winning the series ([COD SnD]{.cod})?
 
@@ -798,7 +797,7 @@ p_cod_o_series_win_prop
 save_plot_for_slide(p_cod_o_series_win_prop)
 ```
 
-![](cod_o_series_win_prop.png){fig-align="center"}
+![](plots/cod_o_series_win_prop.png){fig-align="center"}
 
 ## What are your chances of winning the series ([COD SnD]{.cod})?
 
@@ -862,7 +861,7 @@ p_cod_o_series_win_prop_over_expected
 save_plot_for_slide(p_cod_o_series_win_prop_over_expected)
 ```
 
-![](cod_o_series_win_prop_over_expected.png){fig-align="center"}
+![](plots/cod_o_series_win_prop_over_expected.png){fig-align="center"}
 
 ## What are your chances of winning the series ([Valorant]{.valorant})?
 
@@ -887,7 +886,7 @@ p_val_o_series_win_prop
 save_plot_for_slide(p_val_o_series_win_prop)
 ```
 
-![](val_o_series_win_prop.png){fig-align="center"}
+![](plots/val_o_series_win_prop.png){fig-align="center"}
 
 ## What are your chances of winning the series ([Valorant]{.valorant})?
 
@@ -931,7 +930,7 @@ p_val_o_series_win_prop_over_expected
 save_plot_for_slide(p_val_o_series_win_prop_over_expected)
 ```
 
-![](val_o_series_win_prop_over_expected.png){fig-align="center"}
+![](plots/val_o_series_win_prop_over_expected.png){fig-align="center"}
 
 ## What are your chances of winning the series ([Valorant]{.valorant})?
 
@@ -987,7 +986,7 @@ p_filt_val_o_series_win_prop_over_expected
 save_plot_for_slide(p_val_o_series_win_prop_over_expected)
 ```
 
-## Are offensive win %'s different in round 1 ([COD SnD]{.cod}?
+## Are offensive win %'s different in round 1 ([COD SnD]{.cod})?
 
 ```{r}
 #| label: p_cod_o_win_r1_vs_post_round_prop
@@ -1247,9 +1246,6 @@ plot_round_vs_post_round_slope_chart <- function(df, .round, game = c('cod', 'va
 }
 
 cod_res_r1 <- cod_rounds |> 
-  mutate(
-    map = sprintf('%s - %s (%s)', map, game, year)
-  ) |> 
   plot_round_vs_post_round_slope_chart(1, game = 'cod')
 
 p_cod_o_win_r1_vs_post_round_prop <- cod_res_r1$plot +
@@ -1293,9 +1289,9 @@ p_cod_o_win_r1_vs_post_round_prop
 save_plot_for_slide(p_cod_o_win_r1_vs_post_round_prop)
 ```
 
-![](cod_o_win_r1_vs_post_round_prop.png){fig-align="center"}
+![](plots/cod_o_win_r1_vs_post_round_prop.png){fig-align="center"}
 
-## Are offensive win %'s different in round 1 ([Valorant]{.valorant}?
+## Are offensive win %'s different in round 1 ([Valorant]{.valorant})?
 
 ```{r}
 #| label: p_val_o_win_r1_vs_post_round_prop
@@ -1306,9 +1302,9 @@ p_val_o_win_r1_vs_post_round_prop <- val_rounds |>
 save_plot_for_slide(p_val_o_win_r1_vs_post_round_prop)
 ```
 
-![](val_o_win_r1_vs_post_round_prop.png){fig-align="center"}
+![](plots/val_o_win_r1_vs_post_round_prop.png){fig-align="center"}
 
-## What are the most common series winning states?
+## What are the most common series winning states ([COD SnD]{.cod})?
 
 ```{r}
 #| label: p_cod_series_outcome_prop_over_expected
@@ -1323,41 +1319,18 @@ expected_series_streaks_of_outcomes <- function(m, n) {
 }
 
 summarize_streaks <- function(rounds, game = c('cod', 'val')) {
-  rounds <- val_rounds
-  game = 'val'
-  .max_round <- ifelse(game == 'cod', 11, 25)
-  
-  sudden_death_rounds <- rounds |> 
-    filter(max_round > .max_round)
-  
-  rounds1 <- rounds
-  ## should only happen in val
-  if(nrow(sudden_death_rounds) > 0) {
-    
-    sudden_death_series_ids <- sudden_death_rounds |> 
-      distinct(series_id)
-    
-    imputed_suddent_death_rounds <- sudden_death_rounds |> 
-      mutate(
-        round = .max_round
-      ) |> 
-      select(series_id, round, is_offense) |> 
-      inner_join(
-        rounds,
-        by = c('series_id', 'round', 'is_offense')
-      )
-    
-    rounds <- bind_rows(
-      rounds |> 
-        filter(max_round <= .max_round),
-      imputed_suddent_death_rounds
-    )
+  if (game == 'cod') {
+    .max_round <- 11
+    .adj <- 0
+  } else {
+    .max_round <- 25
+    .adj <- 1
   }
   
   cutoff <- (.max_round + 1) / 2
   
   actual_round_streaks <- rounds |> 
-    filter(round <= .max_round) |> 
+    filter(round <= (.max_round - .adj)) |> 
     filter(win_series) |> 
     mutate(across(win_round, as.integer)) |> 
     group_by(series_id) |> 
@@ -1434,115 +1407,239 @@ summarize_streaks <- function(rounds, game = c('cod', 'val')) {
     arrange(p.value)
   
   list(
-    rounds = series_streak_prop,
+    rounds = round_streak_prop,
     series = series_outcome_prop
   )
 }
 
-cod_streaks_res <- cod_rounds |> summarize_streaks(game = 'cod')
-val_streaks_res <- val_rounds |> summarize_streaks(game = 'val')
-cod_long_series_outcome_prop <- cod_streaks_res$series |>
-  select(
-    record,
-    n = n_actual,
-    `3` = prop_actual,
-    `2` = prop_expected,
-    `1` = prop_diff
-  ) |> 
-  pivot_longer(
-    matches('[123]'),
-    names_to = 'outcome_idx',
-    values_to = 'value'
-  ) |> 
-  mutate(across(outcome_idx, as.integer))
-
-cod_max_diff_series_outcome_prop <- cod_long_series_outcome_prop |> 
-  filter(outcome_idx == 1) |> 
-  pull(value) |> 
-  abs() |> 
-  max()
-
-p_cod_series_outcome_prop_over_expected <- cod_long_series_outcome_prop |> 
-  ggplot() +
-  aes(x = record, y = outcome_idx) +
-  geom_tile(
-    data = cod_long_series_outcome_prop |> filter(outcome_idx > 1),
-    show.legend = FALSE,
-    # height = 0.8,
-    aes(fill = value)
-  ) +
-  ggsci::scale_fill_material(
-    palette = 'light-blue'
-  ) +
-  ggnewscale::new_scale_fill() +
-  geom_tile(
-    data = cod_long_series_outcome_prop |> filter(outcome_idx == 1),
-    show.legend = FALSE,
-    height = 0.8,
-    aes(fill = value)
-  ) +
-  scale_fill_gradient2(
-    low = extract_ggsci_mid_color('purple'),
-    high = extract_ggsci_mid_color('green'),
-    mid = 'white',
-    midpoint = 0,
-    limits = c(
-      -cod_max_diff_series_outcome_prop, 
-      +cod_max_diff_series_outcome_prop
+plot_series_outcome_prop_over_expected <- function(series_outcome_prop, game) {
+  if (game == 'cod') {
+    .lvls <- sprintf('6-%d', 0:5)
+    .axis_x_text_size <- 14
+  } else {
+    .lvls <- c(sprintf('13-%d', 0:11), '12-12')
+    .axis_x_text_size <- 12
+  }
+  
+  long_series_outcome_prop <- series_outcome_prop |>
+    select(
+      record,
+      n = n_actual,
+      `3` = prop_actual,
+      `2` = prop_expected,
+      `1` = prop_diff
+    ) |> 
+    pivot_longer(
+      matches('[123]'),
+      names_to = 'outcome_idx',
+      values_to = 'value'
+    ) |> 
+    mutate(
+      across(outcome_idx, as.integer),
+      across(record, ~factor(.x, levels = .lvls))
     )
-  ) +
-  geom_text(
-    data = cod_long_series_outcome_prop |> filter(outcome_idx == 3),
-    color = blackish_background,
-    size = 11 / .pt,
-    aes(label = sprintf('%.1f%%\n(%s)', 100 * value, scales::comma(n)))
-  ) +
-  geom_text(
-    data = cod_long_series_outcome_prop |> filter(outcome_idx == 2),
-    color = blackish_background,
-    size = 11 / .pt,
-    aes(label = sprintf('%.1f%%', 100 * value))
-  ) +
-  geom_text(
-    data = cod_long_series_outcome_prop |> filter(outcome_idx == 1) |> filter(abs(value) != max(abs(value))),
-    color = blackish_background,
-    size = 11 / .pt,
-    aes(label = sprintf('%+.1f%%', 100 * value))
-  ) +
-  geom_text(
-    data = cod_long_series_outcome_prop |> filter(outcome_idx == 1) |> filter(abs(value) == max(abs(value))),
-    color = 'white',
-    size = 11 / .pt,
-    aes(label = sprintf('%+.1f%%', 100 * value))
-  ) +
-  scale_x_discrete(
-    position = 'top',
-    expand = c(0, 0)
-  ) +
-  scale_y_continuous(
-    labels = c('Diff.', 'Expected', 'Actual'),
-    breaks = 1:3,
-    expand = c(0, 0)
-  ) +
-  theme(
-    panel.grid.major = element_blank(),
-    axis.title = element_text(hjust = 0.5),
-    plot.title = ggtext::element_markdown(hjust = 0.5),
-    axis.text = element_text(size = 16, face = 'bold')
-  ) +
-  labs(
-    title = 'Series outcome %',
-    x = NULL,
-    y = NULL
-  ) +
-  common_cod_labs() 
+  
+  max_diff_series_outcome_prop <- long_series_outcome_prop |> 
+    filter(outcome_idx == 1) |> 
+    pull(value) |> 
+    abs() |> 
+    max()
+  
+  long_series_outcome_prop |> 
+    ggplot() +
+    aes(x = record, y = outcome_idx) +
+    geom_tile(
+      data = long_series_outcome_prop |> filter(outcome_idx > 1),
+      show.legend = FALSE,
+      # height = 0.8,
+      aes(fill = value)
+    ) +
+    ggsci::scale_fill_material(
+      palette = 'light-blue'
+    ) +
+    ggnewscale::new_scale_fill() +
+    geom_tile(
+      data = long_series_outcome_prop |> filter(outcome_idx == 1),
+      show.legend = FALSE,
+      height = 0.8,
+      aes(fill = value)
+    ) +
+    scale_fill_gradient2(
+      low = extract_ggsci_mid_color('purple'),
+      high = extract_ggsci_mid_color('green'),
+      mid = 'white',
+      midpoint = 0,
+      limits = c(
+        -max_diff_series_outcome_prop, 
+        +max_diff_series_outcome_prop
+      )
+    ) +
+    geom_text(
+      data = long_series_outcome_prop |> filter(outcome_idx == 3),
+      color = blackish_background,
+      size = 11 / .pt,
+      aes(label = sprintf('%.1f%%\n(%s)', 100 * value, scales::comma(n)))
+    ) +
+    geom_text(
+      data = long_series_outcome_prop |> filter(outcome_idx == 2),
+      color = blackish_background,
+      size = 11 / .pt,
+      aes(label = sprintf('%.1f%%', 100 * value))
+    ) +
+    geom_text(
+      data = long_series_outcome_prop |> filter(outcome_idx == 1) |> filter(abs(value) != max(abs(value))),
+      color = blackish_background,
+      size = 11 / .pt,
+      aes(label = sprintf('%+.1f%%', 100 * value))
+    ) +
+    geom_text(
+      data = long_series_outcome_prop |> filter(outcome_idx == 1) |> filter(abs(value) == max(abs(value))),
+      color = 'white',
+      size = 11 / .pt,
+      aes(label = sprintf('%+.1f%%', 100 * value))
+    ) +
+    scale_x_discrete(
+      position = 'top',
+      expand = c(0, 0)
+    ) +
+    scale_y_continuous(
+      labels = c('Diff.', 'Expected', 'Actual'),
+      breaks = 1:3,
+      expand = c(0, 0)
+    ) +
+    theme(
+      panel.grid.major = element_blank(),
+      axis.title = element_text(hjust = 0.5),
+      plot.title = ggtext::element_markdown(hjust = 0.5),
+      axis.text = element_text(size = 14, face = 'bold'),
+      axis.text.x = element_text(size = .axis_x_text_size, face = 'bold')
+    ) +
+    labs(
+      title = 'Series outcome %',
+      x = NULL,
+      y = NULL
+    )
+}
+
+cod_streaks_res <- cod_rounds |> summarize_streaks('cod')
+
+p_cod_series_outcome_prop_over_expected <- cod_streaks_res$series |> 
+  plot_series_outcome_prop_over_expected('cod') +
+  common_cod_labs()
 p_cod_series_outcome_prop_over_expected
 save_plot_for_slide(p_cod_series_outcome_prop_over_expected)
 ```
 
-![](cod_series_outcome_prop_over_expected.png){fig-align="center"}
+![](plots/cod_series_outcome_prop_over_expected.png){fig-align="center"}
 
-## When do back-to-back round wins occur?
+## What are the most common series winning states ([Valorant]{.valorant})?
+
+```{r}
+#| label: p_val_series_outcome_prop_over_expected
+val_streaks_res <- val_rounds |> summarize_streaks('val')
+
+p_val_series_outcome_prop_over_expected <- val_streaks_res$series |> 
+  plot_series_outcome_prop_over_expected('val') +
+  common_val_labs()
+p_val_series_outcome_prop_over_expected
+save_plot_for_slide(p_val_series_outcome_prop_over_expected)
+```
+
+![](plots/val_series_outcome_prop_over_expected.png)
+
+```{r}
+#| label: altnerative-to-p=0.5-method-1
+## p. 365 on https://math.mit.edu/classes/18.095/2016IAP/lec9/Sports_Mosteller1952_WorldSeries.pdf
+theoretical_cod_series_length <- function(p) {
+  6 * prob_of_series_lasting_n_games(n = 6, p = p, max_round = 11) +
+    7 * prob_of_series_lasting_n_games(n = 7, p = p, max_round = 11) + 
+    8 * prob_of_series_lasting_n_games(n = 8, p = p, max_round = 11) + 
+    9 * prob_of_series_lasting_n_games(n = 9, p = p, max_round = 11) +
+    10 * prob_of_series_lasting_n_games(n = 10, p = p, max_round = 11) +
+    11 * prob_of_series_lasting_n_games(n = 11, p = p, max_round = 11)
+}
+
+cod_ps <- tibble(p = seq(0.5, 0.7, by = 0.0025))
+
+cod_theoretical_series_lengths <- cod_ps |> 
+  mutate(
+    theoretical_series_length = map_dbl(p, theoretical_cod_series_length)
+  )
+
+cod_rounds_per_series <- cod_streaks_res$series |> 
+  summarize(
+    actual = sum(n_rounds * prop_actual),
+    expected = sum(n_rounds * prop_expected)
+  )
+
+cod_theoretical_constant_p <- cod_theoretical_series_lengths |> 
+  mutate(
+    diff = theoretical_series_length - cod_rounds_per_series$actual
+  ) |> 
+  slice_min(abs(diff), n = 1) |> 
+  pull(p)
+cod_theoretical_constant_p
+```
+
+```{r}
+#| label: altnerative-to-p=0.5-method-2
+pluck_cod_n <- function(.n_rounds) {
+  cod_streaks_res$series |>
+    filter(n_rounds == .n_rounds) |> 
+    pull(n_actual)
+}
+
+n6 <- pluck_cod_n(6)
+n7 <- pluck_cod_n(7)
+n8 <- pluck_cod_n(8)
+n9 <- pluck_cod_n(9)
+n10 <- pluck_cod_n(10)
+n11 <- pluck_cod_n(11)
+pm <- pmin(n6, n7, n8, n9, n10, n11)
+n6adj <- round(10 * n6 / pm)
+n7adj <- round(10 * n7 / pm)
+n8adj <- round(10 * n8 / pm)
+n9adj <- round(10 * n9 / pm)
+n10adj <- round(10 * n10 / pm)
+n11adj <- round(10 * n11 / pm)
+
+maximize_cod_series_p <- function(p) {
+  prob_of_series_lasting_n_games(n = 6, p = p, max_round = 11)^n6adj *
+    prob_of_series_lasting_n_games(n = 7, p = p, max_round = 11)^n7adj * 
+    prob_of_series_lasting_n_games(n = 8, p = p, max_round = 11)^n8adj * 
+    prob_of_series_lasting_n_games(n = 9, p = p, max_round = 11)^n9adj *
+    prob_of_series_lasting_n_games(n = 10, p = p, max_round = 11)^n10adj * 
+    prob_of_series_lasting_n_games(n = 11, p = p, max_round = 11)^n11adj
+}
+
+cod_theoretical_constant_p <- cod_ps |> 
+  mutate(
+    theoretical_series_length = map_dbl(p, maximize_cod_series_p)
+  )
+
+cod_theoretical_constant_p <- cod_theoretical_constant_p |> 
+  slice_max(theoretical_series_length, n = 1) |> 
+  pull(p)
+cod_theoretical_constant_p
+
+m <- matrix(c(cod_streaks_res$series$n_actual, cod_streaks_res$series$n_expected), ncol = 2)
+dimnames(m) <- list(n_rounds = as.character(6:11), kind = c('actual', 'expected'))
+ch <- chisq.test(m)
+# ch$expected
+# chance_numbers <- tibble(
+#   league = rep(c('mlb', 'nba', 'nhl'), each = 4),
+#   i = rep(4:7, 3),
+#   a = c(
+#     c(0.1894, 0.215, 0.215, 0.3895),
+#     c(0.1324, 0.25, 0.3382, 0.2794),
+#     c(0.2532, 0.2405, 0.3038, 0.2025)
+#   ),
+#   e = rep(c(0.125, 0.25, 0.3125, 0.3125), 3)
+# )
+# chance_numbers |> filter(league == 'mlb') |> select(a, e) |> chisq.test()
+```
+
+## When do back-to-back round wins occur ([COD SnD]{.cod})?
 
 ```{r}
 #| label: p_cod_b2b_round_win_prop
@@ -1670,8 +1767,8 @@ p_cod_b2b_round_win_prop <- cod_b2b_round_win_prop |>
   b2b_round_win_prop_tile_layer(
     .df = cod_b2b_round_win_prop, 
     .round = 11, 
-    .palette = 'deep-orange
-  ') +
+    .palette = 'deep-orange'
+  ) +
   b2b_round_win_prop_text_layers(.df = cod_b2b_round_win_prop) +
   scale_x_continuous(
     labels = 2:11,
@@ -1733,7 +1830,7 @@ save_plot_for_slide(p_cod_b2b_round_win_prop)
 #   summarize_b2b_round_wins(n_rounds)
 ```
 
-![](cod_b2b_round_win_prop.png){fig-align="center"}
+![](plots/cod_b2b_round_win_prop.png){fig-align="center"}
 
 ## Is there evidence for the "hot hand"?
 
@@ -1981,3 +2078,9 @@ cod_plant_site_win_prop <- c(
 ::: {.column width="15%"}
 :::
 :::
+
+## Winning a next game given the series state
+
+```{r}
+
+```

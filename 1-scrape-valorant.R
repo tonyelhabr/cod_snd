@@ -105,8 +105,12 @@ val_series_outcomes <- init_val_rounds_side |>
     min_cumu_wl = ifelse(cumu_w > cumu_l, cumu_l, cumu_w)
   )
 
-weird_val_series_outcomes <- val_series_outcomes |>
-  filter(max_cumu_wl > 13 & (min_cumu_wl < (max_cumu_wl - 2)))
+init_weird_val_series_outcomes <- bind_rows(
+  val_series_outcomes |>
+    filter(max_cumu_wl > 13 & (min_cumu_wl < (max_cumu_wl - 2))),
+  val_series_outcomes |> 
+    filter(max_cumu_wl < 13)
+)
 
 val_team_mapping <- bind_rows(
   init_val_rounds_side |> 
@@ -202,7 +206,21 @@ val_rounds_side <- init_val_rounds_side |>
     pre_cumu_l = lag(cumu_l, default = 0L)
   ) |> 
   ungroup()
-val_rounds_side
+
+more_weird_val_series_outcomes <- bind_rows(
+  val_rounds_side |> 
+    filter(win_series_1) |> 
+    group_by(series_id, team_1) |> 
+    slice_max(round, n = 1) |> 
+    ungroup() |> 
+    filter(cumu_w <= cumu_l),
+  val_rounds_side |> 
+    filter(!win_series_1) |> 
+    group_by(series_id, team_1) |> 
+    slice_max(round, n = 1) |> 
+    ungroup() |> 
+    filter(cumu_w >= cumu_l)
+)
 
 val_rounds <- bind_rows(
   val_rounds_side |> 
@@ -312,11 +330,30 @@ val_rounds <- bind_rows(
     opponent_series_w
   ) |> 
   anti_join(
-    weird_val_series_outcomes,
-    by = c('round', 'cumu_w', 'cumu_l')
+    init_weird_val_series_outcomes |> distinct(series_id = game_id),
+    by = 'series_id'
+  ) |> 
+  anti_join(
+    more_weird_val_series_outcomes |> distinct(series_id),
+    by = 'series_id'
   )
 qs::qsave(val_rounds, 'valorant_rounds.qs')
 
+# val_rounds |> 
+#   group_by(team, series_id) |> 
+#   slice_max(round, n = 1) |> 
+#   ungroup() |> 
+#   select(
+#     series_id,
+#     team,
+#     opponent,
+#     cumu_w,
+#     cumu_l,
+#     win_series
+#   ) |> 
+#   arrange(series_id, team, opponent) |> 
+#   filter(win_series, cumu_w <= cumu_l)
+# 
 # val_rounds |> 
 #   filter(is_offense) |> 
 #   mutate(
