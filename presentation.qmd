@@ -32,6 +32,8 @@ library(ggtext)
 library(ggsci)
 library(ggnewscale)
 library(magick)
+library(broom)
+library(knitr)
 
 blackish_background <- '#191919' ## to match slide background
 gray_points <- '#4d4d4d'
@@ -127,7 +129,7 @@ add_logo <- function(
 ### Search and Destroy (SnD) in Call of Duty (COD)
 
 -   2020-2022 Call of Duty League (CDL) matches (qualifiers and majors)
--   4v4.
+-   4v4
 -   First to 6 round wins
 -   Teams swap sides (offense and defense) after every round
 :::
@@ -831,6 +833,9 @@ o_series_win_over_expected_text_layer <- function(
   )
 }
 
+
+ggsci_cyan <- extract_ggsci_mid_color('cyan')
+ggsci_brown <- extract_ggsci_mid_color('brown')
 cod_max_diff_win_series_prop <- max(abs(cod_o_win_prop$diff_win_series_prop))
 p_cod_o_series_win_prop_over_expected <- cod_o_win_prop |> 
   ggplot() +
@@ -845,8 +850,8 @@ p_cod_o_series_win_prop_over_expected <- cod_o_win_prop |>
     .labeller = cod_heatmap_div_labeller
   ) +
   scale_fill_gradient2(
-    low = extract_ggsci_mid_color('brown'),
-    high = extract_ggsci_mid_color('cyan'),
+    low = ggsci_brown,
+    high = ggsci_cyan,
     mid = 'white',
     midpoint = 0,
     limits = c(
@@ -914,8 +919,8 @@ p_val_o_series_win_prop_over_expected <- val_o_win_prop |>
   ) +
   val_swap_path() +
   scale_fill_gradient2(
-    low = extract_ggsci_mid_color('brown'),
-    high = extract_ggsci_mid_color('cyan'),
+    low = ggsci_brown,
+    high = ggsci_cyan,
     mid = 'white',
     limits = c(
       -val_max_diff_win_series_prop,
@@ -970,8 +975,8 @@ p_filt_val_o_series_win_prop_over_expected <- filt_val_o_win_prop |>
   ) +
   val_swap_path() +
   scale_fill_gradient2(
-    low = extract_ggsci_mid_color('brown'),
-    high = extract_ggsci_mid_color('cyan'),
+    low = ggsci_brown,
+    high = ggsci_cyan,
     mid = 'white',
     limits = c(
       -filt_val_max_diff_win_series_prop,
@@ -1532,6 +1537,286 @@ save_plot_for_slide(p_cod_series_outcome_prop_over_expected)
 
 ![](plots/cod_series_outcome_prop_over_expected.png){fig-align="center"}
 
+## Should round win percentage in [COD SnD]{.cod} be modeled as constant?
+
+::: fragment
+[Chance (2019)](https://content.iospress.com/articles/journal-of-sports-analytics/jsa200422) finds that probability of winning a game that the title series in the MLB and NHL is **not** constant (at 50%)
+:::
+
+```{r}
+#| label: chance-2019
+chance_2019_leagues <- c('MLB World Series', 'NBA Finals', 'NHL Stanley Cup')
+
+n_sports <- tibble(
+  league = chance_2019_leagues,
+  ## i think nba has to be 2019 instead of 2018 in order for the product of `n * prop_actual` to be a whole number
+  n = c(2018 - 1923, 2019 - 1951, 2018 - 1939)
+)
+
+chance_sports <- tibble(
+  league = rep(chance_2019_leagues, each = 4),
+  games = rep(4:7, 3),
+  prop_actual = c(
+    c(0.1895, 0.2105, 0.2105, 0.3895),
+    c(0.1324, 0.25, 0.3382, 0.2794),
+    c(0.2532, 0.2278, 0.3165, 0.2025)
+  ),
+  prop_expected = rep(c(0.125, 0.25, 0.3125, 0.3125), 3)
+)
+
+sports <- chance_sports |> 
+  inner_join(
+    n_sports,
+    by = 'league'
+  ) |> 
+  mutate(
+    n_actual = round(n * prop_actual)
+  )
+
+generate_chi_label <- function(statistic, p.value) {
+  sprintf('%.1f (%s)', statistic, ifelse(p.value <= 0.01, '<=0.01', as.character(round(p.value, 2))))
+}
+
+chi_sports <- sports |> 
+  nest(data = -c(league)) |> 
+  mutate(
+    chi = map(data, ~chisq.test(.x$n_actual, p = .x$prop_expected) |> broom::tidy())
+  ) |> 
+  select(league, chi) |> 
+  unnest(chi) |> 
+  transmute(
+    league, 
+    label = generate_chi_label(statistic, p.value)
+  )
+
+sports |> 
+  select(league, games, prop_expected, prop_actual) |> 
+  mutate(
+    across(
+      starts_with('prop_'),
+      scales::percent
+    ),
+    across(games, as.character)
+  ) |> 
+  pivot_wider(names_from = league, values_from = prop_actual) |> 
+  bind_rows(
+    bind_cols(
+      tibble(games = 'Avg. # of games'),
+      sports |> 
+        distinct(games, prop_expected) |>
+        summarize(prop_expected = as.character(round(sum(games * prop_expected), 2))),
+      sports |> 
+        group_by(league) |>
+        summarize(z = as.character(round(sum(games * prop_actual), 2))) |> 
+        pivot_wider(names_from = league, values_from = z)
+    )
+  ) |> 
+  bind_rows(
+    chi_sports |> 
+      pivot_wider(names_from = league, values_from = label) |> 
+      mutate(
+        games = '$\\xi^2$ (p-value)'
+      )
+  ) |> 
+  relocate(
+    `Series ends in i games` = games,
+    `Expected` = prop_expected
+  ) |> 
+  knitr::kable()
+```
+
+::: fragment
+|         Series length | Expected | MLB World Series | NBA Finals | NHL Stanley Cup |
+|----------------------:|---------:|-----------------:|-----------:|----------------:|
+|                     4 |   12.50% |           18.95% |     13.24% |          25.32% |
+|                     5 |   25.00% |           21.05% |     25.00% |          22.78% |
+|                     6 |   31.25% |           21.05% |     33.82% |          31.65% |
+|                     7 |   31.25% |           38.95% |     27.94% |          20.25% |
+|                       |          |                  |            |                 |
+|  **Avg. \# of games** |     5.81 |              5.8 |       5.76 |            5.47 |
+| $\xi^2$ **(p-value)** |          |       8.7 (0.03) | 0.4 (0.94) |  13.6 (\<=0.01) |
+:::
+
+```{r}
+#| label: cod_series_outcomes_chi
+
+cod_rounds_per_series <- cod_streaks_res$series |>
+  summarize(
+    actual = sum(n_rounds * prop_actual),
+    expected = sum(n_rounds * prop_expected)
+  )
+avg_actual_cod_rounds_per_series <- round(cod_rounds_per_series$actual, 2)
+avg_expected_cod_rounds_per_series <- round(cod_rounds_per_series$expected, 2)
+
+cod_series_outcomes_chi <- chisq.test(
+  cod_streaks_res$series$n_actual, 
+  p = cod_streaks_res$series$prop_expected
+) |> 
+  broom::tidy() |> 
+  mutate(label = generate_chi_label(statistic, p.value)) |> 
+  pull(label)
+cod_series_outcomes_chi
+```
+
+```{r}
+#| label: cod_series_outcomes_chi-eval
+#| eval: true
+avg_actual_cod_rounds_per_series <- 9.15
+avg_expected_cod_rounds_per_series <- 9.29
+cod_series_outcomes_chi <- '15.4 (<=0.01)'
+```
+
+<br/>
+
+::: fragment
+-   In COD, the average number of rounds (**`r avg_actual_cod_rounds_per_series`**) is less than the expected value (**`r avg_expected_cod_rounds_per_series`**)
+:::
+
+::: fragment
+-   A $\xi^2$ test for CoD demonstrates evidence against the constant probability null hypothesis for winning a given round in an SnD series (**`r cod_series_outcomes_chi`**)
+:::
+
+## Should round win percentage in [COD SnD]{.cod} be modeled as constant?
+
+```{r}
+#| label: alternative-to-p=0.5-method-1
+## p. 365 on https://math.mit.edu/classes/18.095/2016IAP/lec9/Sports_Mosteller1952_WorldSeries.pdf
+theoretical_cod_series_length <- function(p) {
+  6 * prob_of_series_lasting_n_games(n = 6, p = p, max_round = 11) +
+    7 * prob_of_series_lasting_n_games(n = 7, p = p, max_round = 11) + 
+    8 * prob_of_series_lasting_n_games(n = 8, p = p, max_round = 11) + 
+    9 * prob_of_series_lasting_n_games(n = 9, p = p, max_round = 11) +
+    10 * prob_of_series_lasting_n_games(n = 10, p = p, max_round = 11) +
+    11 * prob_of_series_lasting_n_games(n = 11, p = p, max_round = 11)
+}
+
+cod_ps <- tibble(p = seq(0.5, 0.7, by = 0.0025))
+
+cod_theoretical_series_lengths1 <- cod_ps |> 
+  mutate(
+    theoretical_series_length = map_dbl(p, theoretical_cod_series_length),
+    diff = theoretical_series_length - cod_rounds_per_series$actual
+  )
+
+
+cod_theoretical_constant_p1 <- cod_theoretical_series_lengths1 |> 
+  slice_min(abs(diff), n = 1) |> 
+  pull(p)
+
+pretty_cod_theoretical_constant_p1 <- cod_theoretical_constant_p1 |> 
+  scales::percent(accuracy = 0.01)
+```
+
+```{r}
+#| label: alternative-to-p=0.5-method-1-eval
+#| eval: true
+pretty_cod_theoretical_constant_p1 <- '57.25%'
+```
+
+```{r}
+#| label: cod-alternative-to-p=0.5-method-2
+pluck_cod_n <- function(.n_rounds) {
+  cod_streaks_res$series |>
+    filter(n_rounds == .n_rounds) |> 
+    pull(n_actual)
+}
+
+cod_n6 <- pluck_cod_n(6)
+cod_n7 <- pluck_cod_n(7)
+cod_n8 <- pluck_cod_n(8)
+cod_n9 <- pluck_cod_n(9)
+cod_n10 <- pluck_cod_n(10)
+cod_n11 <- pluck_cod_n(11)
+
+## This adjustment is something that is not done in the paper. I do it here to reduce
+##   the magnitude of the exponents.
+cod_pm <- pmin(cod_n6, cod_n7, cod_n8, cod_n9, cod_n10, cod_n11)
+cod_n6adj <- round(10 * cod_n6 / cod_pm)
+cod_n7adj <- round(10 * cod_n7 / cod_pm)
+cod_n8adj <- round(10 * cod_n8 / cod_)
+cod_n9adj <- round(10 * cod_n9 / cod_pm)
+cod_n10adj <- round(10 * cod_n10 / cod_pm)
+cod_n11adj <- round(10 * cod_n11 / cod_pm)
+
+maximize_cod_series_p <- function(p) {
+  prob_of_series_lasting_n_games(n = 6, p = p, max_round = 11)^cod_n6adj *
+    prob_of_series_lasting_n_games(n = 7, p = p, max_round = 11)^cod_n7adj * 
+    prob_of_series_lasting_n_games(n = 8, p = p, max_round = 11)^cod_n8adj * 
+    prob_of_series_lasting_n_games(n = 9, p = p, max_round = 11)^cod_n9adj *
+    prob_of_series_lasting_n_games(n = 10, p = p, max_round = 11)^cod_n10adj * 
+    prob_of_series_lasting_n_games(n = 11, p = p, max_round = 11)^cod_n11adj
+}
+
+cod_theoretical_series_lengths2 <- cod_ps |> 
+  mutate(
+    theoretical_series_length = map_dbl(p, maximize_cod_series_p)
+  )
+
+cod_theoretical_constant_p2 <- cod_theoretical_series_lengths2 |> 
+  slice_max(theoretical_series_length, n = 1) |> 
+  pull(p)
+
+pretty_cod_theoretical_constant_p2 <- cod_theoretical_constant_p2 |> 
+  scales::percent(accuracy = 0.01)
+
+best_cod_theoretical_series_lengths2 <- cod_theoretical_series_lengths2 |> 
+  filter(p == cod_theoretical_constant_p2)
+
+p_cod_theoretical_series_lengths2 <- cod_theoretical_series_lengths2 |> 
+  ggplot() +
+  aes(x = p, y = theoretical_series_length) +
+  geom_line(
+    size = 2,
+    color = 'white'
+  ) +
+  geom_point(
+    data = best_cod_theoretical_series_lengths2,
+    color = ggsci_cyan,
+    size = 6
+  ) +
+  geom_text(
+    data = best_cod_theoretical_series_lengths2,
+    color = ggsci_cyan,
+    size = 13 / .pt,
+    hjust = 0,
+    aes(
+      x = p + 0.02,
+      label = sprintf('Maximum likilihood estimate (MLE) of\nconstant probability of better team winning (%s)', !!pretty_cod_theoretical_constant_p2)
+    )
+  ) +
+  scale_x_continuous(labels = scales::percent) +
+  labs(
+    x = 'Constant probability of better team winning',
+    y = 'Kernel of the multinomial likelihood'
+  ) +
+  theme(
+    axis.text.y = element_blank(),
+    panel.grid.major = element_blank()
+  )
+p_cod_theoretical_series_lengths2
+save_plot_for_slide(p_cod_theoretical_series_lengths2)
+```
+
+```{r}
+#| label: cod-alternative-to-p=0.5-method-2-eval
+#| eval: true
+pretty_cod_theoretical_constant_p2 <- '53.25%'
+```
+
+::: fragment
+[Mosteller (1952)](https://math.mit.edu/classes/18.095/2016IAP/lec9/Sports_Mosteller1952_WorldSeries.pdf) suggests several ways to find the optimal constant probability of the "stronger" team winning each game in a series.
+:::
+
+::: fragment
+-   Using the method of moments approach (Mosteller's method 1), `r pretty_cod_theoretical_constant_p1`
+:::
+
+::: fragment
+-   Using the maximum likelihood approach (Mosteller's method 2), `r pretty_cod_theoretical_constant_p2`
+
+![](plots/cod_theoretical_series_lengths2.png){fig-align="center" width="65%"}
+:::
+
 ## What are the most common series winning states ([Valorant]{.valorant})?
 
 ```{r}
@@ -1546,98 +1831,6 @@ save_plot_for_slide(p_val_series_outcome_prop_over_expected)
 ```
 
 ![](plots/val_series_outcome_prop_over_expected.png)
-
-```{r}
-#| label: altnerative-to-p=0.5-method-1
-## p. 365 on https://math.mit.edu/classes/18.095/2016IAP/lec9/Sports_Mosteller1952_WorldSeries.pdf
-theoretical_cod_series_length <- function(p) {
-  6 * prob_of_series_lasting_n_games(n = 6, p = p, max_round = 11) +
-    7 * prob_of_series_lasting_n_games(n = 7, p = p, max_round = 11) + 
-    8 * prob_of_series_lasting_n_games(n = 8, p = p, max_round = 11) + 
-    9 * prob_of_series_lasting_n_games(n = 9, p = p, max_round = 11) +
-    10 * prob_of_series_lasting_n_games(n = 10, p = p, max_round = 11) +
-    11 * prob_of_series_lasting_n_games(n = 11, p = p, max_round = 11)
-}
-
-cod_ps <- tibble(p = seq(0.5, 0.7, by = 0.0025))
-
-cod_theoretical_series_lengths <- cod_ps |> 
-  mutate(
-    theoretical_series_length = map_dbl(p, theoretical_cod_series_length)
-  )
-
-cod_rounds_per_series <- cod_streaks_res$series |> 
-  summarize(
-    actual = sum(n_rounds * prop_actual),
-    expected = sum(n_rounds * prop_expected)
-  )
-
-cod_theoretical_constant_p <- cod_theoretical_series_lengths |> 
-  mutate(
-    diff = theoretical_series_length - cod_rounds_per_series$actual
-  ) |> 
-  slice_min(abs(diff), n = 1) |> 
-  pull(p)
-cod_theoretical_constant_p
-```
-
-```{r}
-#| label: altnerative-to-p=0.5-method-2
-pluck_cod_n <- function(.n_rounds) {
-  cod_streaks_res$series |>
-    filter(n_rounds == .n_rounds) |> 
-    pull(n_actual)
-}
-
-n6 <- pluck_cod_n(6)
-n7 <- pluck_cod_n(7)
-n8 <- pluck_cod_n(8)
-n9 <- pluck_cod_n(9)
-n10 <- pluck_cod_n(10)
-n11 <- pluck_cod_n(11)
-pm <- pmin(n6, n7, n8, n9, n10, n11)
-n6adj <- round(10 * n6 / pm)
-n7adj <- round(10 * n7 / pm)
-n8adj <- round(10 * n8 / pm)
-n9adj <- round(10 * n9 / pm)
-n10adj <- round(10 * n10 / pm)
-n11adj <- round(10 * n11 / pm)
-
-maximize_cod_series_p <- function(p) {
-  prob_of_series_lasting_n_games(n = 6, p = p, max_round = 11)^n6adj *
-    prob_of_series_lasting_n_games(n = 7, p = p, max_round = 11)^n7adj * 
-    prob_of_series_lasting_n_games(n = 8, p = p, max_round = 11)^n8adj * 
-    prob_of_series_lasting_n_games(n = 9, p = p, max_round = 11)^n9adj *
-    prob_of_series_lasting_n_games(n = 10, p = p, max_round = 11)^n10adj * 
-    prob_of_series_lasting_n_games(n = 11, p = p, max_round = 11)^n11adj
-}
-
-cod_theoretical_constant_p <- cod_ps |> 
-  mutate(
-    theoretical_series_length = map_dbl(p, maximize_cod_series_p)
-  )
-
-cod_theoretical_constant_p <- cod_theoretical_constant_p |> 
-  slice_max(theoretical_series_length, n = 1) |> 
-  pull(p)
-cod_theoretical_constant_p
-
-m <- matrix(c(cod_streaks_res$series$n_actual, cod_streaks_res$series$n_expected), ncol = 2)
-dimnames(m) <- list(n_rounds = as.character(6:11), kind = c('actual', 'expected'))
-ch <- chisq.test(m)
-# ch$expected
-# chance_numbers <- tibble(
-#   league = rep(c('mlb', 'nba', 'nhl'), each = 4),
-#   i = rep(4:7, 3),
-#   a = c(
-#     c(0.1894, 0.215, 0.215, 0.3895),
-#     c(0.1324, 0.25, 0.3382, 0.2794),
-#     c(0.2532, 0.2405, 0.3038, 0.2025)
-#   ),
-#   e = rep(c(0.125, 0.25, 0.3125, 0.3125), 3)
-# )
-# chance_numbers |> filter(league == 'mlb') |> select(a, e) |> chisq.test()
-```
 
 ## When do back-to-back round wins occur ([COD SnD]{.cod})?
 

@@ -330,7 +330,7 @@
 <h3 id="search-and-destroy-snd-in-call-of-duty-cod">Search and Destroy (SnD) in Call of Duty (COD)</h3>
 <ul>
 <li>2020-2022 Call of Duty League (CDL) matches (qualifiers and majors)</li>
-<li>4v4.</li>
+<li>4v4</li>
 <li>First to 6 round wins</li>
 <li>Teams swap sides (offense and defense) after every round</li>
 </ul>
@@ -468,6 +468,115 @@
 <h2>What are the most common series winning states (<span class="cod">COD SnD</span>)?</h2>
 
 <img data-src="plots/cod_series_outcome_prop_over_expected.png" class="r-stretch quarto-figure-center"></section>
+<section id="should-round-win-percentage-in-cod-snd-be-modeled-as-constant" class="slide level2">
+<h2>Should round win percentage in <span class="cod">COD SnD</span> be modeled as constant?</h2>
+<div class="fragment">
+<p><a href="https://content.iospress.com/articles/journal-of-sports-analytics/jsa200422">Chance (2019)</a> finds that probability of winning a game that the title series in the MLB and NHL is <strong>not</strong> constant (at 50%)</p>
+</div>
+<div class="fragment">
+<table>
+<colgroup>
+<col style="width: 28%">
+<col style="width: 12%">
+<col style="width: 22%">
+<col style="width: 15%">
+<col style="width: 21%">
+</colgroup>
+<thead>
+<tr class="header">
+<th style="text-align: right;">Series length</th>
+<th style="text-align: right;">Expected</th>
+<th style="text-align: right;">MLB World Series</th>
+<th style="text-align: right;">NBA Finals</th>
+<th style="text-align: right;">NHL Stanley Cup</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: right;">4</td>
+<td style="text-align: right;">12.50%</td>
+<td style="text-align: right;">18.95%</td>
+<td style="text-align: right;">13.24%</td>
+<td style="text-align: right;">25.32%</td>
+</tr>
+<tr class="even">
+<td style="text-align: right;">5</td>
+<td style="text-align: right;">25.00%</td>
+<td style="text-align: right;">21.05%</td>
+<td style="text-align: right;">25.00%</td>
+<td style="text-align: right;">22.78%</td>
+</tr>
+<tr class="odd">
+<td style="text-align: right;">6</td>
+<td style="text-align: right;">31.25%</td>
+<td style="text-align: right;">21.05%</td>
+<td style="text-align: right;">33.82%</td>
+<td style="text-align: right;">31.65%</td>
+</tr>
+<tr class="even">
+<td style="text-align: right;">7</td>
+<td style="text-align: right;">31.25%</td>
+<td style="text-align: right;">38.95%</td>
+<td style="text-align: right;">27.94%</td>
+<td style="text-align: right;">20.25%</td>
+</tr>
+<tr class="odd">
+<td style="text-align: right;"></td>
+<td style="text-align: right;"></td>
+<td style="text-align: right;"></td>
+<td style="text-align: right;"></td>
+<td style="text-align: right;"></td>
+</tr>
+<tr class="even">
+<td style="text-align: right;"><strong>Avg. # of games</strong></td>
+<td style="text-align: right;">5.81</td>
+<td style="text-align: right;">5.8</td>
+<td style="text-align: right;">5.76</td>
+<td style="text-align: right;">5.47</td>
+</tr>
+<tr class="odd">
+<td style="text-align: right;"><span class="math inline">\(\xi^2\)</span> <strong>(p-value)</strong></td>
+<td style="text-align: right;"></td>
+<td style="text-align: right;">8.7 (0.03)</td>
+<td style="text-align: right;">0.4 (0.94)</td>
+<td style="text-align: right;">13.6 (&lt;=0.01)</td>
+</tr>
+</tbody>
+</table>
+</div>
+<p><br></p>
+<div class="fragment">
+<ul>
+<li>In COD, the average number of rounds (<strong>9.15</strong>) is less than the expected value (<strong>9.29</strong>)</li>
+</ul>
+</div>
+<div class="fragment">
+<ul>
+<li>A <span class="math inline">\(\xi^2\)</span> test for CoD demonstrates evidence against the constant probability null hypothesis for winning a given round in an SnD series (<strong>15.4 (&lt;=0.01)</strong>)</li>
+</ul>
+</div>
+</section>
+<section id="should-round-win-percentage-in-cod-snd-be-modeled-as-constant-1" class="slide level2">
+<h2>Should round win percentage in <span class="cod">COD SnD</span> be modeled as constant?</h2>
+<div class="fragment">
+<p><a href="https://math.mit.edu/classes/18.095/2016IAP/lec9/Sports_Mosteller1952_WorldSeries.pdf">Mosteller (1952)</a> suggests several ways to find the optimal constant probability of the “stronger” team winning each game in a series.</p>
+</div>
+<div class="fragment">
+<ul>
+<li>Using the method of moments approach (Mosteller’s method 1), 57.25%</li>
+</ul>
+</div>
+<div class="fragment">
+<ul>
+<li>Using the maximum likelihood approach (Mosteller’s method 2), 53.25%</li>
+</ul>
+<div class="quarto-figure quarto-figure-center">
+<figure>
+<p><img data-src="plots/cod_theoretical_series_lengths2.png" style="width:65.0%"></p>
+</figure>
+</div>
+</div>
+</section>
 <section id="what-are-the-most-common-series-winning-states-valorant" class="slide level2">
 <h2>What are the most common series winning states (<span class="valorant">Valorant</span>)?</h2>
 
