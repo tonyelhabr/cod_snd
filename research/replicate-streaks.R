@@ -27,7 +27,7 @@ simulate_post_streak_prob <- function(sims = 1000, ...) {
 
 runs <- crossing(
   n = 1:100,
-  k = 1:5,
+  k = 1:4,
   p = c(0.25, 0.5, 0.75)
 ) |> 
   mutate(
@@ -35,6 +35,8 @@ runs <- crossing(
   )
 
 p_streaks <- runs |>
+  filter(k != 5) |> 
+  filter(!is.nan(next_p)) |> 
   arrange(n, k) |>
   mutate(
     across(k, factor),
@@ -44,7 +46,11 @@ p_streaks <- runs |>
   theme_minimal() +
   aes(x = n, y = next_p, color = k, group = group) +
   geom_step() +
+  # eom_smooth(method = 'gam', formula = y ~ s(x, bs = 'cs'), se = FALSE) +
+  # geom_smooth(method = 'lm', formula = y ~ poly(x, 2)) +
+  # geom_smooth(method = 'loess', formula = y ~ x, se = FALSE) +
   # facet_wrap(~p, scales = 'free_y') +
-  geom_hline(aes( yintercept = p))
+  geom_hline(aes( yintercept = p)) +
+  labs(x = NULL, y = NULL)
 p_streaks
-ggsave(p_streaks, filename = 'research/streaks.png', width = 12, height = 6)
+ggsave(p_streaks, filename = 'research/npk_replicated.png', width = 12, height = 9)
