@@ -287,7 +287,7 @@ val_rounds <- bind_rows(
       group_by(series_id, match_id) |> 
       slice_max(round, n = 1, with_ties = FALSE) |> 
       ungroup() |> 
-      select(series_id, match_id, max_round = round),
+      select(series_id, match_id, n_rounds = round),
     by = 'series_id'
   ) |> 
   inner_join(
@@ -314,7 +314,7 @@ val_rounds <- bind_rows(
     team,
     opponent,
     round,
-    max_round,
+    n_rounds,
     is_offense,
     team_buy_type,
     opponent_buy_type,
