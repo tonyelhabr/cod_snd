@@ -1063,552 +1063,6 @@ save_plot_for_slide(p_filt_val_o_series_win_prop_over_expected)
 
 ![](plots/filt_val_o_series_win_prop_over_expected.png){fig-align="center"}
 
-## Are offensive win %'s different in round 1 ([COD SnD]{.cod})?
-
-```{r}
-#| label: p_cod_o_win_r1_vs_post_round_prop
-# https://raw.githubusercontent.com/dgrtwo/splittestr/master/R/vectorized-prop-test.R
-vectorized_prop_test_approx <- function(a, b, c, d) {
-  n1 <- a + b
-  n2 <- c + d
-  n <- n1 + n2
-  p <- (a + c) / n
-  E <- cbind(p * n1, (1 - p) * n1, p * n2, (1 - p) * n2)
-  
-  x <- cbind(a, b, c, d)
-  
-  DELTA <- a / n1 - c / n2
-  YATES <- pmin(.5, abs(DELTA) / sum(1 / n1 + 1 / n2))
-  
-  STATISTIC <- rowSums((abs(x - E) - YATES)^2 / E)
-  PVAL <- pchisq(STATISTIC, 1, lower.tail = FALSE)
-  PVAL
-}
-
-vectorized_prop_test_exact <- function(a, b, c, d) {
-  sapply(seq_along(a), function(i) {
-    fisher.test(cbind(c(a[i], c[i]), c(b[i], d[i])))$p.value
-  })
-}
-
-vectorized_prop_test <- function(x1, n1, x2, n2, conf.level = .95) {
-  a <- x1
-  b <- n1 - x1
-  c <- x2
-  d <- n2 - x2
-  
-  # if any values are < 20, use Fisher's exact test
-  exact <- (a < 20 | b < 20 | c < 20 | d < 20)
-  
-  pvalue <- rep(NA, length(a))
-  
-  if (any(exact)) {
-    pvalue[exact] <- vectorized_prop_test_exact(a[exact], b[exact], c[exact], d[exact])
-  }
-  if (any(!exact)) {
-    pvalue[!exact] <- vectorized_prop_test_approx(a[!exact], b[!exact], c[!exact], d[!exact])
-  }
-  
-  mu1 <- a / (a + b)
-  mu2 <- c / (c + d)
-  
-  ## confidence interval
-  alpha2 <- (1 - conf.level) / 2
-  DELTA <- mu2 - mu1
-  WIDTH <- qnorm(alpha2)
-  alpha <- (a + .5) / (a + b + 1)
-  beta <- (c + .5) / (c + d + 1)
-  
-  n <- n1 + n2
-  YATES <- pmin(.5, abs(DELTA) / sum(1 / n1 + 1 / n2))
-  
-  z <- qnorm((1 + conf.level) / 2)
-  WIDTH <- z * sqrt(mu1 * (1 - mu1) / n1 + mu2 * (1 - mu2) / n2)
-  
-  tibble(
-    estimate = DELTA,
-    conf.low = pmax(DELTA - WIDTH, -1),
-    conf.high = pmin(DELTA + WIDTH, 1),
-    p.value = pvalue
-  )
-}
-
-calculate_map_o_round_win_prop <- function(df) {
-  df |> 
-    count(map, is_offense, win_round) |> 
-    group_by(map, is_offense) |> 
-    mutate(total = sum(n), prop = n / total) |> 
-    ungroup() |>
-    filter(win_round, is_offense) |>
-    select(
-      map,
-      rounds_won = n,
-      total_rounds = total,
-      win_round_prop = prop
-    ) |>
-    arrange(desc(win_round_prop))
-}
-
-summarize_map_o_round_win_prop <- function(df, .round) {
-  
-  specified_round <- df |> 
-    filter(round == .round) |> 
-    calculate_map_o_round_win_prop()
-  
-  post_rounds <- df |> 
-    filter(round > .round) |> 
-    calculate_map_o_round_win_prop()
-  
-  specified_round |> 
-    inner_join(
-      post_rounds |> rename_with(~sprintf('post_%s', .x), -c(map)),
-      by = 'map'
-    ) |> 
-    mutate(round = .round, .after = 'map') |> 
-    arrange(desc(win_round_prop)) |> 
-    mutate(
-      prop_test = vectorized_prop_test(rounds_won, total_rounds, post_rounds_won, post_total_rounds),
-      p_value = prop_test$p.value
-    ) |> 
-    arrange(p_value) |> 
-    mutate(
-      diff_prop = post_win_round_prop - win_round_prop,
-      dir = factor(sign(diff_prop)),
-      is_significant = p_value < 0.05
-    )
-}
-
-o_win_rx_prop_pal <- c(
-  `-1` = extract_ggsci_mid_color('pink'),
-  `1` = extract_ggsci_mid_color('teal')
-)
-
-arw <- arrow(length = unit(5, 'pt'), type = 'closed')
-
-plot_round_vs_post_round_slope_chart <- function(df, .round, game = c('cod', 'val')) {
-  game <- match.arg(game)
-  o_win_rx_prop <- summarize_map_o_round_win_prop(df, .round)
-  x1_label <- sprintf('Round %d<br/>offensive win %%', .round)
-  x2_label <- sprintf('Post-round %d<br/>offensive win %%', .round)
-  
-  min_o_win_rx_prop <- o_win_rx_prop |> slice_min(diff_prop, n = 1)
-  max_o_win_rx_prop <- o_win_rx_prop |> slice_max(diff_prop, n = 1)
-  minmax_maps <- c(min_o_win_rx_prop$map, max_o_win_rx_prop$map)
-  
-  is_cod <- game == 'cod'
-  if (is_cod) {
-    y_lo <- 0.25
-    y_hi <- 0.75
-  } else {
-    y_lo <- 0.45
-    y_hi <- 0.55
-  }
-  
-  p <- o_win_rx_prop |> 
-    ggplot() +
-    geom_vline(
-      data = tibble(),
-      aes(xintercept = c(1, 2)), 
-      color = gray_points
-    ) +
-    geom_hline(
-      data = tibble(),
-      aes(yintercept = c(y_lo, 0.5, y_hi)), 
-      linetype = 2,
-      color = gray_points
-    ) +
-    geom_segment(
-      data = o_win_rx_prop |> 
-        mutate(
-          big_segment = map %in% minmax_maps
-        ),
-      show.legend = FALSE,
-      aes(
-        x = 1,
-        xend = 2,
-        y = win_round_prop,
-        yend = post_win_round_prop,
-        color = dir,
-        size = big_segment,
-        group = map
-      )
-    ) +
-    geom_text(
-      data = tibble(
-        y = c(y_lo, y_hi)
-      ) |> 
-        mutate(
-          lab = sprintf('%s%%', round(100 * y))
-        ),
-      aes(x = 2, y = y, label = lab), 
-      size = 12 / .pt,
-      hjust = -0.05,
-      vjust = -0.25,
-      fontface = 'bold',
-      color = 'white'
-    ) +
-    ggtext::geom_richtext(
-      fill = blackish_background, 
-      label.color = NA,
-      data = tibble(
-        x = c(1, 2),
-        y = rep(0.7, 2),
-        lab = c(x1_label, x2_label)
-      ),
-      aes(x = x, y = y, label = lab), 
-      size = 9 / .pt,
-      hjust = 0.5,
-      vjust = 0.5,
-      family = font,
-      fontface = 'bold',
-      color = 'white'
-    ) +
-    ggrepel::geom_text_repel(
-      data = o_win_rx_prop |> 
-        filter(map %in% !!minmax_maps),
-      aes(x = 1, y = win_round_prop, label = map),
-      family = font,
-      fontface = 'bold',
-      color = 'white',
-      size = 9 / .pt,
-      hjust = 'right', 
-      nudge_x = -0.1,
-      direction = 'y'
-    ) +
-    ggrepel::geom_text_repel(
-      data = o_win_rx_prop |> 
-        filter(!(map %in% !!minmax_maps)),
-      aes(x = 2, y = post_win_round_prop, label = map),
-      family = font,
-      color = gray_text,
-      size = 9 / .pt,
-      hjust = 'left', 
-      nudge_x = 0.1,
-      direction = 'y'
-    ) +
-    scale_x_continuous(
-      position = 'top',
-      breaks = c(1, 2),
-      expand = expansion(mult = 0.5)
-    ) +
-    scale_y_continuous(
-      limits = c(y_lo, y_hi)
-    ) +
-    scale_size_manual(
-      values = c(
-        `FALSE` = 0.5,
-        `TRUE` = 2
-      )
-    ) +
-    scale_color_manual(
-      name = NULL,
-      values = o_win_rx_prop_pal
-    ) +
-    theme(
-      plot.title = element_text(hjust = 0.5),
-      panel.grid.major = element_blank(),
-      axis.text.x = element_blank(),
-      axis.text.y = element_blank()
-    ) +
-    labs(
-      x = NULL,
-      y = NULL
-    )
-  list(
-    plot = p,
-    data = o_win_rx_prop,
-    largest_neg_diff_prop = min_o_win_rx_prop$diff_prop,
-    largest_pos_diff_prop = max_o_win_rx_prop$diff_prop
-  )
-}
-
-cod_res_r1 <- cod_rounds |> 
-  plot_round_vs_post_round_slope_chart(1, game = 'cod')
-
-p_cod_o_win_r1_vs_post_round_prop <- cod_res_r1$plot +
-  geom_curve(
-    data = tibble(),
-    aes(x = 1.2, y = 0.65, xend = 1.1, yend = 0.63),
-    curvature = 0.2, 
-    color = o_win_rx_prop_pal[["-1"]], 
-    arrow = arw
-  ) +
-  geom_curve(
-    data = tibble(),
-    aes(x = 1.24, y = 0.27, xend = 1.1, yend = 0.27),
-    curvature = 0-.2, 
-    color = o_win_rx_prop_pal[["1"]], 
-    arrow = arw
-  ) +
-  geom_text(
-    data = tibble(
-      x = c(1.2, 1.24),
-      y = c(0.65, 0.27),
-      hjust = c(0, 0),
-      vjust = c(0.5, 0.5),
-      lab = c(
-        sprintf(
-          'Largest negative percent difference in round 1\nvs. all other round win percentages (%+.0f%%).', 
-          100 * cod_res_r1$largest_neg_diff_prop
-        ),
-        sprintf(
-          'Largest positive percent difference (%+.0f%%).\nOnly significant difference (p value < 0.01).',
-          100 * cod_res_r1$largest_pos_diff_prop
-        )
-      )
-    ),
-    color = 'white',
-    size = 9 / .pt,
-    aes(x = x, y = y, hjust = hjust, vjust = vjust, label = lab)
-  ) +
-  common_cod_labs()
-p_cod_o_win_r1_vs_post_round_prop
-save_plot_for_slide(p_cod_o_win_r1_vs_post_round_prop)
-```
-
-![](plots/cod_o_win_r1_vs_post_round_prop.png){fig-align="center"}
-
-## Are offensive win %'s different in round 1 ([Valorant]{.valorant})?
-
-```{r}
-#| label: p_val_o_win_r1_vs_post_round_prop
-p_val_o_win_r1_vs_post_round_prop <- val_rounds |> 
-  plot_round_vs_post_round_slope_chart(1, game = 'val') |> 
-  pluck('plot') +
-  common_val_labs()
-save_plot_for_slide(p_val_o_win_r1_vs_post_round_prop)
-```
-
-![](plots/val_o_win_r1_vs_post_round_prop.png){fig-align="center"}
-
-## What are the most common series winning states ([COD SnD]{.cod})?
-
-```{r}
-#| label: p_cod_series_outcome_prop_over_expected
-# https://content.iospress.com/articles/journal-of-sports-analytics/jsa200422
-prob_of_series_lasting_n_games <- function(n, p = 0.5, max_round) {
-  s <- ceiling(max_round / 2)
-  (factorial(n - 1) / (factorial(s - 1) * factorial(n - s))) * (p^s * (1 - p)^(n - s) + p^(n - s) * (1 - p)^s)
-}
-
-expected_series_streaks_of_outcomes <- function(m, n) {
-  factorial(m + n) / (factorial(m) * factorial(n))
-}
-
-summarize_streaks <- function(rounds, game = c('cod', 'val')) {
-  if (game == 'cod') {
-    .max_round <- 11
-    .adj <- 0
-  } else {
-    .max_round <- 25
-    .adj <- 1
-  }
-  
-  cutoff <- (.max_round + 1) / 2
-  
-  actual_round_streaks <- rounds |> 
-    filter(round <= (.max_round - .adj)) |> 
-    filter(win_series) |> 
-    mutate(across(win_round, as.integer)) |> 
-    group_by(series_id) |> 
-    summarize(
-      wins = max(cumu_w),
-      losses = max(cumu_l),
-      ws = paste0(win_round, collapse = '')
-    ) |> 
-    ungroup() |> 
-    mutate(n_rounds = wins + losses) |> 
-    unite(
-      record, wins, losses, sep = '-'
-    ) |>
-    count(record, n_rounds, ws, sort = TRUE) |> 
-    mutate(prop = n / sum(n))
-  
-  expected_round_streaks <- tibble(
-    n_rounds = cutoff:.max_round
-  ) |> 
-    mutate(
-      series_prop = map_dbl(n_rounds, ~prob_of_series_lasting_n_games(.x, max_round = .max_round)),
-      n_expected_series_streaks = map2_dbl(cutoff, n_rounds - cutoff, expected_series_streaks_of_outcomes)
-    ) |> 
-    transmute(
-      n_rounds,
-      series_prop,
-      prop = series_prop / n_expected_series_streaks
-    )
-  
-  round_streaks <- full_join(
-    actual_round_streaks |> 
-      rename_with(~sprintf('%s_actual', .x), c(n, prop)),
-    expected_round_streaks |> 
-      rename_with(~sprintf('%s_expected', .x), prop),
-    by = 'n_rounds'
-  )
-  
-  round_streak_prop <- round_streaks |> 
-    drop_na() |> 
-    mutate(
-      prop_diff = prop_actual - prop_expected,
-      total_actual = sum(n_actual),
-      n_expected = round(prop_expected * total_actual),
-      p = vectorized_prop_test(n_actual, total_actual, n_expected, total_actual)
-    ) |> 
-    select(-total_actual) |> 
-    unnest_wider(p) |> 
-    arrange(p.value)
-  
-  series_outcomes <- full_join(
-    actual_round_streaks |> 
-      group_by(record, n_rounds) |> 
-      summarize(
-        across(n, sum)
-      ) |> 
-      ungroup() |> 
-      mutate(prop = n / sum(n)) |> 
-      rename_with(~sprintf('%s_actual', .x), c(n, prop)),
-    expected_round_streaks |> 
-      select(n_rounds, prop_expected = series_prop),
-    by = 'n_rounds'
-  )
-  
-  series_outcome_prop <- series_outcomes |> 
-    drop_na() |> 
-    mutate(
-      prop_diff = prop_actual - prop_expected,
-      total_actual = sum(n_actual),
-      n_expected = round(prop_expected * total_actual),
-      p = vectorized_prop_test(n_actual, total_actual, n_expected, total_actual)
-    ) |> 
-    select(-total_actual) |> 
-    unnest_wider(p) |> 
-    arrange(p.value)
-  
-  list(
-    rounds = round_streak_prop,
-    series = series_outcome_prop
-  )
-}
-
-plot_series_outcome_prop_over_expected <- function(series_outcome_prop, game) {
-  if (game == 'cod') {
-    .lvls <- sprintf('6-%d', 0:5)
-    .axis_x_text_size <- 14
-  } else {
-    .lvls <- c(sprintf('13-%d', 0:11), '12-12')
-    .axis_x_text_size <- 12
-  }
-  
-  long_series_outcome_prop <- series_outcome_prop |>
-    select(
-      record,
-      n = n_actual,
-      `3` = prop_actual,
-      `2` = prop_expected,
-      `1` = prop_diff
-    ) |> 
-    pivot_longer(
-      matches('[123]'),
-      names_to = 'outcome_idx',
-      values_to = 'value'
-    ) |> 
-    mutate(
-      across(outcome_idx, as.integer),
-      across(record, ~factor(.x, levels = .lvls))
-    )
-  
-  max_diff_series_outcome_prop <- long_series_outcome_prop |> 
-    filter(outcome_idx == 1) |> 
-    pull(value) |> 
-    abs() |> 
-    max()
-  
-  long_series_outcome_prop |> 
-    ggplot() +
-    aes(x = record, y = outcome_idx) +
-    geom_tile(
-      data = long_series_outcome_prop |> filter(outcome_idx > 1),
-      show.legend = FALSE,
-      # height = 0.8,
-      aes(fill = value)
-    ) +
-    ggsci::scale_fill_material(
-      palette = 'light-blue'
-    ) +
-    ggnewscale::new_scale_fill() +
-    geom_tile(
-      data = long_series_outcome_prop |> filter(outcome_idx == 1),
-      show.legend = FALSE,
-      height = 0.8,
-      aes(fill = value)
-    ) +
-    scale_fill_gradient2(
-      low = extract_ggsci_mid_color('purple'),
-      high = extract_ggsci_mid_color('green'),
-      mid = 'white',
-      midpoint = 0,
-      limits = c(
-        -max_diff_series_outcome_prop, 
-        +max_diff_series_outcome_prop
-      )
-    ) +
-    geom_text(
-      data = long_series_outcome_prop |> filter(outcome_idx == 3),
-      color = blackish_background,
-      size = 11 / .pt,
-      aes(label = sprintf('%.1f%%\n(%s)', 100 * value, scales::comma(n)))
-    ) +
-    geom_text(
-      data = long_series_outcome_prop |> filter(outcome_idx == 2),
-      color = blackish_background,
-      size = 11 / .pt,
-      aes(label = sprintf('%.1f%%', 100 * value))
-    ) +
-    geom_text(
-      data = long_series_outcome_prop |> filter(outcome_idx == 1) |> filter(abs(value) != max(abs(value))),
-      color = blackish_background,
-      size = 11 / .pt,
-      aes(label = sprintf('%+.1f%%', 100 * value))
-    ) +
-    geom_text(
-      data = long_series_outcome_prop |> filter(outcome_idx == 1) |> filter(abs(value) == max(abs(value))),
-      color = 'white',
-      size = 11 / .pt,
-      aes(label = sprintf('%+.1f%%', 100 * value))
-    ) +
-    scale_x_discrete(
-      position = 'top',
-      expand = c(0, 0)
-    ) +
-    scale_y_continuous(
-      labels = c('Diff.', 'Expected', 'Actual'),
-      breaks = 1:3,
-      expand = c(0, 0)
-    ) +
-    theme(
-      panel.grid.major = element_blank(),
-      axis.title = element_text(hjust = 0.5),
-      plot.title = ggtext::element_markdown(hjust = 0.5),
-      axis.text = element_text(size = 14, face = 'bold'),
-      axis.text.x = element_text(size = .axis_x_text_size, face = 'bold')
-    ) +
-    labs(
-      title = 'Series outcome %',
-      x = NULL,
-      y = NULL
-    )
-}
-
-cod_streaks_res <- cod_rounds |> summarize_streaks('cod')
-
-p_cod_series_outcome_prop_over_expected <- cod_streaks_res$series |> 
-  plot_series_outcome_prop_over_expected('cod') +
-  common_cod_labs()
-p_cod_series_outcome_prop_over_expected
-save_plot_for_slide(p_cod_series_outcome_prop_over_expected)
-```
-
-![](plots/cod_series_outcome_prop_over_expected.png){fig-align="center"}
-
 ## Should round win percentage in [COD SnD]{.cod} be modeled as constant?
 
 ::: fragment
@@ -2341,6 +1795,552 @@ cod_plant_site_win_prop <- c(
 ::: {.column width="15%"}
 :::
 :::
+
+## Are offensive win %'s different in round 1 ([COD SnD]{.cod})?
+
+```{r}
+#| label: p_cod_o_win_r1_vs_post_round_prop
+# https://raw.githubusercontent.com/dgrtwo/splittestr/master/R/vectorized-prop-test.R
+vectorized_prop_test_approx <- function(a, b, c, d) {
+  n1 <- a + b
+  n2 <- c + d
+  n <- n1 + n2
+  p <- (a + c) / n
+  E <- cbind(p * n1, (1 - p) * n1, p * n2, (1 - p) * n2)
+  
+  x <- cbind(a, b, c, d)
+  
+  DELTA <- a / n1 - c / n2
+  YATES <- pmin(.5, abs(DELTA) / sum(1 / n1 + 1 / n2))
+  
+  STATISTIC <- rowSums((abs(x - E) - YATES)^2 / E)
+  PVAL <- pchisq(STATISTIC, 1, lower.tail = FALSE)
+  PVAL
+}
+
+vectorized_prop_test_exact <- function(a, b, c, d) {
+  sapply(seq_along(a), function(i) {
+    fisher.test(cbind(c(a[i], c[i]), c(b[i], d[i])))$p.value
+  })
+}
+
+vectorized_prop_test <- function(x1, n1, x2, n2, conf.level = .95) {
+  a <- x1
+  b <- n1 - x1
+  c <- x2
+  d <- n2 - x2
+  
+  # if any values are < 20, use Fisher's exact test
+  exact <- (a < 20 | b < 20 | c < 20 | d < 20)
+  
+  pvalue <- rep(NA, length(a))
+  
+  if (any(exact)) {
+    pvalue[exact] <- vectorized_prop_test_exact(a[exact], b[exact], c[exact], d[exact])
+  }
+  if (any(!exact)) {
+    pvalue[!exact] <- vectorized_prop_test_approx(a[!exact], b[!exact], c[!exact], d[!exact])
+  }
+  
+  mu1 <- a / (a + b)
+  mu2 <- c / (c + d)
+  
+  ## confidence interval
+  alpha2 <- (1 - conf.level) / 2
+  DELTA <- mu2 - mu1
+  WIDTH <- qnorm(alpha2)
+  alpha <- (a + .5) / (a + b + 1)
+  beta <- (c + .5) / (c + d + 1)
+  
+  n <- n1 + n2
+  YATES <- pmin(.5, abs(DELTA) / sum(1 / n1 + 1 / n2))
+  
+  z <- qnorm((1 + conf.level) / 2)
+  WIDTH <- z * sqrt(mu1 * (1 - mu1) / n1 + mu2 * (1 - mu2) / n2)
+  
+  tibble(
+    estimate = DELTA,
+    conf.low = pmax(DELTA - WIDTH, -1),
+    conf.high = pmin(DELTA + WIDTH, 1),
+    p.value = pvalue
+  )
+}
+
+calculate_map_o_round_win_prop <- function(df) {
+  df |> 
+    count(map, is_offense, win_round) |> 
+    group_by(map, is_offense) |> 
+    mutate(total = sum(n), prop = n / total) |> 
+    ungroup() |>
+    filter(win_round, is_offense) |>
+    select(
+      map,
+      rounds_won = n,
+      total_rounds = total,
+      win_round_prop = prop
+    ) |>
+    arrange(desc(win_round_prop))
+}
+
+summarize_map_o_round_win_prop <- function(df, .round) {
+  
+  specified_round <- df |> 
+    filter(round == .round) |> 
+    calculate_map_o_round_win_prop()
+  
+  post_rounds <- df |> 
+    filter(round > .round) |> 
+    calculate_map_o_round_win_prop()
+  
+  specified_round |> 
+    inner_join(
+      post_rounds |> rename_with(~sprintf('post_%s', .x), -c(map)),
+      by = 'map'
+    ) |> 
+    mutate(round = .round, .after = 'map') |> 
+    arrange(desc(win_round_prop)) |> 
+    mutate(
+      prop_test = vectorized_prop_test(rounds_won, total_rounds, post_rounds_won, post_total_rounds),
+      p_value = prop_test$p.value
+    ) |> 
+    arrange(p_value) |> 
+    mutate(
+      diff_prop = post_win_round_prop - win_round_prop,
+      dir = factor(sign(diff_prop)),
+      is_significant = p_value < 0.05
+    )
+}
+
+o_win_rx_prop_pal <- c(
+  `-1` = extract_ggsci_mid_color('pink'),
+  `1` = extract_ggsci_mid_color('teal')
+)
+
+arw <- arrow(length = unit(5, 'pt'), type = 'closed')
+
+plot_round_vs_post_round_slope_chart <- function(df, .round, game = c('cod', 'val')) {
+  game <- match.arg(game)
+  o_win_rx_prop <- summarize_map_o_round_win_prop(df, .round)
+  x1_label <- sprintf('Round %d<br/>offensive win %%', .round)
+  x2_label <- sprintf('Post-round %d<br/>offensive win %%', .round)
+  
+  min_o_win_rx_prop <- o_win_rx_prop |> slice_min(diff_prop, n = 1)
+  max_o_win_rx_prop <- o_win_rx_prop |> slice_max(diff_prop, n = 1)
+  minmax_maps <- c(min_o_win_rx_prop$map, max_o_win_rx_prop$map)
+  
+  is_cod <- game == 'cod'
+  if (is_cod) {
+    y_lo <- 0.25
+    y_hi <- 0.75
+  } else {
+    y_lo <- 0.45
+    y_hi <- 0.55
+  }
+  
+  p <- o_win_rx_prop |> 
+    ggplot() +
+    geom_vline(
+      data = tibble(),
+      aes(xintercept = c(1, 2)), 
+      color = gray_points
+    ) +
+    geom_hline(
+      data = tibble(),
+      aes(yintercept = c(y_lo, 0.5, y_hi)), 
+      linetype = 2,
+      color = gray_points
+    ) +
+    geom_segment(
+      data = o_win_rx_prop |> 
+        mutate(
+          big_segment = map %in% minmax_maps
+        ),
+      show.legend = FALSE,
+      aes(
+        x = 1,
+        xend = 2,
+        y = win_round_prop,
+        yend = post_win_round_prop,
+        color = dir,
+        size = big_segment,
+        group = map
+      )
+    ) +
+    geom_text(
+      data = tibble(
+        y = c(y_lo, y_hi)
+      ) |> 
+        mutate(
+          lab = sprintf('%s%%', round(100 * y))
+        ),
+      aes(x = 2, y = y, label = lab), 
+      size = 12 / .pt,
+      hjust = -0.05,
+      vjust = -0.25,
+      fontface = 'bold',
+      color = 'white'
+    ) +
+    ggtext::geom_richtext(
+      fill = blackish_background, 
+      label.color = NA,
+      data = tibble(
+        x = c(1, 2),
+        y = rep(0.7, 2),
+        lab = c(x1_label, x2_label)
+      ),
+      aes(x = x, y = y, label = lab), 
+      size = 9 / .pt,
+      hjust = 0.5,
+      vjust = 0.5,
+      family = font,
+      fontface = 'bold',
+      color = 'white'
+    ) +
+    ggrepel::geom_text_repel(
+      data = o_win_rx_prop |> 
+        filter(map %in% !!minmax_maps),
+      aes(x = 1, y = win_round_prop, label = map),
+      family = font,
+      fontface = 'bold',
+      color = 'white',
+      size = 9 / .pt,
+      hjust = 'right', 
+      nudge_x = -0.1,
+      direction = 'y'
+    ) +
+    ggrepel::geom_text_repel(
+      data = o_win_rx_prop |> 
+        filter(!(map %in% !!minmax_maps)),
+      aes(x = 2, y = post_win_round_prop, label = map),
+      family = font,
+      color = gray_text,
+      size = 9 / .pt,
+      hjust = 'left', 
+      nudge_x = 0.1,
+      direction = 'y'
+    ) +
+    scale_x_continuous(
+      position = 'top',
+      breaks = c(1, 2),
+      expand = expansion(mult = 0.5)
+    ) +
+    scale_y_continuous(
+      limits = c(y_lo, y_hi)
+    ) +
+    scale_size_manual(
+      values = c(
+        `FALSE` = 0.5,
+        `TRUE` = 2
+      )
+    ) +
+    scale_color_manual(
+      name = NULL,
+      values = o_win_rx_prop_pal
+    ) +
+    theme(
+      plot.title = element_text(hjust = 0.5),
+      panel.grid.major = element_blank(),
+      axis.text.x = element_blank(),
+      axis.text.y = element_blank()
+    ) +
+    labs(
+      x = NULL,
+      y = NULL
+    )
+  list(
+    plot = p,
+    data = o_win_rx_prop,
+    largest_neg_diff_prop = min_o_win_rx_prop$diff_prop,
+    largest_pos_diff_prop = max_o_win_rx_prop$diff_prop
+  )
+}
+
+cod_res_r1 <- cod_rounds |> 
+  plot_round_vs_post_round_slope_chart(1, game = 'cod')
+
+p_cod_o_win_r1_vs_post_round_prop <- cod_res_r1$plot +
+  geom_curve(
+    data = tibble(),
+    aes(x = 1.2, y = 0.65, xend = 1.1, yend = 0.63),
+    curvature = 0.2, 
+    color = o_win_rx_prop_pal[["-1"]], 
+    arrow = arw
+  ) +
+  geom_curve(
+    data = tibble(),
+    aes(x = 1.24, y = 0.27, xend = 1.1, yend = 0.27),
+    curvature = 0-.2, 
+    color = o_win_rx_prop_pal[["1"]], 
+    arrow = arw
+  ) +
+  geom_text(
+    data = tibble(
+      x = c(1.2, 1.24),
+      y = c(0.65, 0.27),
+      hjust = c(0, 0),
+      vjust = c(0.5, 0.5),
+      lab = c(
+        sprintf(
+          'Largest negative percent difference in round 1\nvs. all other round win percentages (%+.0f%%).', 
+          100 * cod_res_r1$largest_neg_diff_prop
+        ),
+        sprintf(
+          'Largest positive percent difference (%+.0f%%).\nOnly significant difference (p value < 0.01).',
+          100 * cod_res_r1$largest_pos_diff_prop
+        )
+      )
+    ),
+    color = 'white',
+    size = 9 / .pt,
+    aes(x = x, y = y, hjust = hjust, vjust = vjust, label = lab)
+  ) +
+  common_cod_labs()
+p_cod_o_win_r1_vs_post_round_prop
+save_plot_for_slide(p_cod_o_win_r1_vs_post_round_prop)
+```
+
+![](plots/cod_o_win_r1_vs_post_round_prop.png){fig-align="center"}
+
+## Are offensive win %'s different in round 1 ([Valorant]{.valorant})?
+
+```{r}
+#| label: p_val_o_win_r1_vs_post_round_prop
+p_val_o_win_r1_vs_post_round_prop <- val_rounds |> 
+  plot_round_vs_post_round_slope_chart(1, game = 'val') |> 
+  pluck('plot') +
+  common_val_labs()
+save_plot_for_slide(p_val_o_win_r1_vs_post_round_prop)
+```
+
+![](plots/val_o_win_r1_vs_post_round_prop.png){fig-align="center"}
+
+## What are the most common series winning states ([COD SnD]{.cod})?
+
+```{r}
+#| label: p_cod_series_outcome_prop_over_expected
+# https://content.iospress.com/articles/journal-of-sports-analytics/jsa200422
+prob_of_series_lasting_n_games <- function(n, p = 0.5, max_round) {
+  s <- ceiling(max_round / 2)
+  (factorial(n - 1) / (factorial(s - 1) * factorial(n - s))) * (p^s * (1 - p)^(n - s) + p^(n - s) * (1 - p)^s)
+}
+
+expected_series_streaks_of_outcomes <- function(m, n) {
+  factorial(m + n) / (factorial(m) * factorial(n))
+}
+
+summarize_streaks <- function(rounds, game = c('cod', 'val')) {
+  if (game == 'cod') {
+    .max_round <- 11
+    .adj <- 0
+  } else {
+    .max_round <- 25
+    .adj <- 1
+  }
+  
+  cutoff <- (.max_round + 1) / 2
+  
+  actual_round_streaks <- rounds |> 
+    filter(round <= (.max_round - .adj)) |> 
+    filter(win_series) |> 
+    mutate(across(win_round, as.integer)) |> 
+    group_by(series_id) |> 
+    summarize(
+      wins = max(cumu_w),
+      losses = max(cumu_l),
+      ws = paste0(win_round, collapse = '')
+    ) |> 
+    ungroup() |> 
+    mutate(n_rounds = wins + losses) |> 
+    unite(
+      record, wins, losses, sep = '-'
+    ) |>
+    count(record, n_rounds, ws, sort = TRUE) |> 
+    mutate(prop = n / sum(n))
+  
+  expected_round_streaks <- tibble(
+    n_rounds = cutoff:.max_round
+  ) |> 
+    mutate(
+      series_prop = map_dbl(n_rounds, ~prob_of_series_lasting_n_games(.x, max_round = .max_round)),
+      n_expected_series_streaks = map2_dbl(cutoff, n_rounds - cutoff, expected_series_streaks_of_outcomes)
+    ) |> 
+    transmute(
+      n_rounds,
+      series_prop,
+      prop = series_prop / n_expected_series_streaks
+    )
+  
+  round_streaks <- full_join(
+    actual_round_streaks |> 
+      rename_with(~sprintf('%s_actual', .x), c(n, prop)),
+    expected_round_streaks |> 
+      rename_with(~sprintf('%s_expected', .x), prop),
+    by = 'n_rounds'
+  )
+  
+  round_streak_prop <- round_streaks |> 
+    drop_na() |> 
+    mutate(
+      prop_diff = prop_actual - prop_expected,
+      total_actual = sum(n_actual),
+      n_expected = round(prop_expected * total_actual),
+      p = vectorized_prop_test(n_actual, total_actual, n_expected, total_actual)
+    ) |> 
+    select(-total_actual) |> 
+    unnest_wider(p) |> 
+    arrange(p.value)
+  
+  series_outcomes <- full_join(
+    actual_round_streaks |> 
+      group_by(record, n_rounds) |> 
+      summarize(
+        across(n, sum)
+      ) |> 
+      ungroup() |> 
+      mutate(prop = n / sum(n)) |> 
+      rename_with(~sprintf('%s_actual', .x), c(n, prop)),
+    expected_round_streaks |> 
+      select(n_rounds, prop_expected = series_prop),
+    by = 'n_rounds'
+  )
+  
+  series_outcome_prop <- series_outcomes |> 
+    drop_na() |> 
+    mutate(
+      prop_diff = prop_actual - prop_expected,
+      total_actual = sum(n_actual),
+      n_expected = round(prop_expected * total_actual),
+      p = vectorized_prop_test(n_actual, total_actual, n_expected, total_actual)
+    ) |> 
+    select(-total_actual) |> 
+    unnest_wider(p) |> 
+    arrange(p.value)
+  
+  list(
+    rounds = round_streak_prop,
+    series = series_outcome_prop
+  )
+}
+
+plot_series_outcome_prop_over_expected <- function(series_outcome_prop, game) {
+  if (game == 'cod') {
+    .lvls <- sprintf('6-%d', 0:5)
+    .axis_x_text_size <- 14
+  } else {
+    .lvls <- c(sprintf('13-%d', 0:11), '12-12')
+    .axis_x_text_size <- 12
+  }
+  
+  long_series_outcome_prop <- series_outcome_prop |>
+    select(
+      record,
+      n = n_actual,
+      `3` = prop_actual,
+      `2` = prop_expected,
+      `1` = prop_diff
+    ) |> 
+    pivot_longer(
+      matches('[123]'),
+      names_to = 'outcome_idx',
+      values_to = 'value'
+    ) |> 
+    mutate(
+      across(outcome_idx, as.integer),
+      across(record, ~factor(.x, levels = .lvls))
+    )
+  
+  max_diff_series_outcome_prop <- long_series_outcome_prop |> 
+    filter(outcome_idx == 1) |> 
+    pull(value) |> 
+    abs() |> 
+    max()
+  
+  long_series_outcome_prop |> 
+    ggplot() +
+    aes(x = record, y = outcome_idx) +
+    geom_tile(
+      data = long_series_outcome_prop |> filter(outcome_idx > 1),
+      show.legend = FALSE,
+      # height = 0.8,
+      aes(fill = value)
+    ) +
+    ggsci::scale_fill_material(
+      palette = 'light-blue'
+    ) +
+    ggnewscale::new_scale_fill() +
+    geom_tile(
+      data = long_series_outcome_prop |> filter(outcome_idx == 1),
+      show.legend = FALSE,
+      height = 0.8,
+      aes(fill = value)
+    ) +
+    scale_fill_gradient2(
+      low = extract_ggsci_mid_color('purple'),
+      high = extract_ggsci_mid_color('green'),
+      mid = 'white',
+      midpoint = 0,
+      limits = c(
+        -max_diff_series_outcome_prop, 
+        +max_diff_series_outcome_prop
+      )
+    ) +
+    geom_text(
+      data = long_series_outcome_prop |> filter(outcome_idx == 3),
+      color = blackish_background,
+      size = 11 / .pt,
+      aes(label = sprintf('%.1f%%\n(%s)', 100 * value, scales::comma(n)))
+    ) +
+    geom_text(
+      data = long_series_outcome_prop |> filter(outcome_idx == 2),
+      color = blackish_background,
+      size = 11 / .pt,
+      aes(label = sprintf('%.1f%%', 100 * value))
+    ) +
+    geom_text(
+      data = long_series_outcome_prop |> filter(outcome_idx == 1) |> filter(abs(value) != max(abs(value))),
+      color = blackish_background,
+      size = 11 / .pt,
+      aes(label = sprintf('%+.1f%%', 100 * value))
+    ) +
+    geom_text(
+      data = long_series_outcome_prop |> filter(outcome_idx == 1) |> filter(abs(value) == max(abs(value))),
+      color = 'white',
+      size = 11 / .pt,
+      aes(label = sprintf('%+.1f%%', 100 * value))
+    ) +
+    scale_x_discrete(
+      position = 'top',
+      expand = c(0, 0)
+    ) +
+    scale_y_continuous(
+      labels = c('Diff.', 'Expected', 'Actual'),
+      breaks = 1:3,
+      expand = c(0, 0)
+    ) +
+    theme(
+      panel.grid.major = element_blank(),
+      axis.title = element_text(hjust = 0.5),
+      plot.title = ggtext::element_markdown(hjust = 0.5),
+      axis.text = element_text(size = 14, face = 'bold'),
+      axis.text.x = element_text(size = .axis_x_text_size, face = 'bold')
+    ) +
+    labs(
+      title = 'Series outcome %',
+      x = NULL,
+      y = NULL
+    )
+}
+
+cod_streaks_res <- cod_rounds |> summarize_streaks('cod')
+
+p_cod_series_outcome_prop_over_expected <- cod_streaks_res$series |> 
+  plot_series_outcome_prop_over_expected('cod') +
+  common_cod_labs()
+p_cod_series_outcome_prop_over_expected
+save_plot_for_slide(p_cod_series_outcome_prop_over_expected)
+```
+
+![](plots/cod_series_outcome_prop_over_expected.png){fig-align="center"}
 
 ## Winning a next game given the series state
 
