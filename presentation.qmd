@@ -1,5 +1,5 @@
 ---
-title: "They're on Fire: Team Momentum in Round-Based First Person Shooter Esports"
+title: "They're Clutching up! Team Momentum in Round-Based Esports"
 author: 'Tony ElHabr'
 format:
   revealjs:
@@ -143,7 +143,7 @@ add_logo <- function(
 -   5v5
 -   First to 13 round wins
 -   One team plays offense in 12 consecutive rounds before swapping sides
--   Must win by 2 cod_rounds
+-   Must win by 2 rounds
 :::
 
 ## How does a team win a round of COD SnD / Valorant plant/defuse?
@@ -161,7 +161,7 @@ add_logo <- function(
 :::
 
 ::: fragment
-Often the defensive team will try to eliminate all o team members prior to making the defuse, but in some cases, they may try to "ninja" defuse.
+Often the defensive team will try to eliminate all team members prior to making the defuse, but in some cases, they may try to "ninja" defuse.
 :::
 
 ::: fragment
@@ -280,44 +280,7 @@ val_o_win_pct <- scales::percent(val_o_win_prop_const, accuracy = 0.1)
 ## What are your chances of winning the next round ([COD SnD]{.cod})?
 
 ```{r}
-#| label: cod_heatmap_prep
-cod_round_and_series_win_prop_by_side <- cod_rounds |> 
-  group_by(pre_cumu_w, pre_cumu_l, is_offense) |> 
-  summarize(
-    n = n(),
-    across(c(win_round, win_series), sum)
-  ) |> 
-  ungroup() |> 
-  mutate(
-    win_round_prop = win_round / n,
-    win_series_prop = win_series / n
-  )
-
-cod_o_win_prop <- cod_round_and_series_win_prop_by_side |> 
-  filter(is_offense) |> 
-  mutate(
-    diff_win_round_prop = win_round_prop - !!cod_o_win_prop_const
-  )
-
-cod_e_o_win_series_prop <- crossing(
-  pre_cumu_w = 0:5,
-  pre_cumu_l = 0:5
-) |> 
-  mutate(
-    n_remain_max = 11 - (pre_cumu_w + pre_cumu_l),
-    n_remain_w = 6 - pre_cumu_w,
-    ## can i account for offense in this by rotating?
-    e_win_series_prop = map2_dbl(n_remain_w, n_remain_max, ~sum(dbinom(..1:..2, ..2, 0.5)))
-  )
-
-cod_o_win_prop <- cod_o_win_prop |> 
-  inner_join(
-    cod_e_o_win_series_prop |> select(pre_cumu_w, pre_cumu_l, e_win_series_prop),
-    by = c('pre_cumu_w', 'pre_cumu_l')
-  ) |> 
-  mutate(
-    diff_win_series_prop = win_series_prop - e_win_series_prop
-  )
+#| label: cod-funcs
 
 common_cod_labs <- function(...) {
   list(
@@ -415,16 +378,7 @@ heatmap_tile <- function(..., .fill) {
   )
 }
 
-cod_heatmap_seq_labeller <- function(.df, .label, .num) {
-  sprintf(
-    '%s\n(%s/%s)',
-    scales::percent(.df[[.label]], accuracy = 1),
-    scales::comma(.df[[.num]]),
-    scales::comma(.df$n)
-  )
-}
-
-heatmap_text_layer <- function(..., .op, .df, .label, .num, .color, .threshold, .labeller) {
+heatmap_text_layer <- function(..., .op, .df, .label, .num, .color, .threshold, .labeller, .size = 11 / .pt) {
   .df_filt <- .df |> filter(`.op`(.df[[.label]], .threshold))
   if(nrow(.df_filt) == 0) {
     return(list(...))
@@ -434,7 +388,7 @@ heatmap_text_layer <- function(..., .op, .df, .label, .num, .color, .threshold, 
     geom_text(
       data = .df_filt,
       color = .color,
-      size = 11 / .pt,
+      size = .size,
       fontface = 'bold',
       aes(
         label = .labeller(.df = .df_filt, .label = .label, .num = .num),
@@ -458,10 +412,15 @@ heatmap_text_layers <- function(
     .f(.df = .df, .threshold = .threshold, .labeller = .labeller, .emphasize = 'high')
   )
 }
-```
 
-```{r}
-#| label: p_cod_o_round_win_prop
+cod_heatmap_seq_labeller <- function(.df, .label, .num) {
+  sprintf(
+    '%s\n(%s)',
+    scales::percent(.df[[.label]], accuracy = 1), 
+    scales::comma(.df$n)
+  )
+}
+
 o_round_win_text_layer <- function(
     ..., 
     .df,
@@ -487,35 +446,12 @@ o_round_win_text_layer <- function(
       .num = .num,
       .color = .color,
       .threshold = .threshold,
-      .labeller = .labeller
+      .labeller = .labeller,
+      .size = 11 / .pt
     )
   )
 }
 
-p_cod_o_round_win_prop <- cod_o_win_prop |> 
-  ggplot() +
-  common_cod_heatmap_layers() +
-  heatmap_tile(.fill = 'win_round_prop') +
-  heatmap_text_layers(
-    .df = cod_o_win_prop,
-    .f = o_round_win_text_layer,
-    .threshold = 0.52,
-    .labeller = cod_heatmap_seq_labeller
-  ) +
-  ggsci::scale_fill_material('teal') +
-  labs(
-    title = 'Offensive Round Win %'
-  )
-p_cod_o_round_win_prop
-save_plot_for_slide(p_cod_o_round_win_prop)
-```
-
-![](plots/cod_o_round_win_prop.png){fig-align="center"}
-
-## What are your chances of winning the next round ([COD SnD]{.cod})?
-
-```{r}
-#| label: p_cod_o_round_win_prop_over_expected
 cod_heatmap_div_labeller <- function(.df, .label, .num) {
   sprintf(
     '%+.1f\n(%s)', 
@@ -556,6 +492,77 @@ extract_ggsci_mid_color <- function(palette) {
   ggsci::pal_material(palette, n = 3)(2)[2]
 }
 
+ggsci_purple <- extract_ggsci_mid_color('purple')
+ggsci_green <- extract_ggsci_mid_color('green')
+ggsci_cyan <- extract_ggsci_mid_color('cyan')
+ggsci_brown <- extract_ggsci_mid_color('brown')
+```
+
+```{r}
+#| label: cod_rounds-calcs
+cod_round_and_series_win_prop_by_side <- cod_rounds |> 
+  group_by(pre_cumu_w, pre_cumu_l, is_offense) |> 
+  summarize(
+    n = n(),
+    across(c(win_round, win_series), sum)
+  ) |> 
+  ungroup() |> 
+  mutate(
+    win_round_prop = win_round / n,
+    win_series_prop = win_series / n
+  )
+
+cod_e_o_win_series_prop <- crossing(
+  pre_cumu_w = 0:5,
+  pre_cumu_l = 0:5
+) |> 
+  mutate(
+    n_remain_max = 11 - (pre_cumu_w + pre_cumu_l),
+    n_remain_w = 6 - pre_cumu_w,
+    ## can i account for offense in this by rotating?
+    e_win_series_prop = map2_dbl(n_remain_w, n_remain_max, ~sum(dbinom(..1:..2, ..2, 0.5)))
+  )
+
+cod_o_win_prop <- cod_round_and_series_win_prop_by_side |> 
+  filter(is_offense) |> 
+  mutate(
+    diff_win_round_prop = win_round_prop - !!cod_o_win_prop_const
+  ) |> 
+  inner_join(
+    cod_e_o_win_series_prop |> select(pre_cumu_w, pre_cumu_l, e_win_series_prop),
+    by = c('pre_cumu_w', 'pre_cumu_l')
+  ) |> 
+  mutate(
+    diff_win_series_prop = win_series_prop - e_win_series_prop
+  )
+```
+
+```{r}
+#| label: p_cod_o_round_win_prop
+p_cod_o_round_win_prop <- cod_o_win_prop |> 
+  ggplot() +
+  common_cod_heatmap_layers() +
+  heatmap_tile(.fill = 'win_round_prop') +
+  heatmap_text_layers(
+    .df = cod_o_win_prop,
+    .f = o_round_win_text_layer,
+    .threshold = 0.52,
+    .labeller = cod_heatmap_seq_labeller
+  ) +
+  ggsci::scale_fill_material('teal') +
+  labs(
+    title = 'Offensive Round Win %'
+  )
+p_cod_o_round_win_prop
+save_plot_for_slide(p_cod_o_round_win_prop)
+```
+
+![](plots/cod_o_round_win_prop.png){fig-align="center"}
+
+## What are your chances of winning the next round ([COD SnD]{.cod})?
+
+```{r}
+#| label: p_cod_o_round_win_prop_over_expected
 cod_max_diff_win_round_prop <- max(abs(cod_o_win_prop$diff_win_round_prop))
 p_cod_o_round_win_prop_over_expected <- cod_o_win_prop |> 
   ggplot() +
@@ -568,8 +575,8 @@ p_cod_o_round_win_prop_over_expected <- cod_o_win_prop |>
     .labeller = cod_heatmap_div_labeller
   ) +
   scale_fill_gradient2(
-    low = extract_ggsci_mid_color('purple'),
-    high = extract_ggsci_mid_color('green'),
+    low = ggsci_purple,
+    high = ggsci_green,
     mid = 'white',
     midpoint = 0,
     limits = c(
@@ -589,24 +596,7 @@ save_plot_for_slide(p_cod_o_round_win_prop_over_expected)
 ## What are your chances of winning the next round ([Valorant]{.valorant})?
 
 ```{r}
-val_round_and_series_win_prop_by_side <- val_rounds |> 
-  group_by(pre_cumu_w, pre_cumu_l, is_offense) |> 
-  summarize(
-    n = n(),
-    across(c(win_round, win_series), sum)
-  ) |> 
-  ungroup() |> 
-  mutate(
-    win_round_prop = win_round / n,
-    win_series_prop = win_series / n
-  )
-
-val_o_win_prop <- val_round_and_series_win_prop_by_side |> 
-  filter(is_offense) |> 
-  mutate(
-    diff_win_round_prop = win_round_prop - !!val_o_win_prop_const
-  )
-
+#| label: val-funcs
 drop_25th_round <- function(df) {
   df |> 
     filter(
@@ -626,18 +616,8 @@ val_e_o_win_series_prop <- crossing(
     e_win_series_prop = map2_dbl(n_remain_w, n_remain_max, ~sum(dbinom(..1:..2, ..2, 0.5)))
   )
 
-val_o_win_prop <- val_o_win_prop |> 
-  inner_join(
-    val_e_o_win_series_prop |> select(pre_cumu_w, pre_cumu_l, e_win_series_prop),
-    by = c('pre_cumu_w', 'pre_cumu_l')
-  ) |> 
-  mutate(
-    diff_win_series_prop = win_series_prop - e_win_series_prop
-  ) |> 
-  filter(pre_cumu_w <= 12, pre_cumu_l <= 12) |> 
-  drop_25th_round()
 
-# Joshua Broas, vlr.gg
+## Joshua Broas, vlr.gg
 common_val_labs <- function(...) {
   list(
     ...,
@@ -685,74 +665,12 @@ common_val_heatmap_layers <- function(...) {
 
 val_heatmap_seq_labeller <- function(.df, .label, .num) {
   sprintf(
-    '%s', 
-    scales::percent(.df[[.label]], accuracy = 1)
+    '%s\n(%s)', 
+    scales::percent(.df[[.label]], accuracy = 1), 
+    scales::comma(.df$n)
   )
 }
 
-val_pre_swap_rounds <- val_o_win_prop |> 
-  mutate(pre_cumu_wl = pre_cumu_w + pre_cumu_l) |> 
-  filter(pre_cumu_wl == 12)
-
-val_pre_swap_round_segments <- val_pre_swap_rounds |> 
-  transmute(
-    pre_cumu_w,
-    across(pre_cumu_l, ~.x + 1),
-    i = row_number(),
-    n = 2
-  ) |> 
-  uncount(n) |> 
-  group_by(i) |> 
-  mutate(rn = row_number()) |> 
-  ungroup() |> 
-  mutate(
-    across(pre_cumu_w, ~ifelse(rn == 2, .x + 1, .x))
-  ) |> 
-  add_row(
-    pre_cumu_w = 13,
-    pre_cumu_l = 0
-  )
-
-val_swap_path <- function(...) {
-  list(
-    ...,
-    geom_path(
-      data = val_pre_swap_round_segments,
-      color = 'white',
-      size = 1.5,
-      aes(
-        x = pre_cumu_w, 
-        y = pre_cumu_l
-      )
-    )
-  )
-}
-
-p_val_o_round_win_prop <- val_o_win_prop |> 
-  ggplot() +
-  common_val_heatmap_layers() +
-  heatmap_tile(.fill = 'win_round_prop') +
-  val_swap_path() +
-  heatmap_text_layers(
-    .df = val_o_win_prop, 
-    .f = o_round_win_text_layer,
-    .threshold = 0.8,
-    .labeller = val_heatmap_seq_labeller
-  ) +
-  ggsci::scale_fill_material('teal') +
-  labs(
-    title = 'Offensive Round Win %'
-  )
-p_val_o_round_win_prop
-save_plot_for_slide(p_val_o_round_win_prop)
-```
-
-![](plots/val_o_round_win_prop.png){fig-align="center"}
-
-## What are your chances of winning the series ([COD SnD]{.cod})?
-
-```{r}
-#| label: p_cod_o_series_win_prop
 o_series_win_text_layer <- function(
     ..., 
     .df,
@@ -776,11 +694,209 @@ o_series_win_text_layer <- function(
       .num = 'win_series',
       .color = .color,
       .threshold = .threshold,
-      .labeller = .labeller
+      .labeller = .labeller,
+      .size = 9 / .pt
     )
   )
 }
 
+val_heatmap_div_labeller <- function(.df, .label, .num) {
+  sprintf(
+    '%+.1f\n(%s)', 
+    100 * .df[[.label]], 
+    scales::comma(.df$n)
+  )
+}
+
+o_series_win_over_expected_text_layer <- function(
+    ..., 
+    .df,
+    .threshold,
+    .labeller, 
+    .emphasize
+) {
+  if(.emphasize == 'low') {
+    op <- `<`
+    .color <- blackish_background
+  } else {
+    op <- `>=`
+    .color <- 'white'
+  }
+  list(
+    ...,
+    heatmap_text_layer(
+      .df = .df,
+      .op = op,
+      .label = 'diff_win_series_prop',
+      .num = NULL,
+      .color = .color,
+      .threshold = .threshold,
+      .labeller = .labeller,
+      .size = 9 / .pt
+    )
+  )
+}
+```
+
+```{r}
+#| label: val_rounds-calcs
+val_round_and_series_win_prop_by_side <- val_rounds |> 
+  group_by(pre_cumu_w, pre_cumu_l, is_offense) |> 
+  summarize(
+    n = n(),
+    across(c(win_round, win_series), sum)
+  ) |> 
+  ungroup() |> 
+  mutate(
+    win_round_prop = win_round / n,
+    win_series_prop = win_series / n
+  )
+
+val_o_win_prop <- val_round_and_series_win_prop_by_side |> 
+  filter(is_offense) |> 
+  mutate(
+    diff_win_round_prop = win_round_prop - !!val_o_win_prop_const
+  ) |> 
+  inner_join(
+    val_e_o_win_series_prop |> select(pre_cumu_w, pre_cumu_l, e_win_series_prop),
+    by = c('pre_cumu_w', 'pre_cumu_l')
+  ) |> 
+  mutate(
+    diff_win_series_prop = win_series_prop - e_win_series_prop
+  ) |> 
+  filter(pre_cumu_w <= 12, pre_cumu_l <= 12) |> 
+  drop_25th_round()
+```
+
+```{r}
+#| label: val_rounds_bothbuy-calcs
+val_bothbuy_rounds <- val_rounds |> 
+  filter(
+    team_buy_type %in% c('semi-buy', 'full-buy'), 
+    opponent_buy_type  %in% c('semi-buy', 'full-buy')
+  )
+
+val_bothbuy_o_win_prop_const <- val_bothbuy_rounds |> 
+  filter(is_offense) |> 
+  count(win_round) |> 
+  mutate(prop = n / sum(n)) |> 
+  filter(win_round) |> 
+  pull(prop)
+
+val_round_and_series_win_prop_by_side_bothbuy <- val_bothbuy_rounds |> 
+  group_by(pre_cumu_w, pre_cumu_l, is_offense) |> 
+  summarize(
+    n = n(),
+    across(c(win_round, win_series), sum)
+  ) |> 
+  ungroup() |> 
+  mutate(
+    win_round_prop = win_round / n,
+    win_series_prop = win_series / n
+  )
+
+val_o_win_prop_bothbuy <- val_round_and_series_win_prop_by_side_bothbuy |> 
+  filter(is_offense) |> 
+  mutate(
+    diff_win_round_prop = win_round_prop - !!val_bothbuy_o_win_prop_const
+  ) |> 
+  inner_join(
+    val_e_o_win_series_prop |> select(pre_cumu_w, pre_cumu_l, e_win_series_prop),
+    by = c('pre_cumu_w', 'pre_cumu_l')
+  ) |> 
+  mutate(
+    diff_win_series_prop = win_series_prop - e_win_series_prop
+  ) |> 
+  filter(pre_cumu_w <= 12, pre_cumu_l <= 12) |> 
+  drop_25th_round()
+```
+
+```{r}
+#| label: val-funcs-2
+val_pre_swap_rounds <- val_o_win_prop |> 
+  mutate(pre_cumu_wl = pre_cumu_w + pre_cumu_l) |> 
+  filter(pre_cumu_wl == 12)
+
+val_pre_swap_round_segments <- val_pre_swap_rounds |> 
+  transmute(
+    pre_cumu_w,
+    across(pre_cumu_l, ~.x),
+    i = row_number(),
+    n = 2
+  ) |> 
+  uncount(n) |> 
+  group_by(i) |> 
+  mutate(rn = row_number()) |> 
+  ungroup() |> 
+  mutate(
+    across(pre_cumu_w, ~ifelse(rn == 2, .x + 1, .x))
+  ) |> 
+  add_row(
+    pre_cumu_w = 12,
+    pre_cumu_l = 0
+  )
+
+val_swap_path <- function(...) {
+  list(
+    ...,
+    geom_path(
+      data = val_pre_swap_round_segments,
+      color = 'white',
+      size = 1.5,
+      aes(
+        x = pre_cumu_w, 
+        y = pre_cumu_l
+      )
+    )
+  )
+}
+```
+
+```{r}
+#| label: p_val_o_round_win_prop
+p_val_o_round_win_prop <- val_o_win_prop |> 
+  ggplot() +
+  common_val_heatmap_layers() +
+  heatmap_tile(.fill = 'win_round_prop') +
+  val_swap_path() +
+  heatmap_text_layers(
+    .df = val_o_win_prop, 
+    .f = o_round_win_text_layer,
+    .threshold = 0.8,
+    .labeller = val_heatmap_seq_labeller
+  ) +
+  ggsci::scale_fill_material('teal') +
+  labs(
+    title = 'Offensive Round Win %'
+  )
+p_val_o_round_win_prop
+save_plot_for_slide(p_val_o_round_win_prop)
+
+p_val_o_round_win_prop_bothbuy <- val_o_win_prop_bothbuy |> 
+  ggplot() +
+  common_val_heatmap_layers() +
+  heatmap_tile(.fill = 'win_round_prop') +
+  val_swap_path() +
+  heatmap_text_layers(
+    .df = val_o_win_prop_bothbuy, 
+    .f = o_round_win_text_layer,
+    .threshold = 0.8,
+    .labeller = val_heatmap_seq_labeller
+  ) +
+  ggsci::scale_fill_material('teal') +
+  labs(
+    title = 'Offensive Round Win %'
+  )
+p_val_o_round_win_prop_bothbuy
+save_plot_for_slide(p_val_o_round_win_prop_bothbuy)
+```
+
+![](plots/val_o_round_win_prop.png){fig-align="center"}
+
+## What are your chances of winning the series ([COD SnD]{.cod})?
+
+```{r}
+#| label: p_cod_o_series_win_prop
 p_cod_o_series_win_prop <- cod_o_win_prop |> 
   ggplot() +
   common_cod_heatmap_layers() +
@@ -805,37 +921,6 @@ save_plot_for_slide(p_cod_o_series_win_prop)
 
 ```{r}
 #| label: p_cod_o_series_win_prop_over_expected
-o_series_win_over_expected_text_layer <- function(
-    ..., 
-    .df,
-    .threshold,
-    .labeller, 
-    .emphasize
-) {
-  if(.emphasize == 'low') {
-    op <- `<`
-    .color <- blackish_background
-  } else {
-    op <- `>=`
-    .color <- 'white'
-  }
-  list(
-    ...,
-    heatmap_text_layer(
-      .df = .df,
-      .op = op,
-      .label = 'diff_win_series_prop',
-      .num = NULL,
-      .color = .color,
-      .threshold = .threshold,
-      .labeller = .labeller
-    )
-  )
-}
-
-
-ggsci_cyan <- extract_ggsci_mid_color('cyan')
-ggsci_brown <- extract_ggsci_mid_color('brown')
 cod_max_diff_win_series_prop <- max(abs(cod_o_win_prop$diff_win_series_prop))
 p_cod_o_series_win_prop_over_expected <- cod_o_win_prop |> 
   ggplot() +
@@ -897,13 +982,6 @@ save_plot_for_slide(p_val_o_series_win_prop)
 
 ```{r}
 #| label: p_val_o_series_win_prop_over_expected
-val_heatmap_div_labeller <- function(.df, .label, .num) {
-  sprintf(
-    '%+.1f', 
-    100 * .df[[.label]]
-  )
-}
-
 val_max_diff_win_series_prop <- max(abs(val_o_win_prop$diff_win_series_prop))
 p_val_o_series_win_prop_over_expected <- val_o_win_prop |> 
   ggplot() +
@@ -959,14 +1037,6 @@ p_filt_val_o_series_win_prop_over_expected <- filt_val_o_win_prop |>
   heatmap_tile(
     .fill = 'diff_win_series_prop'
   ) +
-  # geom_abline(
-  #   color = 'white',
-  #   linetype = 2,
-  #   aes(
-  #     slope = 1,
-  #     intercept = 0
-  #   )
-  # ) +
   heatmap_text_layers(
     .df = filt_val_o_win_prop, 
     .f = o_series_win_over_expected_text_layer,
@@ -988,8 +1058,10 @@ p_filt_val_o_series_win_prop_over_expected <- filt_val_o_win_prop |>
     title = 'Offensive Series Win % Over Expected'
   )
 p_filt_val_o_series_win_prop_over_expected
-save_plot_for_slide(p_val_o_series_win_prop_over_expected)
+save_plot_for_slide(p_filt_val_o_series_win_prop_over_expected)
 ```
+
+![](plots/filt_val_o_series_win_prop_over_expected.png){fig-align="center"}
 
 ## Are offensive win %'s different in round 1 ([COD SnD]{.cod})?
 
@@ -1540,7 +1612,7 @@ save_plot_for_slide(p_cod_series_outcome_prop_over_expected)
 ## Should round win percentage in [COD SnD]{.cod} be modeled as constant?
 
 ::: fragment
-[Chance (2019)](https://content.iospress.com/articles/journal-of-sports-analytics/jsa200422) finds that probability of winning a game that the title series in the MLB and NHL is **not** constant (at 50%)
+[Chance (2019)](https://content.iospress.com/articles/journal-of-sports-analytics/jsa200422) finds that the probability of winning a game in the title series in the MLB and NHL is **not** constant (at 50%)
 :::
 
 ```{r}
@@ -1665,8 +1737,6 @@ avg_actual_cod_rounds_per_series <- 9.15
 avg_expected_cod_rounds_per_series <- 9.29
 cod_series_outcomes_chi <- '15.4 (<=0.01)'
 ```
-
-<br/>
 
 ::: fragment
 -   In COD, the average number of rounds (**`r avg_actual_cod_rounds_per_series`**) is less than the expected value (**`r avg_expected_cod_rounds_per_series`**)
@@ -1983,7 +2053,7 @@ p_cod_b2b_round_win_prop <- cod_b2b_round_win_prop |>
   labs(
     title = 'Back-to-back round win %',
     x = 'Round',
-    y = '# of cod_rounds in Complete Series'
+    y = '# of rounds played in series'
   ) + 
   geom_text(
     data = tibble(
