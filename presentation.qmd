@@ -1686,65 +1686,6 @@ cod_round_win_prop_after_b2b2b_wins <- tibble::tribble(
 There is no evidence for momentum, for both streaks of 2 and 3. In fact, for series that go to 9, 10, or 11 rounds, there is evidence that the streaking teams perform significantly worse than expected in the post-streak round.
 :::
 
-```{r}
-#| label: chance_summarize_and_compare_win_prop_after_wins
-#| eval: false
-## https://content.iospress.com/articles/journal-of-sports-analytics/jsa200422#app2 suggests that we should look at non-overlapping streaks.
-## "To avoid this problem, we examine only the frequency of winning game three after having won games one and two and the frequency of winning game six after having won games four and five". They sort of deduced that win %s > 50% in the third game might constitute momentum, but didn't make strong statements.
-## Personally, I don't really like this approach. It needs to account for the number of games played.
-chance_summarize_cod_win_prop_after_x_wins <- function(round, ...) {
-  cod_round_streaks |> 
-    filter(round == !!round) |> 
-    count(win_round, won_prior_round, won_prior_round2, ..., sort = TRUE) |> 
-    relocate(n) |> 
-    drop_na(last_col()) |> 
-    filter(won_prior_round, won_prior_round2, ...) |> 
-    mutate(
-      total = sum(n),
-      prop = n / total
-    ) |> 
-    filter(win_round) |> 
-    transmute(round = !!round, n, total, prop)
-}
-
-chance_summarize_cod_win_prop_after_b2b_wins <- chance_summarize_cod_win_prop_after_x_wins
-chance_summarize_cod_win_prop_after_b2b2b_wins <- function(round) {
-  chance_summarize_cod_win_prop_after_x_wins(round = round, won_prior_round3)
-}
-
-chance_summarize_and_compare_cod_win_prop_after_wins <- function(ri, add, f) {
-  ra <- f(ri)
-  rb <- f(ri + add)
-  bind_rows(ra, rb)
-}
-
-chance_summarize_and_compare_cod_win_prop_after_b2b_wins <- partial(
-  chance_summarize_and_compare_cod_win_prop_after_wins,
-  add = 3,
-  f = summarize_cod_win_prop_after_b2b_wins,
-  ... = 
-)
-
-chance_summarize_and_compare_cod_win_prop_after_b2b2b_wins <- partial(
-  chance_summarize_and_compare_cod_win_prop_after_wins,
-  add = 4,
-  f = summarize_cod_win_prop_after_b2b2b_wins,
-  ... = 
-)
-
-chance_cod_win_prop_after_b2b_wins <- seq(3, 8, by = 1) |> 
-  map_dfr(
-    chance_summarize_and_compare_cod_win_prop_after_b2b_wins,
-    .id = 'pair_idx'
-  )
-
-chance_cod_win_prop_after_b2b2b_wins <- seq(4, 7, by = 1) |> 
-  map_dfr(
-    chance_summarize_and_compare_cod_win_prop_after_b2b2b_wins,
-    .id = 'pair_idx'
-  )
-```
-
 ## Is planting at one site better than the other ([COD SnD]{.cod})?
 
 ```{r}
