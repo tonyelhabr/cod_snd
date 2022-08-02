@@ -25,32 +25,45 @@ simulate_post_streak_prob <- function(sims = 1000, ...) {
     mean(na.rm = TRUE)
 }
 
-runs <- crossing(
-  n = 1:100,
-  k = 1:4,
-  p = c(0.25, 0.5, 0.75)
+set.seed(42)
+## 1.6 hours for 1k reruns and 100 sims
+runs <- rerun(
+  1000,
+  crossing(
+    n = 1:100,
+    k = 1:4,
+    p = c(0.25, 0.5, 0.75)
+  ) |> 
+    mutate(
+      next_p = pmap_dbl(list(n, k, p), ~simulate_post_streak_prob(sims = 100, n = ..1, k = ..2, p = ..3))
+    )
 ) |> 
-  mutate(
-    next_p = pmap_dbl(list(n, k, p), ~simulate_post_streak_prob(sims = 10000, n = ..1, k = ..2, p = ..3))
-  )
+  reduce(bind_rows)
 
-p_streaks <- runs |>
-  filter(k != 5) |> 
+agg_runs <- runs |> 
   filter(!is.nan(next_p)) |> 
-  arrange(n, k) |>
+  group_by(p, k, n) |> 
+  summarize(
+    across(next_p, mean)
+  ) |> 
+  ungroup() |>
+  arrange(p, k)
+
+p_streaks <- agg_runs |>
+  group_by(p, k) |> 
+  mutate(
+    avg_next_p = slider::slide_dbl(next_p, .f = mean, .before = 5, .after = 0)
+  ) |> 
+  ungroup() |> 
   mutate(
     across(k, factor),
     group = sprintf('%s-%s', p, k)
   ) |> 
   ggplot() +
   theme_minimal() +
-  aes(x = n, y = next_p, color = k, group = group) +
-  geom_step() +
-  # eom_smooth(method = 'gam', formula = y ~ s(x, bs = 'cs'), se = FALSE) +
-  # geom_smooth(method = 'lm', formula = y ~ poly(x, 2)) +
-  # geom_smooth(method = 'loess', formula = y ~ x, se = FALSE) +
-  # facet_wrap(~p, scales = 'free_y') +
-  geom_hline(aes( yintercept = p)) +
+  aes(x = n, y = avg_next_p, color = k, group = group) +
+  geom_line() +
+  geom_hline(aes(yintercept = p)) +
   labs(x = NULL, y = NULL)
 p_streaks
 ggsave(p_streaks, filename = 'research/npk_replicated.png', width = 12, height = 9)
