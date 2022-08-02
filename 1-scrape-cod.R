@@ -208,7 +208,6 @@ cod_rounds <- cod_series |>
     cumu_l = round - cumu_w,
     pre_cumu_w = lag(cumu_w, default = 0L),
     pre_cumu_l = lag(cumu_l, default = 0L),
-    won_prior_round = lag(win_round, default = NA),
     max_cumu_w = max(cumu_w)
   ) |> 
   ungroup() |> 
