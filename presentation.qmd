@@ -1549,18 +1549,14 @@ save_plot_for_slide(p_cod_b2b_round_win_prop)
 
 ![](plots/cod_b2b_round_win_prop.png){fig-align="center"}
 
-## Is there evidence for the "hot hand"?
+## Is there evidence for the "hot hand" ([COD SnD]{.cod})?
 
 ::: fragment
 [Miller and Sanjurjo (2018)](https://papers.ssrn.com/sol3/papers.cfm?abstract_id=2627354) outline a framework for quantifying post-streak success
 :::
 
-::: fragment
-Looking at streaks of 3
-:::
-
 ```{r}
-#| label: cod_round_win_prop_after_b2b2b_wins
+#| label: cod_round_win_prop_after_x_wins
 ## http://keyonvafa.com/hot-hand/
 get_post_streak_prob <- function(n, k, p = 0.5) {
   tosses <- rbinom(n, 1, p)
@@ -1586,42 +1582,48 @@ simulate_post_streak_prob <- function(sims = 10000, seed = 42, ...) {
     mean(na.rm = TRUE)
 }
 
-summarize_cod_win_prop_after_x_wins <- function(kind = c('b2b', 'b2b2b')) {
-  kind <- match.arg(kind)
-  is_b2b <- kind == 'b2b'
-  if (is_b2b) {
-    k <- 2
-  } else {
-    k <- 3
-  }
+cod_round_streaks <- cod_rounds |> 
+  group_by(series_id, team) |> 
+  mutate(
+    won_prior_round1 = lag(win_round, n = 1, default = NA),
+    won_prior_round2 = lag(win_round, n = 2, default = NA),
+    won_prior_round3 = lag(win_round, n = 3, default = NA),
+    won_prior_round4 = lag(win_round, n = 4, default = NA),
+    won_prior_round5 = lag(win_round, n = 5, default = NA)
+  ) |> 
+  ungroup() |>
+  select(
+    series_id,
+    team,
+    is_offense,
+    round,
+    n_rounds,
+    win_round,
+    starts_with('won_prior_round')
+  )
+
+summarize_cod_win_prop_after_x_wins <- function(k) {
+  stopifnot((k >= 2) & (k <= 5))
   
   probs_nx_k <- tibble(
     n_rounds = 7L:11L
   ) |> 
     mutate(
-      trial_p = 6 / n_rounds,
+      prior_p = 6L / n_rounds,
       expected_poststreak_p = map2_dbl(
-        n_rounds, trial_p, 
+        n_rounds, prior_p, 
         ~simulate_post_streak_prob(n = ..1, k = !!k, p = ..2)
       )
     )
   
-  cod_round_win_prop_after_x_wins <- if (is_b2b) {
-    cod_round_streaks_after_x <- cod_round_streaks |> 
-      filter(!is.na(won_prior_round2)) |> 
-      count(n_rounds, win_round, won_prior_round, won_prior_round2, sort = TRUE)
-    
-     cod_round_streaks_after_x |> 
-      filter(won_prior_round, won_prior_round2) 
-  } else {
-    cod_round_streaks_after_x <- cod_round_streaks |> 
-      filter(!is.na(won_prior_round2), !is.na(won_prior_round3)) |> 
-      count(n_rounds, win_round, won_prior_round, won_prior_round2, won_prior_round3, sort = TRUE)
-    
-     cod_round_streaks_after_x |> 
-      filter(won_prior_round, won_prior_round2, won_prior_round3) 
-  }
+  cols <- sprintf('won_prior_round%d', 2:k)
+  col_syms <- syms(cols)
+  cod_round_streaks_after_x <- cod_round_streaks |> 
+    drop_na(!!!col_syms) |> 
+    count(n_rounds, win_round, won_prior_round1, !!!col_syms, sort = TRUE)
   
+  cod_round_win_prop_after_x_wins <- cod_round_streaks_after_x |> 
+    filter(won_prior_round1, !!!col_syms)
   
   cod_round_win_prop_after_x_wins |> 
     group_by(n_rounds) |> 
@@ -1655,35 +1657,300 @@ summarize_cod_win_prop_after_x_wins <- function(kind = c('b2b', 'b2b2b')) {
     unnest(data)
 }
 
-cod_round_win_prop_after_b2b_wins <- summarize_cod_win_prop_after_x_wins('b2b')
-cod_round_win_prop_after_b2b2b_wins <- summarize_cod_win_prop_after_x_wins('b2b2b')
+cod_round_win_prop_after_x_wins <- tibble(win_streak = 2L:4L) |> 
+  mutate(
+    data = map(win_streak, summarize_cod_win_prop_after_x_wins)
+  ) |> 
+  unnest(data)
 ```
 
 ```{r}
-#| label: cod_round_win_prop_after_b2b2b_wins-eval
+#| label: cod_round_win_prop_after_x_wins-eval
 #| eval: true
-# cod_round_win_prop_after_b2b_wins |> clipr::write_clip() |> datapasta::tribble_paste()
-cod_round_win_prop_after_b2b_wins <- tibble::tribble(
-  ~n_rounds,   ~n, ~total,             ~prop,          ~trial_p, ~expected_poststreak_p,       ~gt_p_value,          ~lt_p_value,
-         7L, 262L,   328L, 0.798780487804878, 0.857142857142857,      0.786573045059608,   0.3220219536276,    0.725316732579212,
-         8L, 265L,   421L, 0.629453681710214,              0.75,      0.648791374811152, 0.811481245561487,    0.217078977854197,
-         9L, 275L,   577L, 0.476603119584055, 0.666666666666667,      0.557203226372085, 0.999956606998609, 6.11343021400038e-05,
-        10L, 257L,   628L, 0.409235668789809,               0.6,      0.483529268542724, 0.999920968231117, 0.000108871179188732,
-        11L, 317L,   807L, 0.392812887236679, 0.545454545454545,       0.42596043311709, 0.974133848646825,   0.0304921375685209
-  )
-# cod_round_win_prop_after_b2b2b_wins |> clipr::write_clip() |> datapasta::tribble_paste()
-cod_round_win_prop_after_b2b2b_wins <- tibble::tribble(
-  ~n_rounds,   ~n, ~total,             ~prop,          ~trial_p, ~expected_poststreak_p,       ~gt_p_value,         ~lt_p_value,
-         7L, 149L,   201L, 0.741293532338308, 0.857142857142857,      0.757307821042062, 0.732554638281868,   0.323308922871945,
-         8L, 126L,   203L, 0.620689655172414,              0.75,      0.618543392752532, 0.505988058731931,   0.551527754692743,
-         9L,  98L,   209L,   0.4688995215311, 0.666666666666667,      0.526500674199098, 0.958718294702725,   0.055063286515911,
-        10L,  74L,   208L, 0.355769230769231,               0.6,      0.446500557074851, 0.996786203815779, 0.00490308277112825,
-        11L,  90L,   276L, 0.326086956521739, 0.545454545454545,      0.387843835660101, 0.985650077371605,  0.0196488641002811
-  )
+cod_round_win_prop_after_x_wins |> 
+  transmute(
+    `Win Streak` = win_streak,
+    `Rounds` = n_rounds,
+    `N` = scales::comma(total),
+    across(c(prop, expected_poststreak_p), ~scales::percent(.x, accuracy = 0.1)),
+    across(
+      ends_with('p_value'), 
+      ~case_when(
+        .x <= 0.01 ~ '<=0.01', 
+        round(.x, 2) == 1 ~ '1',
+        TRUE ~ as.character(round(.x, 2))
+      )
+    )
+  ) |>
+  rename(
+    `Actual post-streak win %` = prop,
+    `Expected post-streak win %` = expected_poststreak_p,
+    `Binom. > p-value` = gt_p_value,
+    `Binom. < p-value` = lt_p_value
+  ) |> 
+  knitr::kable()
+
 ```
 
 ::: fragment
-There is no evidence for momentum, for both streaks of 2 and 3. In fact, for series that go to 9, 10, or 11 rounds, there is evidence that the streaking teams perform significantly worse than expected in the post-streak round.
+-   There is no evidence for momentum, for both streaks of 2 and 3. In fact, for series that go to 9, 10, or 11 rounds, there is evidence that the streaking teams perform significantly worse than expected in the post-streak round. And for streaks of 4, teams perform worse than expected in series ending in 7, 8, 10, and 11 rounds.
+:::
+
+## Is there evidence for the "hot hand" ([Valorant]{.valorant})?
+
+```{r}
+#| label: val_round_win_prop_after_x_wins-save
+#| eval: false
+val_round_streaks <- val_rounds |> 
+  group_by(series_id, team, is_offense) |> 
+  mutate(
+    won_prior_round1 = lag(win_round, n = 1, default = NA),
+    won_prior_round2 = lag(win_round, n = 2, default = NA),
+    won_prior_round3 = lag(win_round, n = 3, default = NA),
+    won_prior_round4 = lag(win_round, n = 4, default = NA),
+    won_prior_round5 = lag(win_round, n = 5, default = NA),
+    won_prior_round6 = lag(win_round, n = 6, default = NA),
+    won_prior_round7 = lag(win_round, n = 7, default = NA),
+    won_prior_round8 = lag(win_round, n = 8, default = NA),
+    won_prior_round9 = lag(win_round, n = 9, default = NA)
+  ) |> 
+  ungroup() |>
+  select(
+    series_id,
+    team,
+    is_offense,
+    cumu_w,
+    round,
+    n_rounds,
+    win_round,
+    starts_with('won_prior_round')
+  )
+
+summarize_val_win_prop_after_x_wins_first12r <- function(k) {
+  stopifnot((k >= 3) & (k <= 9))
+  probs_nx_k <- tibble(
+    cumu_w = 4L:11L,
+    n_rounds = 12L
+  ) |> 
+    mutate(
+      prior_p = cumu_w / n_rounds,
+      expected_poststreak_p = map2_dbl(
+        n_rounds, prior_p, 
+        ~simulate_post_streak_prob(n = ..1, k = !!k, p = ..2)
+      )
+    )
+  
+  cols <- sprintf('won_prior_round%d', 2:k)
+  col_syms <- syms(cols)
+  val_round_streaks_after_x <- val_round_streaks |> 
+    filter(round < 13) |> 
+    drop_na(!!!col_syms) |> 
+    count(cumu_w, win_round, won_prior_round1, !!!col_syms, sort = TRUE)
+  
+  val_round_win_prop_after_x_wins <- val_round_streaks_after_x |> 
+    filter(won_prior_round1, !!!col_syms)
+  
+  val_round_win_prop_after_x_wins |> 
+    group_by(cumu_w) |> 
+    mutate(
+      total = sum(n),
+      prop = n / total
+    ) |> 
+    ungroup() |> 
+    filter(win_round) |> 
+    select(cumu_w, n, total, prop) |> 
+    arrange(cumu_w) |> 
+    inner_join(
+      probs_nx_k,
+      by = 'cumu_w'
+    ) |> 
+    nest(data = -c(cumu_w)) |> 
+    mutate(
+      gt_p_value = map_dbl(
+        data, 
+        ~binom.test(.x$n, .x$total, .x$expected_poststreak_p, alternative = 'greater') |> 
+          broom::tidy() |>
+          pull(p.value) |> 
+          round(3)
+      ),
+      lt_p_value = map_dbl(
+        data, 
+        ~binom.test(.x$n, .x$total, .x$expected_poststreak_p, alternative = 'less') |> 
+          broom::tidy() |>
+          pull(p.value) |> 
+          round(3)
+      )
+    ) |> 
+    unnest(data)
+}
+
+summarize_val_win_prop_after_x_wins_second12r <- function(k) {
+  stopifnot((k >= 3) & (k <= 9))
+  probs_nx_k <- crossing(
+    cumu_w = 0L:13L,
+    n_rounds = 13L:24L
+  ) |> 
+    mutate(
+      prior_p = cumu_w / n_rounds,
+      expected_poststreak_p = map2_dbl(
+        n_rounds, prior_p, 
+        ~simulate_post_streak_prob(n = ..1, k = !!k, p = ..2)
+      )
+    )
+  
+  cols <- sprintf('won_prior_round%d', 2:k)
+  col_syms <- syms(cols)
+  val_round_streaks_after_x <- val_round_streaks |> 
+    filter(round > 12) |> 
+    drop_na(!!!col_syms) |> 
+    count(n_rounds, cumu_w, win_round, won_prior_round1, !!!col_syms, sort = TRUE)
+  
+  val_round_win_prop_after_x_wins <- val_round_streaks_after_x |> 
+    filter(won_prior_round1, !!!col_syms)
+  
+  val_round_win_prop_after_x_wins |> 
+    group_by(n_rounds, cumu_w) |> 
+    mutate(
+      total = sum(n),
+      prop = n / total
+    ) |> 
+    ungroup() |> 
+    filter(win_round) |> 
+    select(n_rounds, cumu_w, n, total, prop) |> 
+    arrange(n_rounds, cumu_w) |> 
+    inner_join(
+      probs_nx_k,
+      by = c('n_rounds', 'cumu_w')
+    ) |> 
+    nest(data = -c(n_rounds, cumu_w)) |> 
+    mutate(
+      gt_p_value = map_dbl(
+        data, 
+        ~binom.test(.x$n, .x$total, .x$expected_poststreak_p, alternative = 'greater') |> 
+          broom::tidy() |>
+          pull(p.value) |> 
+          round(3)
+      ),
+      lt_p_value = map_dbl(
+        data, 
+        ~binom.test(.x$n, .x$total, .x$expected_poststreak_p, alternative = 'less') |> 
+          broom::tidy() |>
+          pull(p.value) |> 
+          round(3)
+      )
+    ) |> 
+    unnest(data)
+}
+
+save_qs <- function(df, name = deparse(substitute(df))) {
+  qs::qsave(df, sprintf('data/%s.qs', name))
+}
+
+val_round_win_prop_after_x_wins_first12r <- tibble(win_streak = 3L:9L) |> 
+  mutate(
+    data = map(win_streak, summarize_val_win_prop_after_x_wins_first12r)
+  ) |> 
+  unnest(data)
+save_qs(val_round_win_prop_after_x_wins_first12r)
+
+val_round_win_prop_after_x_wins_second12r <- tibble(win_streak = 3L:9L) |> 
+  mutate(
+    data = map(win_streak, summarize_val_win_prop_after_x_wins_second12r)
+  ) |> 
+  unnest(data)
+save_qs(val_round_win_prop_after_x_wins_second12r)
+```
+
+```{r}
+#| label: val_round_win_prop_after_x_wins
+#| eval: false
+load_qs <- function(name) {
+  res <- qs::qread(sprintf('data/%s.qs', name))
+  assign(name, value = res, envir = .GlobalEnv)
+}
+load_qs('val_round_win_prop_after_x_wins_first12r')
+load_qs('val_round_win_prop_after_x_wins_second12r')
+val_round_win_prop_after_x_wins_first12r |> 
+  filter(n > 30) |> 
+  mutate(
+    gt_signif = gt_p_value <= 0.05
+  ) |> 
+  ggplot() +
+  aes(x = win_streak, y = cumu_w) +
+  geom_tile(
+    aes(fill = gt_signif)
+  ) +
+  geom_text(
+    aes(label = sprintf(
+      '%s | %s\n(%s)',
+      scales::percent(prop, accuracy = 1),
+      scales::percent(expected_poststreak_p, accuracy = 1),
+      scales::comma(total)
+      )
+    )
+  )
+
+val_round_win_prop_after_x_wins_second12r |> 
+  filter(n > 30) |> 
+  mutate(
+    gt_signif = gt_p_value <= 0.05
+  ) |> 
+  ggplot() +
+  aes(x = win_streak, y = cumu_w) +
+  geom_tile(
+    aes(fill = gt_signif)
+  ) +
+  geom_text(
+    aes(label = sprintf(
+      '%s | %s\n(%s)',
+      scales::percent(prop, accuracy = 1),
+      scales::percent(expected_poststreak_p, accuracy = 1),
+      scales::comma(total)
+      )
+    )
+  ) +
+  facet_wrap(~n_rounds)
+
+```
+
+```{r}
+#| label: cod_round_win_prop_after_xw-eval
+#| eval: true
+val_round_win_prop_after_xw |> 
+  transmute(
+    `Win Streak` = win_streak,
+    `# of Offensive Wins in First 12 Rounds` = cumu_w,
+    `N` = scales::comma(total),
+    across(c(prop, expected_poststreak_p), ~scales::percent(.x, accuracy = 0.1)),
+    across(
+      ends_with('p_value'), 
+      ~case_when(
+        .x <= 0.01 ~ '<=0.01', 
+        round(.x, 2) == 1 ~ '1',
+        TRUE ~ as.character(round(.x, 2))
+      )
+    )
+  ) |>
+  rename(
+    `Actual post-streak win %` = prop,
+    `Expected post-streak win %` = expected_poststreak_p,
+    `Binom. > p-value` = gt_p_value,
+    `Binom. < p-value` = lt_p_value
+  ) |> 
+  knitr::kable()
+
+```
+
+::: fragment
+First 12 rounds **only**
+:::
+
+::: fragment
+-   There is no evidence for momentum, for both streaks of 2 and 3. In fact, for series that go to 9, 10, or 11 rounds, there is evidence that the streaking teams perform significantly worse than expected in the post-streak round. And for streaks of 4, teams perform worse than expected in series ending in 7, 8, 10, and 11 rounds.
+:::
+
+::: fragment
+-   Given the nature of how economy is used in the game, perhaps this is not suprising at all.
 :::
 
 ## Is planting at one site better than the other ([COD SnD]{.cod})?
