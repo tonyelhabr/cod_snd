@@ -1063,6 +1063,234 @@ save_plot_for_slide(p_filt_val_o_series_win_prop_over_expected)
 
 ![](plots/filt_val_o_series_win_prop_over_expected.png){fig-align="center"}
 
+## What are the most common series winning states ([COD SnD]{.cod})?
+
+```{r}
+#| label: p_cod_series_outcome_prop_over_expected
+# https://content.iospress.com/articles/journal-of-sports-analytics/jsa200422
+prob_of_series_lasting_n_games <- function(n, p = 0.5, max_round) {
+  s <- ceiling(max_round / 2)
+  (factorial(n - 1) / (factorial(s - 1) * factorial(n - s))) * (p^s * (1 - p)^(n - s) + p^(n - s) * (1 - p)^s)
+}
+
+expected_series_streaks_of_outcomes <- function(m, n) {
+  factorial(m + n) / (factorial(m) * factorial(n))
+}
+
+summarize_streaks <- function(rounds, game = c('cod', 'val')) {
+  if (game == 'cod') {
+    .max_round <- 11
+    .adj <- 0
+  } else {
+    .max_round <- 25
+    .adj <- 1
+  }
+  
+  cutoff <- (.max_round + 1) / 2
+  
+  actual_round_streaks <- rounds |> 
+    filter(round <= (.max_round - .adj)) |> 
+    filter(win_series) |> 
+    mutate(across(win_round, as.integer)) |> 
+    group_by(series_id) |> 
+    summarize(
+      wins = max(cumu_w),
+      losses = max(cumu_l),
+      ws = paste0(win_round, collapse = '')
+    ) |> 
+    ungroup() |> 
+    mutate(n_rounds = wins + losses) |> 
+    unite(
+      record, wins, losses, sep = '-'
+    ) |>
+    count(record, n_rounds, ws, sort = TRUE) |> 
+    mutate(prop = n / sum(n))
+  
+  expected_round_streaks <- tibble(
+    n_rounds = cutoff:.max_round
+  ) |> 
+    mutate(
+      series_prop = map_dbl(n_rounds, ~prob_of_series_lasting_n_games(.x, max_round = .max_round)),
+      n_expected_series_streaks = map2_dbl(cutoff, n_rounds - cutoff, expected_series_streaks_of_outcomes)
+    ) |> 
+    transmute(
+      n_rounds,
+      series_prop,
+      prop = series_prop / n_expected_series_streaks
+    )
+  
+  round_streaks <- full_join(
+    actual_round_streaks |> 
+      rename_with(~sprintf('%s_actual', .x), c(n, prop)),
+    expected_round_streaks |> 
+      rename_with(~sprintf('%s_expected', .x), prop),
+    by = 'n_rounds'
+  )
+  
+  round_streak_prop <- round_streaks |> 
+    drop_na() |> 
+    mutate(
+      prop_diff = prop_actual - prop_expected,
+      total_actual = sum(n_actual),
+      n_expected = round(prop_expected * total_actual),
+      p = vectorized_prop_test(n_actual, total_actual, n_expected, total_actual)
+    ) |> 
+    select(-total_actual) |> 
+    unnest_wider(p) |> 
+    arrange(p.value)
+  
+  series_outcomes <- full_join(
+    actual_round_streaks |> 
+      group_by(record, n_rounds) |> 
+      summarize(
+        across(n, sum)
+      ) |> 
+      ungroup() |> 
+      mutate(prop = n / sum(n)) |> 
+      rename_with(~sprintf('%s_actual', .x), c(n, prop)),
+    expected_round_streaks |> 
+      select(n_rounds, prop_expected = series_prop),
+    by = 'n_rounds'
+  )
+  
+  series_outcome_prop <- series_outcomes |> 
+    drop_na() |> 
+    mutate(
+      prop_diff = prop_actual - prop_expected,
+      total_actual = sum(n_actual),
+      n_expected = round(prop_expected * total_actual),
+      p = vectorized_prop_test(n_actual, total_actual, n_expected, total_actual)
+    ) |> 
+    select(-total_actual) |> 
+    unnest_wider(p) |> 
+    arrange(p.value)
+  
+  list(
+    rounds = round_streak_prop,
+    series = series_outcome_prop
+  )
+}
+
+plot_series_outcome_prop_over_expected <- function(series_outcome_prop, game) {
+  if (game == 'cod') {
+    .lvls <- sprintf('6-%d', 0:5)
+    .axis_x_text_size <- 14
+  } else {
+    .lvls <- c(sprintf('13-%d', 0:11), '12-12')
+    .axis_x_text_size <- 12
+  }
+  
+  long_series_outcome_prop <- series_outcome_prop |>
+    select(
+      record,
+      n = n_actual,
+      `3` = prop_actual,
+      `2` = prop_expected,
+      `1` = prop_diff
+    ) |> 
+    pivot_longer(
+      matches('[123]'),
+      names_to = 'outcome_idx',
+      values_to = 'value'
+    ) |> 
+    mutate(
+      across(outcome_idx, as.integer),
+      across(record, ~factor(.x, levels = .lvls))
+    )
+  
+  max_diff_series_outcome_prop <- long_series_outcome_prop |> 
+    filter(outcome_idx == 1) |> 
+    pull(value) |> 
+    abs() |> 
+    max()
+  
+  long_series_outcome_prop |> 
+    ggplot() +
+    aes(x = record, y = outcome_idx) +
+    geom_tile(
+      data = long_series_outcome_prop |> filter(outcome_idx > 1),
+      show.legend = FALSE,
+      # height = 0.8,
+      aes(fill = value)
+    ) +
+    ggsci::scale_fill_material(
+      palette = 'light-blue'
+    ) +
+    ggnewscale::new_scale_fill() +
+    geom_tile(
+      data = long_series_outcome_prop |> filter(outcome_idx == 1),
+      show.legend = FALSE,
+      height = 0.8,
+      aes(fill = value)
+    ) +
+    scale_fill_gradient2(
+      low = extract_ggsci_mid_color('purple'),
+      high = extract_ggsci_mid_color('green'),
+      mid = 'white',
+      midpoint = 0,
+      limits = c(
+        -max_diff_series_outcome_prop, 
+        +max_diff_series_outcome_prop
+      )
+    ) +
+    geom_text(
+      data = long_series_outcome_prop |> filter(outcome_idx == 3),
+      color = blackish_background,
+      size = 11 / .pt,
+      aes(label = sprintf('%.1f%%\n(%s)', 100 * value, scales::comma(n)))
+    ) +
+    geom_text(
+      data = long_series_outcome_prop |> filter(outcome_idx == 2),
+      color = blackish_background,
+      size = 11 / .pt,
+      aes(label = sprintf('%.1f%%', 100 * value))
+    ) +
+    geom_text(
+      data = long_series_outcome_prop |> filter(outcome_idx == 1) |> filter(abs(value) != max(abs(value))),
+      color = blackish_background,
+      size = 11 / .pt,
+      aes(label = sprintf('%+.1f%%', 100 * value))
+    ) +
+    geom_text(
+      data = long_series_outcome_prop |> filter(outcome_idx == 1) |> filter(abs(value) == max(abs(value))),
+      color = 'white',
+      size = 11 / .pt,
+      aes(label = sprintf('%+.1f%%', 100 * value))
+    ) +
+    scale_x_discrete(
+      position = 'top',
+      expand = c(0, 0)
+    ) +
+    scale_y_continuous(
+      labels = c('Diff.', 'Expected', 'Actual'),
+      breaks = 1:3,
+      expand = c(0, 0)
+    ) +
+    theme(
+      panel.grid.major = element_blank(),
+      axis.title = element_text(hjust = 0.5),
+      plot.title = ggtext::element_markdown(hjust = 0.5),
+      axis.text = element_text(size = 14, face = 'bold'),
+      axis.text.x = element_text(size = .axis_x_text_size, face = 'bold')
+    ) +
+    labs(
+      title = 'Series outcome %',
+      x = NULL,
+      y = NULL
+    )
+}
+
+cod_streaks_res <- cod_rounds |> summarize_streaks('cod')
+
+p_cod_series_outcome_prop_over_expected <- cod_streaks_res$series |> 
+  plot_series_outcome_prop_over_expected('cod') +
+  common_cod_labs()
+p_cod_series_outcome_prop_over_expected
+save_plot_for_slide(p_cod_series_outcome_prop_over_expected)
+```
+
+![](plots/cod_series_outcome_prop_over_expected.png){fig-align="center"}
+
 ## Should round win percentage in [COD SnD]{.cod} be modeled as constant?
 
 ::: fragment
@@ -1710,6 +1938,72 @@ cod_round_win_prop_after_x_wins |>
 ::: fragment
 -   There is no evidence for momentum, for both streaks of 2 and 3. In fact, for series that go to 9, 10, or 11 rounds, there is evidence that the streaking teams perform significantly worse than expected in the post-streak round. And for streaks of 4, teams perform worse than expected in series ending in 7, 8, 10, and 11 rounds.
 :::
+
+```{r}
+summarize_cod_win_prop_after_x_wins_y_rounds <- function(k) {
+  stopifnot((k >= 2) & (k <= 5))
+  
+  probs_nx_k <- crossing(
+    n_rounds = 7L:11L,
+    round = 1L:10L
+  ) |> 
+    filter(round <= n_rounds) |> 
+    mutate(
+      prior_p = 6L / n_rounds,
+      expected_poststreak_p = map2_dbl(
+        n_rounds, prior_p, 
+        ~simulate_post_streak_prob(n = ..1, k = !!k, p = ..2)
+      )
+    )
+  
+  cols <- sprintf('won_prior_round%d', 2:k)
+  col_syms <- syms(cols)
+  cod_round_streaks_after_x <- cod_round_streaks |> 
+    drop_na(!!!col_syms) |> 
+    count(n_rounds, round, win_round, won_prior_round1, !!!col_syms, sort = TRUE)
+  
+  cod_round_win_prop_after_x_wins <- cod_round_streaks_after_x |> 
+    filter(won_prior_round1, !!!col_syms)
+  
+  cod_round_win_prop_after_x_wins |> 
+    group_by(n_rounds, round) |> 
+    mutate(
+      total = sum(n),
+      prop = n / total
+    ) |> 
+    ungroup() |> 
+    filter(win_round) |> 
+    select(n_rounds, round, n, total, prop) |> 
+    arrange(n_rounds, round) |> 
+    inner_join(
+      probs_nx_k,
+      by = c('n_rounds', 'round')
+    ) |> 
+    nest(data = -c(n_rounds, round)) |> 
+    mutate(
+      gt_p_value = map_dbl(
+        data, 
+        ~binom.test(.x$n, .x$total, .x$expected_poststreak_p, alternative = 'greater') |> 
+          broom::tidy() |>
+          pull(p.value)
+      ),
+      lt_p_value = map_dbl(
+        data, 
+        ~binom.test(.x$n, .x$total, .x$expected_poststreak_p, alternative = 'less') |> 
+          broom::tidy() |>
+          pull(p.value)
+      )
+    ) |> 
+    unnest(data)
+}
+
+cod_round_win_prop_after_x_wins_y_rounds <- tibble(win_streak = 2L:4L) |> 
+  mutate(
+    data = map(win_streak, summarize_cod_win_prop_after_x_wins_y_rounds)
+  ) |> 
+  unnest(data)
+save_qs(cod_round_win_prop_after_x_wins_y_rounds)
+```
 
 ## Is there evidence for the "hot hand" ([Valorant]{.valorant})?
 
@@ -2384,231 +2678,3 @@ save_plot_for_slide(p_val_o_win_r1_vs_post_round_prop)
 ```
 
 ![](plots/val_o_win_r1_vs_post_round_prop.png){fig-align="center"}
-
-## What are the most common series winning states ([COD SnD]{.cod})?
-
-```{r}
-#| label: p_cod_series_outcome_prop_over_expected
-# https://content.iospress.com/articles/journal-of-sports-analytics/jsa200422
-prob_of_series_lasting_n_games <- function(n, p = 0.5, max_round) {
-  s <- ceiling(max_round / 2)
-  (factorial(n - 1) / (factorial(s - 1) * factorial(n - s))) * (p^s * (1 - p)^(n - s) + p^(n - s) * (1 - p)^s)
-}
-
-expected_series_streaks_of_outcomes <- function(m, n) {
-  factorial(m + n) / (factorial(m) * factorial(n))
-}
-
-summarize_streaks <- function(rounds, game = c('cod', 'val')) {
-  if (game == 'cod') {
-    .max_round <- 11
-    .adj <- 0
-  } else {
-    .max_round <- 25
-    .adj <- 1
-  }
-  
-  cutoff <- (.max_round + 1) / 2
-  
-  actual_round_streaks <- rounds |> 
-    filter(round <= (.max_round - .adj)) |> 
-    filter(win_series) |> 
-    mutate(across(win_round, as.integer)) |> 
-    group_by(series_id) |> 
-    summarize(
-      wins = max(cumu_w),
-      losses = max(cumu_l),
-      ws = paste0(win_round, collapse = '')
-    ) |> 
-    ungroup() |> 
-    mutate(n_rounds = wins + losses) |> 
-    unite(
-      record, wins, losses, sep = '-'
-    ) |>
-    count(record, n_rounds, ws, sort = TRUE) |> 
-    mutate(prop = n / sum(n))
-  
-  expected_round_streaks <- tibble(
-    n_rounds = cutoff:.max_round
-  ) |> 
-    mutate(
-      series_prop = map_dbl(n_rounds, ~prob_of_series_lasting_n_games(.x, max_round = .max_round)),
-      n_expected_series_streaks = map2_dbl(cutoff, n_rounds - cutoff, expected_series_streaks_of_outcomes)
-    ) |> 
-    transmute(
-      n_rounds,
-      series_prop,
-      prop = series_prop / n_expected_series_streaks
-    )
-  
-  round_streaks <- full_join(
-    actual_round_streaks |> 
-      rename_with(~sprintf('%s_actual', .x), c(n, prop)),
-    expected_round_streaks |> 
-      rename_with(~sprintf('%s_expected', .x), prop),
-    by = 'n_rounds'
-  )
-  
-  round_streak_prop <- round_streaks |> 
-    drop_na() |> 
-    mutate(
-      prop_diff = prop_actual - prop_expected,
-      total_actual = sum(n_actual),
-      n_expected = round(prop_expected * total_actual),
-      p = vectorized_prop_test(n_actual, total_actual, n_expected, total_actual)
-    ) |> 
-    select(-total_actual) |> 
-    unnest_wider(p) |> 
-    arrange(p.value)
-  
-  series_outcomes <- full_join(
-    actual_round_streaks |> 
-      group_by(record, n_rounds) |> 
-      summarize(
-        across(n, sum)
-      ) |> 
-      ungroup() |> 
-      mutate(prop = n / sum(n)) |> 
-      rename_with(~sprintf('%s_actual', .x), c(n, prop)),
-    expected_round_streaks |> 
-      select(n_rounds, prop_expected = series_prop),
-    by = 'n_rounds'
-  )
-  
-  series_outcome_prop <- series_outcomes |> 
-    drop_na() |> 
-    mutate(
-      prop_diff = prop_actual - prop_expected,
-      total_actual = sum(n_actual),
-      n_expected = round(prop_expected * total_actual),
-      p = vectorized_prop_test(n_actual, total_actual, n_expected, total_actual)
-    ) |> 
-    select(-total_actual) |> 
-    unnest_wider(p) |> 
-    arrange(p.value)
-  
-  list(
-    rounds = round_streak_prop,
-    series = series_outcome_prop
-  )
-}
-
-plot_series_outcome_prop_over_expected <- function(series_outcome_prop, game) {
-  if (game == 'cod') {
-    .lvls <- sprintf('6-%d', 0:5)
-    .axis_x_text_size <- 14
-  } else {
-    .lvls <- c(sprintf('13-%d', 0:11), '12-12')
-    .axis_x_text_size <- 12
-  }
-  
-  long_series_outcome_prop <- series_outcome_prop |>
-    select(
-      record,
-      n = n_actual,
-      `3` = prop_actual,
-      `2` = prop_expected,
-      `1` = prop_diff
-    ) |> 
-    pivot_longer(
-      matches('[123]'),
-      names_to = 'outcome_idx',
-      values_to = 'value'
-    ) |> 
-    mutate(
-      across(outcome_idx, as.integer),
-      across(record, ~factor(.x, levels = .lvls))
-    )
-  
-  max_diff_series_outcome_prop <- long_series_outcome_prop |> 
-    filter(outcome_idx == 1) |> 
-    pull(value) |> 
-    abs() |> 
-    max()
-  
-  long_series_outcome_prop |> 
-    ggplot() +
-    aes(x = record, y = outcome_idx) +
-    geom_tile(
-      data = long_series_outcome_prop |> filter(outcome_idx > 1),
-      show.legend = FALSE,
-      # height = 0.8,
-      aes(fill = value)
-    ) +
-    ggsci::scale_fill_material(
-      palette = 'light-blue'
-    ) +
-    ggnewscale::new_scale_fill() +
-    geom_tile(
-      data = long_series_outcome_prop |> filter(outcome_idx == 1),
-      show.legend = FALSE,
-      height = 0.8,
-      aes(fill = value)
-    ) +
-    scale_fill_gradient2(
-      low = extract_ggsci_mid_color('purple'),
-      high = extract_ggsci_mid_color('green'),
-      mid = 'white',
-      midpoint = 0,
-      limits = c(
-        -max_diff_series_outcome_prop, 
-        +max_diff_series_outcome_prop
-      )
-    ) +
-    geom_text(
-      data = long_series_outcome_prop |> filter(outcome_idx == 3),
-      color = blackish_background,
-      size = 11 / .pt,
-      aes(label = sprintf('%.1f%%\n(%s)', 100 * value, scales::comma(n)))
-    ) +
-    geom_text(
-      data = long_series_outcome_prop |> filter(outcome_idx == 2),
-      color = blackish_background,
-      size = 11 / .pt,
-      aes(label = sprintf('%.1f%%', 100 * value))
-    ) +
-    geom_text(
-      data = long_series_outcome_prop |> filter(outcome_idx == 1) |> filter(abs(value) != max(abs(value))),
-      color = blackish_background,
-      size = 11 / .pt,
-      aes(label = sprintf('%+.1f%%', 100 * value))
-    ) +
-    geom_text(
-      data = long_series_outcome_prop |> filter(outcome_idx == 1) |> filter(abs(value) == max(abs(value))),
-      color = 'white',
-      size = 11 / .pt,
-      aes(label = sprintf('%+.1f%%', 100 * value))
-    ) +
-    scale_x_discrete(
-      position = 'top',
-      expand = c(0, 0)
-    ) +
-    scale_y_continuous(
-      labels = c('Diff.', 'Expected', 'Actual'),
-      breaks = 1:3,
-      expand = c(0, 0)
-    ) +
-    theme(
-      panel.grid.major = element_blank(),
-      axis.title = element_text(hjust = 0.5),
-      plot.title = ggtext::element_markdown(hjust = 0.5),
-      axis.text = element_text(size = 14, face = 'bold'),
-      axis.text.x = element_text(size = .axis_x_text_size, face = 'bold')
-    ) +
-    labs(
-      title = 'Series outcome %',
-      x = NULL,
-      y = NULL
-    )
-}
-
-cod_streaks_res <- cod_rounds |> summarize_streaks('cod')
-
-p_cod_series_outcome_prop_over_expected <- cod_streaks_res$series |> 
-  plot_series_outcome_prop_over_expected('cod') +
-  common_cod_labs()
-p_cod_series_outcome_prop_over_expected
-save_plot_for_slide(p_cod_series_outcome_prop_over_expected)
-```
-
-![](plots/cod_series_outcome_prop_over_expected.png){fig-align="center"}
