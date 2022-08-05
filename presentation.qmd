@@ -1556,6 +1556,19 @@ save_plot_for_slide(p_cod_b2b_round_win_prop)
 :::
 
 ```{r}
+#| label: qs-funcs
+#| eval: true
+load_qs <- function(name) {
+  res <- qs::qread(sprintf('data/%s.qs', name))
+  assign(name, value = res, envir = .GlobalEnv)
+}
+save_qs <- function(df, name = deparse(substitute(df))) {
+  qs::qsave(df, sprintf('data/%s.qs', name))
+}
+
+```
+
+```{r}
 #| label: cod_round_win_prop_after_x_wins
 ## http://keyonvafa.com/hot-hand/
 get_post_streak_prob <- function(n, k, p = 0.5) {
@@ -1662,11 +1675,13 @@ cod_round_win_prop_after_x_wins <- tibble(win_streak = 2L:4L) |>
     data = map(win_streak, summarize_cod_win_prop_after_x_wins)
   ) |> 
   unnest(data)
+save_qs(cod_round_win_prop_after_x_wins)
 ```
 
 ```{r}
 #| label: cod_round_win_prop_after_x_wins-eval
 #| eval: true
+load_qs('cod_round_win_prop_after_x_wins')
 cod_round_win_prop_after_x_wins |> 
   transmute(
     `Win Streak` = win_streak,
@@ -1842,10 +1857,6 @@ summarize_val_win_prop_after_x_wins_second12r <- function(k) {
     unnest(data)
 }
 
-save_qs <- function(df, name = deparse(substitute(df))) {
-  qs::qsave(df, sprintf('data/%s.qs', name))
-}
-
 val_round_win_prop_after_x_wins_first12r <- tibble(win_streak = 3L:9L) |> 
   mutate(
     data = map(win_streak, summarize_val_win_prop_after_x_wins_first12r)
@@ -1864,10 +1875,6 @@ save_qs(val_round_win_prop_after_x_wins_second12r)
 ```{r}
 #| label: val_round_win_prop_after_x_wins
 #| eval: false
-load_qs <- function(name) {
-  res <- qs::qread(sprintf('data/%s.qs', name))
-  assign(name, value = res, envir = .GlobalEnv)
-}
 load_qs('val_round_win_prop_after_x_wins_first12r')
 load_qs('val_round_win_prop_after_x_wins_second12r')
 val_round_win_prop_after_x_wins_first12r |> 
@@ -1915,8 +1922,9 @@ val_round_win_prop_after_x_wins_second12r |>
 
 ```{r}
 #| label: cod_round_win_prop_after_xw-eval
-#| eval: true
-val_round_win_prop_after_xw |> 
+#| eval: false
+load_qs('val_round_win_prop_after_x_wins_first12r')
+val_round_win_prop_after_x_wins_first12r |> 
   transmute(
     `Win Streak` = win_streak,
     `# of Offensive Wins in First 12 Rounds` = cumu_w,
@@ -1943,6 +1951,8 @@ val_round_win_prop_after_xw |>
 
 ::: fragment
 First 12 rounds **only**
+
+TODO
 :::
 
 ::: fragment
@@ -2602,9 +2612,3 @@ save_plot_for_slide(p_cod_series_outcome_prop_over_expected)
 ```
 
 ![](plots/cod_series_outcome_prop_over_expected.png){fig-align="center"}
-
-## Winning a next game given the series state
-
-```{r}
-
-```
