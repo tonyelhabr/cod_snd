@@ -1077,6 +1077,72 @@ expected_series_streaks_of_outcomes <- function(m, n) {
   factorial(m + n) / (factorial(m) * factorial(n))
 }
 
+# https://raw.githubusercontent.com/dgrtwo/splittestr/master/R/vectorized-prop-test.R
+vectorized_prop_test_approx <- function(a, b, c, d) {
+  n1 <- a + b
+  n2 <- c + d
+  n <- n1 + n2
+  p <- (a + c) / n
+  E <- cbind(p * n1, (1 - p) * n1, p * n2, (1 - p) * n2)
+  
+  x <- cbind(a, b, c, d)
+  
+  DELTA <- a / n1 - c / n2
+  YATES <- pmin(.5, abs(DELTA) / sum(1 / n1 + 1 / n2))
+  
+  STATISTIC <- rowSums((abs(x - E) - YATES)^2 / E)
+  PVAL <- pchisq(STATISTIC, 1, lower.tail = FALSE)
+  PVAL
+}
+
+vectorized_prop_test_exact <- function(a, b, c, d) {
+  sapply(seq_along(a), function(i) {
+    fisher.test(cbind(c(a[i], c[i]), c(b[i], d[i])))$p.value
+  })
+}
+
+vectorized_prop_test <- function(x1, n1, x2, n2, conf.level = .95) {
+  a <- x1
+  b <- n1 - x1
+  c <- x2
+  d <- n2 - x2
+  
+  # if any values are < 20, use Fisher's exact test
+  exact <- (a < 20 | b < 20 | c < 20 | d < 20)
+  
+  pvalue <- rep(NA, length(a))
+  
+  if (any(exact)) {
+    pvalue[exact] <- vectorized_prop_test_exact(a[exact], b[exact], c[exact], d[exact])
+  }
+  if (any(!exact)) {
+    pvalue[!exact] <- vectorized_prop_test_approx(a[!exact], b[!exact], c[!exact], d[!exact])
+  }
+  
+  mu1 <- a / (a + b)
+  mu2 <- c / (c + d)
+  
+  ## confidence interval
+  alpha2 <- (1 - conf.level) / 2
+  DELTA <- mu2 - mu1
+  WIDTH <- qnorm(alpha2)
+  alpha <- (a + .5) / (a + b + 1)
+  beta <- (c + .5) / (c + d + 1)
+  
+  n <- n1 + n2
+  YATES <- pmin(.5, abs(DELTA) / sum(1 / n1 + 1 / n2))
+  
+  z <- qnorm((1 + conf.level) / 2)
+  WIDTH <- z * sqrt(mu1 * (1 - mu1) / n1 + mu2 * (1 - mu2) / n2)
+  
+  tibble(
+    estimate = DELTA,
+    conf.low = pmax(DELTA - WIDTH, -1),
+    conf.high = pmin(DELTA + WIDTH, 1),
+    p.value = pvalue
+  )
+}
+
 summarize_streaks <- function(rounds, game = c('cod', 'val')) {
   if (game == 'cod') {
     .max_round <- 11
@@ -1393,7 +1459,6 @@ sports |>
 
 ```{r}
 #| label: cod_series_outcomes_chi
-
 cod_rounds_per_series <- cod_streaks_res$series |>
   summarize(
     actual = sum(n_rounds * prop_actual),
@@ -1485,7 +1550,7 @@ cod_n11 <- pluck_cod_n(11)
 cod_pm <- pmin(cod_n6, cod_n7, cod_n8, cod_n9, cod_n10, cod_n11)
 cod_n6adj <- round(10 * cod_n6 / cod_pm)
 cod_n7adj <- round(10 * cod_n7 / cod_pm)
-cod_n8adj <- round(10 * cod_n8 / cod_)
+cod_n8adj <- round(10 * cod_n8 / cod_pm)
 cod_n9adj <- round(10 * cod_n9 / cod_pm)
 cod_n10adj <- round(10 * cod_n10 / cod_pm)
 cod_n11adj <- round(10 * cod_n11 / cod_pm)
@@ -1583,6 +1648,8 @@ save_plot_for_slide(p_val_series_outcome_prop_over_expected)
 ```
 
 ![](plots/val_series_outcome_prop_over_expected.png)
+
+There's a clear bias towards shorter series than expected.
 
 ## When do back-to-back round wins occur ([COD SnD]{.cod})?
 
@@ -1685,6 +1752,8 @@ cod_b2b_round_win_prop_arws <- tibble(
   mutate(
     rn = row_number()
   )
+
+arw <- arrow(length = unit(5, 'pt'), type = 'closed')
 
 p_cod_b2b_round_win_prop <- cod_b2b_round_win_prop |> 
   ggplot() +
@@ -1793,7 +1862,6 @@ load_qs <- function(name) {
 save_qs <- function(df, name = deparse(substitute(df))) {
   qs::qsave(df, sprintf('data/%s.qs', name))
 }
-
 ```
 
 ```{r}
@@ -1843,44 +1911,31 @@ cod_round_streaks <- cod_rounds |>
     starts_with('won_prior_round')
   )
 
-summarize_cod_win_prop_after_x_wins <- function(k) {
-  stopifnot((k >= 2) & (k <= 5))
-  
-  probs_nx_k <- tibble(
-    n_rounds = 7L:11L
-  ) |> 
-    mutate(
-      prior_p = 6L / n_rounds,
-      expected_poststreak_p = map2_dbl(
-        n_rounds, prior_p, 
-        ~simulate_post_streak_prob(n = ..1, k = !!k, p = ..2)
-      )
-    )
+.postprocess_round_streaks <- function(k, round_streaks, probs_nx_k, ...) {
   
   cols <- sprintf('won_prior_round%d', 2:k)
   col_syms <- syms(cols)
-  cod_round_streaks_after_x <- cod_round_streaks |> 
+  round_streaks_after_x <- round_streaks |> 
     drop_na(!!!col_syms) |> 
-    count(n_rounds, win_round, won_prior_round1, !!!col_syms, sort = TRUE)
+    count(n_rounds, ..., win_round, won_prior_round1, !!!col_syms, sort = TRUE)
   
-  cod_round_win_prop_after_x_wins <- cod_round_streaks_after_x |> 
+  round_win_prop_after_x_wins <- round_streaks_after_x |> 
     filter(won_prior_round1, !!!col_syms)
   
-  cod_round_win_prop_after_x_wins |> 
-    group_by(n_rounds) |> 
+  round_win_prop_after_x_wins |> 
+    group_by(n_rounds, ...) |> 
     mutate(
       total = sum(n),
       prop = n / total
     ) |> 
     ungroup() |> 
     filter(win_round) |> 
-    select(n_rounds, n, total, prop) |> 
-    arrange(n_rounds) |> 
+    select(n_rounds, ..., n, total, prop) |> 
+    arrange(n_rounds, ...) |> 
     inner_join(
-      probs_nx_k,
-      by = 'n_rounds'
+      probs_nx_k
     ) |> 
-    nest(data = -c(n_rounds)) |> 
+    nest(data = -c(n_rounds, ...)) |> 
     mutate(
       gt_p_value = map_dbl(
         data, 
@@ -1893,22 +1948,80 @@ summarize_cod_win_prop_after_x_wins <- function(k) {
         ~binom.test(.x$n, .x$total, .x$expected_poststreak_p, alternative = 'less') |> 
           broom::tidy() |>
           pull(p.value)
+      ),
+      gt_is_signif = gt_p_value <= 0.05,
+      lt_is_signif = lt_p_value <= 0.05,
+      is_signif = case_when(
+        gt_is_signif ~ 'Better',
+        lt_is_signif ~ 'Worse',
+        TRUE ~ 'Neither'
       )
     ) |> 
     unnest(data)
 }
 
-cod_round_win_prop_after_x_wins <- tibble(win_streak = 2L:4L) |> 
+summarize_cod_win_prop_after_x_wins <- function(k) {
+  probs_nx_k <- tibble(
+    n_rounds = 7L:11L
+  ) |> 
+    mutate(
+      prior_p = 6L / n_rounds,
+      expected_poststreak_p = map2_dbl(
+        n_rounds, prior_p, 
+        ~simulate_post_streak_prob(n = ..1, k = !!k, p = ..2)
+      )
+    )
+  
+  .postprocess_round_streaks(
+    k = k,
+    round_streaks = cod_round_streaks,
+    probs_nx_k = probs_nx_k
+  )
+}
+
+cod_round_win_prop_after_x_wins <- tibble(win_streak = 2L:4L) |>
   mutate(
     data = map(win_streak, summarize_cod_win_prop_after_x_wins)
-  ) |> 
+  ) |>
   unnest(data)
 save_qs(cod_round_win_prop_after_x_wins)
 ```
 
 ```{r}
-#| label: cod_round_win_prop_after_x_wins-eval
-#| eval: true
+#| label: cod_round_win_prop_after_x_wins_and_rounds
+summarize_cod_win_prop_after_x_wins_y_rounds <- function(k) {
+  probs_nx_k <- crossing(
+    n_rounds = 7L:11L,
+    round = 3L:11L
+  ) |> 
+    filter(round >= (k + 1L)) |> 
+    mutate(
+      prior_p = 6L / n_rounds,
+      expected_poststreak_p = map2_dbl(
+        n_rounds, prior_p, 
+        ~simulate_post_streak_prob(n = ..1, k = !!k, p = ..2)
+      )
+    )
+  
+  .postprocess_round_streaks(
+    k = k,
+    round_streaks = cod_round_streaks,
+    probs_nx_k = probs_nx_k,
+    round
+  )
+}
+
+cod_round_win_prop_after_x_wins_and_rounds <- tibble(win_streak = 2L:4L) |>
+  mutate(
+    data = map(win_streak, summarize_cod_win_prop_after_x_wins_and_rounds)
+  ) |>
+  unnest(data)
+save_qs(cod_round_win_prop_after_x_wins_and_rounds)
+```
+
+```{r}
+#| label: cod_round_win_prop_after_x_wins-table
+#| eval: false
 load_qs('cod_round_win_prop_after_x_wins')
 cod_round_win_prop_after_x_wins |> 
   transmute(
@@ -1932,77 +2045,219 @@ cod_round_win_prop_after_x_wins |>
     `Binom. < p-value` = lt_p_value
   ) |> 
   knitr::kable()
+```
 
+```{r}
+#| label: cod_round_win_prop_after_x_wins-plot
+load_qs('cod_round_win_prop_after_x_wins')
+
+ggsci_grey <- extract_ggsci_mid_color('grey')
+p_cod_round_win_prop_after_x_wins <- cod_round_win_prop_after_x_wins |> 
+  ggplot() +
+  geom_tile(
+    color = blackish_background,
+    height = 0.8,
+    aes(
+      fill = lt_is_signif,
+      y = win_streak + 0.5, 
+      x = n_rounds + 0.5
+    )
+  ) +
+  geom_richtext(
+    fill = NA_character_,
+    label.color = NA_character_,
+    family = font,
+    color = blackish_background,
+    size = 11 / .pt,
+    fontface = 'bold',
+    aes(
+      label = sprintf(
+        '%s %s <span style="color:white">%s</span><br/>(%s)',
+        scales::percent(prop, accuracy = 1), 
+        case_when(
+          round(prop, 1) == round(expected_poststreak_p, 1) ~ '=',
+          prop >= expected_poststreak_p ~ '>=', 
+          TRUE ~ '<'
+        ),
+        scales::percent(expected_poststreak_p, accuracy = 1),
+        scales::comma(n)
+      ),
+      y = win_streak + 0.5, 
+      x = n_rounds + 0.5
+    )
+  ) +
+  guides(
+    fill = guide_legend(
+      'Significantly less than expected?'
+    )
+  ) +
+  scale_y_continuous(
+    labels = 2:4,
+    breaks = seq(2.5, 4.5, by = 1),
+    expand = c(0, 0.5)
+  ) +
+  scale_x_continuous(
+    labels = 7:11,
+    breaks = seq(7.5, 11.5, by = 1),
+    expand = c(0, 0)
+  ) +
+  scale_fill_manual(
+    values = c(ggsci_grey, ggsci_cyan),
+    labels = c('No', 'Yes')
+  ) +
+  theme(
+    legend.position = 'top',
+    legend.text = element_text(color = 'white', size = 12),
+    panel.grid.major = element_blank(),
+    axis.title = element_text(hjust = 0.5),
+    plot.title = ggtext::element_markdown(hjust = 0.5),
+    axis.text = element_text(size = 16, face = 'bold')
+  ) +
+  common_cod_labs() +
+  labs(
+    title = 'Post win streak round win %',
+    y = 'Win streak length',
+    x = '# of rounds played in series'
+  ) +
+  geom_curve(
+    data = data.frame(),
+    color = 'white',
+    arrow = arw,
+    curvature = 0.1,
+    aes(
+      x = 7.8,
+      y = 5.11,
+      xend = 7.7,
+      yend = 4.8
+    )
+  ) +
+  geom_text(
+    data = data.frame(),
+    hjust = 0,
+    vjust = 0.5,
+    color = 'white',
+    size = 12 / .pt,
+    aes(
+      label = 'Expected %',
+      x = 7.81,
+      y = 5.12
+    )
+  ) +
+  geom_curve(
+    data = data.frame(),
+    color = 'white',
+    arrow = arw,
+    curvature = 0.25,
+    aes(
+      x = 7.8,
+      y = 5.41,
+      xend = 7.3,
+      yend = 4.8
+    )
+  ) +
+  geom_text(
+    data = data.frame(),
+    hjust = 0,
+    vjust = 0.5,
+    color = 'white',
+    size = 12 / .pt,
+    aes(
+      label = 'Actual %',
+      x = 7.81,
+      y = 5.42
+    )
+  )
+p_cod_round_win_prop_after_x_wins
+save_plot_for_slide(p_cod_round_win_prop_after_x_wins)
 ```
 
 ::: fragment
+![](plots/cod_round_win_prop_after_x_wins.png)
+
 -   There is no evidence for momentum, for both streaks of 2 and 3. In fact, for series that go to 9, 10, or 11 rounds, there is evidence that the streaking teams perform significantly worse than expected in the post-streak round. And for streaks of 4, teams perform worse than expected in series ending in 7, 8, 10, and 11 rounds.
 :::
 
 ```{r}
-summarize_cod_win_prop_after_x_wins_y_rounds <- function(k) {
-  stopifnot((k >= 2) & (k <= 5))
-  
-  probs_nx_k <- crossing(
-    n_rounds = 7L:11L,
-    round = 1L:10L
-  ) |> 
-    filter(round <= n_rounds) |> 
-    mutate(
-      prior_p = 6L / n_rounds,
-      expected_poststreak_p = map2_dbl(
-        n_rounds, prior_p, 
-        ~simulate_post_streak_prob(n = ..1, k = !!k, p = ..2)
-      )
-    )
-  
-  cols <- sprintf('won_prior_round%d', 2:k)
-  col_syms <- syms(cols)
-  cod_round_streaks_after_x <- cod_round_streaks |> 
-    drop_na(!!!col_syms) |> 
-    count(n_rounds, round, win_round, won_prior_round1, !!!col_syms, sort = TRUE)
-  
-  cod_round_win_prop_after_x_wins <- cod_round_streaks_after_x |> 
-    filter(won_prior_round1, !!!col_syms)
-  
-  cod_round_win_prop_after_x_wins |> 
-    group_by(n_rounds, round) |> 
-    mutate(
-      total = sum(n),
-      prop = n / total
-    ) |> 
-    ungroup() |> 
-    filter(win_round) |> 
-    select(n_rounds, round, n, total, prop) |> 
-    arrange(n_rounds, round) |> 
-    inner_join(
-      probs_nx_k,
-      by = c('n_rounds', 'round')
-    ) |> 
-    nest(data = -c(n_rounds, round)) |> 
-    mutate(
-      gt_p_value = map_dbl(
-        data, 
-        ~binom.test(.x$n, .x$total, .x$expected_poststreak_p, alternative = 'greater') |> 
-          broom::tidy() |>
-          pull(p.value)
-      ),
-      lt_p_value = map_dbl(
-        data, 
-        ~binom.test(.x$n, .x$total, .x$expected_poststreak_p, alternative = 'less') |> 
-          broom::tidy() |>
-          pull(p.value)
-      )
-    ) |> 
-    unnest(data)
-}
-
-cod_round_win_prop_after_x_wins_y_rounds <- tibble(win_streak = 2L:4L) |> 
+load_qs('cod_round_win_prop_after_x_wins')
+ggsci_orange <- extract_ggsci_mid_color('orange')
+p_cod_round_win_prop_after_x_wins_y_rounds <- cod_round_win_prop_after_x_wins_y_rounds |> 
   mutate(
-    data = map(win_streak, summarize_cod_win_prop_after_x_wins_y_rounds)
+    is_signif = case_when(
+      gt_is_signif ~ 'Better',
+      lt_is_signif ~ 'Worse',
+      TRUE ~ 'Neither'
+    )
   ) |> 
-  unnest(data)
-save_qs(cod_round_win_prop_after_x_wins_y_rounds)
+  # filter(win_streak %in% c(3, 4)) |> 
+  # filter(n >= 20) |> 
+  ggplot() +
+  geom_tile(
+    color = blackish_background,
+    height = 0.8,
+    aes(
+      fill = is_signif,
+      x = round + 0.5, 
+      y = n_rounds + 0.5
+    )
+  ) +
+  geom_richtext(
+    fill = NA_character_,
+    label.color = NA_character_,
+    family = font,
+    color = blackish_background,
+    size = 11 / .pt,
+    fontface = 'bold',
+    aes(
+      label = sprintf(
+        '%s %s <span style="color:white">%s</span><br/>(%s)',
+        scales::percent(prop, accuracy = 1), 
+        case_when(
+          round(prop, 1) == round(expected_poststreak_p, 1) ~ '=',
+          prop >= expected_poststreak_p ~ '>=', 
+          TRUE ~ '<'
+        ),
+        scales::percent(expected_poststreak_p, accuracy = 1),
+        scales::comma(n)
+      ),
+      x = round + 0.5, 
+      y = n_rounds + 0.5
+    )
+  ) +
+  guides(
+    fill = guide_legend(
+      'Significantly better/worse?'
+    )
+  ) +
+  scale_x_continuous(
+    labels = 4:11,
+    breaks = seq(4.5, 11.5, by = 1),
+    expand = c(0, 0.5)
+  ) +
+  scale_y_continuous(
+    labels = 7:11,
+    breaks = seq(7.5, 11.5, by = 1),
+    expand = c(0, 0)
+  ) +
+  scale_fill_manual(
+    values = c(ggsci_cyan, ggsci_grey, ggsci_orange),
+    labels = c('Better', 'Neither', 'Worse')
+  ) +
+  theme(
+    legend.position = 'top',
+    legend.text = element_text(color = 'white', size = 12),
+    panel.grid.major = element_blank(),
+    axis.title = element_text(hjust = 0.5),
+    plot.title = ggtext::element_markdown(hjust = 0.5),
+    axis.text = element_text(size = 16, face = 'bold')
+  ) +
+  common_cod_labs() +
+  labs(
+    title = 'Post win streak round win %',
+    x = 'Round',
+    y = '# of rounds played in series'
+  ) +
+  facet_wrap(~win_streak)
+p_cod_round_win_prop_after_x_wins_y_rounds
 ```
 
 ## Is there evidence for the "hot hand" ([Valorant]{.valorant})?
@@ -2187,7 +2442,7 @@ val_round_win_prop_after_x_wins_first12r |>
       scales::percent(prop, accuracy = 1),
       scales::percent(expected_poststreak_p, accuracy = 1),
       scales::comma(total)
-      )
+    )
     )
   )
 
@@ -2207,7 +2462,7 @@ val_round_win_prop_after_x_wins_second12r |>
       scales::percent(prop, accuracy = 1),
       scales::percent(expected_poststreak_p, accuracy = 1),
       scales::comma(total)
-      )
+    )
     )
   ) +
   facet_wrap(~n_rounds)
@@ -2365,72 +2620,6 @@ cod_plant_site_win_prop <- c(
 
 ```{r}
 #| label: p_cod_o_win_r1_vs_post_round_prop
-# https://raw.githubusercontent.com/dgrtwo/splittestr/master/R/vectorized-prop-test.R
-vectorized_prop_test_approx <- function(a, b, c, d) {
-  n1 <- a + b
-  n2 <- c + d
-  n <- n1 + n2
-  p <- (a + c) / n
-  E <- cbind(p * n1, (1 - p) * n1, p * n2, (1 - p) * n2)
-  
-  x <- cbind(a, b, c, d)
-  
-  DELTA <- a / n1 - c / n2
-  YATES <- pmin(.5, abs(DELTA) / sum(1 / n1 + 1 / n2))
-  
-  STATISTIC <- rowSums((abs(x - E) - YATES)^2 / E)
-  PVAL <- pchisq(STATISTIC, 1, lower.tail = FALSE)
-  PVAL
-}
-
-vectorized_prop_test_exact <- function(a, b, c, d) {
-  sapply(seq_along(a), function(i) {
-    fisher.test(cbind(c(a[i], c[i]), c(b[i], d[i])))$p.value
-  })
-}
-
-vectorized_prop_test <- function(x1, n1, x2, n2, conf.level = .95) {
-  a <- x1
-  b <- n1 - x1
-  c <- x2
-  d <- n2 - x2
-  
-  # if any values are < 20, use Fisher's exact test
-  exact <- (a < 20 | b < 20 | c < 20 | d < 20)
-  
-  pvalue <- rep(NA, length(a))
-  
-  if (any(exact)) {
-    pvalue[exact] <- vectorized_prop_test_exact(a[exact], b[exact], c[exact], d[exact])
-  }
-  if (any(!exact)) {
-    pvalue[!exact] <- vectorized_prop_test_approx(a[!exact], b[!exact], c[!exact], d[!exact])
-  }
-  
-  mu1 <- a / (a + b)
-  mu2 <- c / (c + d)
-  
-  ## confidence interval
-  alpha2 <- (1 - conf.level) / 2
-  DELTA <- mu2 - mu1
-  WIDTH <- qnorm(alpha2)
-  alpha <- (a + .5) / (a + b + 1)
-  beta <- (c + .5) / (c + d + 1)
-  
-  n <- n1 + n2
-  YATES <- pmin(.5, abs(DELTA) / sum(1 / n1 + 1 / n2))
-  
-  z <- qnorm((1 + conf.level) / 2)
-  WIDTH <- z * sqrt(mu1 * (1 - mu1) / n1 + mu2 * (1 - mu2) / n2)
-  
-  tibble(
-    estimate = DELTA,
-    conf.low = pmax(DELTA - WIDTH, -1),
-    conf.high = pmin(DELTA + WIDTH, 1),
-    p.value = pvalue
-  )
-}
-
 calculate_map_o_round_win_prop <- function(df) {
   df |> 
     count(map, is_offense, win_round) |> 
@@ -2480,8 +2669,6 @@ o_win_rx_prop_pal <- c(
   `-1` = extract_ggsci_mid_color('pink'),
   `1` = extract_ggsci_mid_color('teal')
 )
-
-arw <- arrow(length = unit(5, 'pt'), type = 'closed')
 
 plot_round_vs_post_round_slope_chart <- function(df, .round, game = c('cod', 'val')) {
   game <- match.arg(game)
