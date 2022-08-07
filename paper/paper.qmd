@@ -1,0 +1,43 @@
+---
+title: "They're Clutching up! Team Momentum in Round-Based Esports"
+format:
+  arxiv-pdf:
+    keep-tex: true  
+  arxiv-html: default
+author:
+  - name: Tony ElHabr
+    affiliations:
+      - name: Georgia Institute of Technology
+    email: anthonyelhabr@gmail.com
+    url: https://tonyelhabr.rbind.io
+abstract: |
+  My research investigates patterns in round win percentages in professional matches (series) of two popular first-person shooter games, Call of Duty (Search and Destroy mode) and Valorant.
+
+  First, I find evidence in Call of Duty (COD) defying the naive hypothesis that a series represents a sequence of independent events (rounds), with each team having a constant 50% probability of winning a given round.
+  
+  Second, I examine post-streak round win probability. For COD, in which teams play first to 6 round wins (maximum 11 rounds), I find that teams perform significantly worse than expected after streaks of 2, 3, and 4 wins when series end up going to 9, 10, or 11 rounds, even after accounting for the "hot-hand" phenomenon. In Valorant, which requires one side to win 13 rounds for the series victory, there is evidence of performing better than expected after streaks of up to 8 wins, which is perhaps not shocking given the economy aspect of the game.
+  
+  Third, I compare win percentages in round one versus all other rounds, hypothesizing that there may be some advantage on either side when there is no prior information about how the opponent intends to play a given map in either game. I find one COD map for which there seems to be a significant defensive advantage in round one, but none otherwise.
+  
+  Finally, I evaluate behavior when teams have two rounds left to win the series, observing a peak in COD offensive win percentages in the 4-4 state, and no such oddity in Valorant.
+keywords: 
+  - esports
+bibliography: bibliography.bib  
+---
+
+Sit nunc at convallis fringilla semper! Penatibus vivamus eget malesuada cursus fames magnis potenti. Venenatis ligula enim conubia laoreet orci class ligula? Massa sem sed enim risus ut mattis inceptos nisl elementum mattis. Nostra ultricies habitant donec vitae luctus proin gravida placerat ac libero imperdiet. Auctor habitasse faucibus ultricies purus eget sociis ultrices habitasse nec ad aptent lectus rutrum proin potenti montes sodales posuere convallis tempor erat egestas magna lectus sociis mollis purus.
+
+Dolor turpis euismod himenaeos interdum felis dictum tempus euismod tortor aliquam? Eget interdum vehicula laoreet quam. Mollis justo cursus ad blandit feugiat pulvinar sem sodales bibendum. Leo leo magna pulvinar metus lacinia nam fringilla maecenas duis dis suscipit aenean natoque sem metus quam risus sagittis convallis primis sociis id dictumst.
+
+# Introduction
+
+Amet ultricies dignissim varius potenti suscipit justo phasellus dui ullamcorper luctus suscipit vulputate. Sagittis enim volutpat ultrices diam curabitur potenti platea euismod vel libero primis feugiat. Nibh potenti habitant ultricies dictum sociis class at vehicula eu vestibulum. Curabitur iaculis.
+
+Consectetur est eleifend turpis morbi magna porttitor bibendum ut blandit aliquet lacus. Nostra iaculis torquent parturient id fermentum montes at himenaeos. Magna congue blandit fames egestas at inceptos? Id maecenas blandit maecenas accumsan ridiculus mollis nullam justo pulvinar elementum inceptos habitant risus.
+
+{{< pagebreak >}}
+
+# References {.unnumbered}
+
+::: {#refs}
+:::

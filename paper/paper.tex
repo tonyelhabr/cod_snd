@@ -1,0 +1,257 @@
+% Options for packages loaded elsewhere
+\PassOptionsToPackage{unicode}{hyperref}
+\PassOptionsToPackage{hyphens}{url}
+\PassOptionsToPackage{dvipsnames,svgnames,x11names}{xcolor}
+%
+\documentclass[
+]{article}
+
+\usepackage{amsmath,amssymb}
+\usepackage{lmodern}
+\usepackage{iftex}
+\ifPDFTeX
+  \usepackage[T1]{fontenc}
+  \usepackage[utf8]{inputenc}
+  \usepackage{textcomp} % provide euro and other symbols
+\else % if luatex or xetex
+  \usepackage{unicode-math}
+  \defaultfontfeatures{Scale=MatchLowercase}
+  \defaultfontfeatures[\rmfamily]{Ligatures=TeX,Scale=1}
+  \setmathfont[]{Latin Modern Math}
+\fi
+% Use upquote if available, for straight quotes in verbatim environments
+\IfFileExists{upquote.sty}{\usepackage{upquote}}{}
+\IfFileExists{microtype.sty}{% use microtype if available
+  \usepackage[]{microtype}
+  \UseMicrotypeSet[protrusion]{basicmath} % disable protrusion for tt fonts
+}{}
+\makeatletter
+\@ifundefined{KOMAClassName}{% if non-KOMA class
+  \IfFileExists{parskip.sty}{%
+    \usepackage{parskip}
+  }{% else
+    \setlength{\parindent}{0pt}
+    \setlength{\parskip}{6pt plus 2pt minus 1pt}}
+}{% if KOMA class
+  \KOMAoptions{parskip=half}}
+\makeatother
+\usepackage{xcolor}
+\setlength{\emergencystretch}{3em} % prevent overfull lines
+\setcounter{secnumdepth}{5}
+% Make \paragraph and \subparagraph free-standing
+\ifx\paragraph\undefined\else
+  \let\oldparagraph\paragraph
+  \renewcommand{\paragraph}[1]{\oldparagraph{#1}\mbox{}}
+\fi
+\ifx\subparagraph\undefined\else
+  \let\oldsubparagraph\subparagraph
+  \renewcommand{\subparagraph}[1]{\oldsubparagraph{#1}\mbox{}}
+\fi
+
+
+\providecommand{\tightlist}{%
+  \setlength{\itemsep}{0pt}\setlength{\parskip}{0pt}}\usepackage{longtable,booktabs,array}
+\usepackage{calc} % for calculating minipage widths
+% Correct order of tables after \paragraph or \subparagraph
+\usepackage{etoolbox}
+\makeatletter
+\patchcmd\longtable{\par}{\if@noskipsec\mbox{}\fi\par}{}{}
+\makeatother
+% Allow footnotes in longtable head/foot
+\IfFileExists{footnotehyper.sty}{\usepackage{footnotehyper}}{\usepackage{footnote}}
+\makesavenoteenv{longtable}
+\usepackage{graphicx}
+\makeatletter
+\def\maxwidth{\ifdim\Gin@nat@width>\linewidth\linewidth\else\Gin@nat@width\fi}
+\def\maxheight{\ifdim\Gin@nat@height>\textheight\textheight\else\Gin@nat@height\fi}
+\makeatother
+% Scale images if necessary, so that they will not overflow the page
+% margins by default, and it is still possible to overwrite the defaults
+% using explicit options in \includegraphics[width, height, ...]{}
+\setkeys{Gin}{width=\maxwidth,height=\maxheight,keepaspectratio}
+% Set default figure placement to htbp
+\makeatletter
+\def\fps@figure{htbp}
+\makeatother
+\newlength{\cslhangindent}
+\setlength{\cslhangindent}{1.5em}
+\newlength{\csllabelwidth}
+\setlength{\csllabelwidth}{3em}
+\newlength{\cslentryspacingunit} % times entry-spacing
+\setlength{\cslentryspacingunit}{\parskip}
+\newenvironment{CSLReferences}[2] % #1 hanging-ident, #2 entry spacing
+ {% don't indent paragraphs
+  \setlength{\parindent}{0pt}
+  % turn on hanging indent if param 1 is 1
+  \ifodd #1
+  \let\oldpar\par
+  \def\par{\hangindent=\cslhangindent\oldpar}
+  \fi
+  % set entry spacing
+  \setlength{\parskip}{#2\cslentryspacingunit}
+ }%
+ {}
+\usepackage{calc}
+\newcommand{\CSLBlock}[1]{#1\hfill\break}
+\newcommand{\CSLLeftMargin}[1]{\parbox[t]{\csllabelwidth}{#1}}
+\newcommand{\CSLRightInline}[1]{\parbox[t]{\linewidth - \csllabelwidth}{#1}\break}
+\newcommand{\CSLIndent}[1]{\hspace{\cslhangindent}#1}
+
+\usepackage{arxiv}
+\usepackage{orcidlink}
+\usepackage{amsmath}
+\usepackage[T1]{fontenc}
+\makeatletter
+\makeatother
+\makeatletter
+\makeatother
+\makeatletter
+\@ifpackageloaded{caption}{}{\usepackage{caption}}
+\AtBeginDocument{%
+\ifdefined\contentsname
+  \renewcommand*\contentsname{Table of contents}
+\else
+  \newcommand\contentsname{Table of contents}
+\fi
+\ifdefined\listfigurename
+  \renewcommand*\listfigurename{List of Figures}
+\else
+  \newcommand\listfigurename{List of Figures}
+\fi
+\ifdefined\listtablename
+  \renewcommand*\listtablename{List of Tables}
+\else
+  \newcommand\listtablename{List of Tables}
+\fi
+\ifdefined\figurename
+  \renewcommand*\figurename{Figure}
+\else
+  \newcommand\figurename{Figure}
+\fi
+\ifdefined\tablename
+  \renewcommand*\tablename{Table}
+\else
+  \newcommand\tablename{Table}
+\fi
+}
+\@ifpackageloaded{float}{}{\usepackage{float}}
+\floatstyle{ruled}
+\@ifundefined{c@chapter}{\newfloat{codelisting}{h}{lop}}{\newfloat{codelisting}{h}{lop}[chapter]}
+\floatname{codelisting}{Listing}
+\newcommand*\listoflistings{\listof{codelisting}{List of Listings}}
+\makeatother
+\makeatletter
+\@ifpackageloaded{caption}{}{\usepackage{caption}}
+\@ifpackageloaded{subcaption}{}{\usepackage{subcaption}}
+\makeatother
+\makeatletter
+\@ifpackageloaded{tcolorbox}{}{\usepackage[many]{tcolorbox}}
+\makeatother
+\makeatletter
+\@ifundefined{shadecolor}{\definecolor{shadecolor}{rgb}{.97, .97, .97}}
+\makeatother
+\makeatletter
+\makeatother
+\ifLuaTeX
+  \usepackage{selnolig}  % disable illegal ligatures
+\fi
+\IfFileExists{bookmark.sty}{\usepackage{bookmark}}{\usepackage{hyperref}}
+\IfFileExists{xurl.sty}{\usepackage{xurl}}{} % add URL line breaks if available
+\urlstyle{same} % disable monospaced font for URLs
+\hypersetup{
+  pdftitle={They're Clutching up! Team Momentum in Round-Based Esports},
+  pdfauthor={Tony ElHabr},
+  pdfkeywords={esports},
+  colorlinks=true,
+  linkcolor={blue},
+  filecolor={Maroon},
+  citecolor={Blue},
+  urlcolor={Blue},
+  pdfcreator={LaTeX via pandoc}}
+
+\title{They're Clutching up! Team Momentum in Round-Based Esports}
+\author{
+Tony ElHabr\\\\Georgia Institute of
+Technology\\\\\href{mailto:anthonyelhabr@gmail.com}{anthonyelhabr@gmail.com}}
+\date{}
+\begin{document}
+\maketitle
+\begin{abstract}
+My research investigates patterns in round win percentages in
+professional matches (series) of two popular first-person shooter games,
+Call of Duty (Search and Destroy mode) and Valorant.
+
+First, I find evidence in Call of Duty (COD) defying the naive
+hypothesis that a series represents a sequence of independent events
+(rounds), with each team having a constant 50\% probability of winning a
+given round.
+
+Second, I examine post-streak round win probability. For COD, in which
+teams play first to 6 round wins (maximum 11 rounds), I find that teams
+perform significantly worse than expected after streaks of 2, 3, and 4
+wins when series end up going to 9, 10, or 11 rounds, even after
+accounting for the ``hot-hand'' phenomenon. In Valorant, which requires
+one side to win 13 rounds for the series victory, there is evidence of
+performing better than expected after streaks of up to 8 wins, which is
+perhaps not shocking given the economy aspect of the game.
+
+Third, I compare win percentages in round one versus all other rounds,
+hypothesizing that there may be some advantage on either side when there
+is no prior information about how the opponent intends to play a given
+map in either game. I find one COD map for which there seems to be a
+significant defensive advantage in round one, but none otherwise.
+
+Finally, I evaluate behavior when teams have two rounds left to win the
+series, observing a peak in COD offensive win percentages in the 4-4
+state, and no such oddity in Valorant.
+\end{abstract}
+{\bfseries \emph Keywords}
+\def\sep{\textbullet\ }
+
+esports
+
+\ifdefined\Shaded\renewenvironment{Shaded}{\begin{tcolorbox}[sharp corners, frame hidden, interior hidden, borderline west={3pt}{0pt}{shadecolor}, enhanced, breakable, boxrule=0pt]}{\end{tcolorbox}}\fi
+
+Sit nunc at convallis fringilla semper! Penatibus vivamus eget malesuada
+cursus fames magnis potenti. Venenatis ligula enim conubia laoreet orci
+class ligula? Massa sem sed enim risus ut mattis inceptos nisl elementum
+mattis. Nostra ultricies habitant donec vitae luctus proin gravida
+placerat ac libero imperdiet. Auctor habitasse faucibus ultricies purus
+eget sociis ultrices habitasse nec ad aptent lectus rutrum proin potenti
+montes sodales posuere convallis tempor erat egestas magna lectus sociis
+mollis purus.
+
+Dolor turpis euismod himenaeos interdum felis dictum tempus euismod
+tortor aliquam? Eget interdum vehicula laoreet quam. Mollis justo cursus
+ad blandit feugiat pulvinar sem sodales bibendum. Leo leo magna pulvinar
+metus lacinia nam fringilla maecenas duis dis suscipit aenean natoque
+sem metus quam risus sagittis convallis primis sociis id dictumst.
+
+\hypertarget{introduction}{%
+\section{Introduction}\label{introduction}}
+
+Amet ultricies dignissim varius potenti suscipit justo phasellus dui
+ullamcorper luctus suscipit vulputate. Sagittis enim volutpat ultrices
+diam curabitur potenti platea euismod vel libero primis feugiat. Nibh
+potenti habitant ultricies dictum sociis class at vehicula eu
+vestibulum. Curabitur iaculis.
+
+Consectetur est eleifend turpis morbi magna porttitor bibendum ut
+blandit aliquet lacus. Nostra iaculis torquent parturient id fermentum
+montes at himenaeos. Magna congue blandit fames egestas at inceptos? Id
+maecenas blandit maecenas accumsan ridiculus mollis nullam justo
+pulvinar elementum inceptos habitant risus.
+
+\newpage{}
+
+\hypertarget{references}{%
+\section*{References}\label{references}}
+\addcontentsline{toc}{section}{References}
+
+\hypertarget{refs}{}
+\begin{CSLReferences}{0}{0}
+\end{CSLReferences}
+
+
+
+\end{document}
