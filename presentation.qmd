@@ -120,7 +120,7 @@ cod_o_win_prop_const <- cod_rounds |>
   mutate(prop = n / sum(n)) |> 
   filter(win_round) |> 
   pull(prop)
-cod_o_win_pct <- scales::percent(cod_o_win_prop_const, accuracy = 1)
+cod_o_win_pct <- scales::percent(cod_o_win_prop_const, accuracy = 0.1)
 
 cod_plant_pct <- cod_rounds |>
   filter(is_offense) |> 
@@ -128,7 +128,7 @@ cod_plant_pct <- cod_rounds |>
   mutate(prop = n / sum(n)) |> 
   filter(makes_plant) |> 
   pull(prop) |> 
-  scales::percent(accuracy = 1)
+  scales::percent(accuracy = 0.1)
 
 cod_o_plant_and_win_pct <- cod_rounds |> 
   filter(is_offense, !is.na(plant)) |> 
@@ -136,7 +136,7 @@ cod_o_plant_and_win_pct <- cod_rounds |>
   mutate(prop = n / sum(n)) |> 
   filter(win_round) |> 
   pull(prop) |> 
-  scales::percent(accuracy = 1)
+  scales::percent(accuracy = 0.1)
 
 cod_o_first_blood_win_pct <- cod_rounds |> 
   filter(!is.na(earned_fb)) |> 
@@ -145,7 +145,7 @@ cod_o_first_blood_win_pct <- cod_rounds |>
   mutate(prop = n / sum(n)) |> 
   filter(win_round) |> 
   pull(prop) |> 
-  scales::percent(accuracy = 1)
+  scales::percent(accuracy = 0.1)
 ```
 
 ::: fragment
@@ -297,7 +297,7 @@ heatmap_text_layers <- function(
 cod_heatmap_seq_labeller <- function(.df, .label, .num) {
   sprintf(
     '%s\n(%s)',
-    scales::percent(.df[[.label]], accuracy = 1), 
+    scales::percent(.df[[.label]], accuracy = 0.1), 
     scales::comma(.df$n)
   )
 }
@@ -332,7 +332,34 @@ o_round_win_text_layer <- function(
     )
   )
 }
-
+o_series_win_text_layer <- function(
+    ..., 
+    .df,
+    .threshold,
+    .labeller, 
+    .emphasize
+) {
+  if(.emphasize == 'low') {
+    op <- `<`
+    .color <- blackish_background
+  } else {
+    op <- `>=`
+    .color <- 'white'
+  }
+  list(
+    ...,
+    heatmap_text_layer(
+      .df = .df,
+      .op = op,
+      .label = 'win_series_prop',
+      .num = 'win_series',
+      .color = .color,
+      .threshold = .threshold,
+      .labeller = .labeller,
+      .size = 9 / .pt
+    )
+  )
+}
 cod_heatmap_div_labeller <- function(.df, .label, .num) {
   sprintf(
     '%+.1f\n(%s)', 
@@ -365,6 +392,35 @@ o_round_win_over_expected_text_layer <- function(
       .color = .color,
       .threshold = .threshold,
       .labeller = .labeller
+    )
+  )
+}
+
+o_series_win_over_expected_text_layer <- function(
+    ..., 
+    .df,
+    .threshold,
+    .labeller, 
+    .emphasize
+) {
+  if(.emphasize == 'low') {
+    op <- `<`
+    .color <- blackish_background
+  } else {
+    op <- `>=`
+    .color <- 'white'
+  }
+  list(
+    ...,
+    heatmap_text_layer(
+      .df = .df,
+      .op = op,
+      .label = 'diff_win_series_prop',
+      .num = NULL,
+      .color = .color,
+      .threshold = .threshold,
+      .labeller = .labeller,
+      .size = 9 / .pt
     )
   )
 }
@@ -1367,7 +1423,8 @@ cod_round_streaks <- cod_rounds |>
   round_win_prop_after_x_wins <- round_streaks_after_x |> 
     filter(won_prior_round1, !!!col_syms)
   
-  round_win_prop_after_x_wins |> 
+  suppressMessages(
+  round_win_prop_after_x_wins_w_probs <- round_win_prop_after_x_wins |> 
     group_by(n_rounds, ...) |> 
     mutate(
       total = sum(n),
@@ -1379,7 +1436,10 @@ cod_round_streaks <- cod_rounds |>
     arrange(n_rounds, ...) |> 
     inner_join(
       probs_nx_k
-    ) |> 
+    )
+  )
+  
+  round_win_prop_after_x_wins_w_probs |> 
     nest(data = -c(n_rounds, ...)) |> 
     mutate(
       gt_p_value = map_dbl(
@@ -1456,12 +1516,12 @@ summarize_cod_win_prop_after_x_wins_y_rounds <- function(k) {
   )
 }
 
-cod_round_win_prop_after_x_wins_and_rounds <- tibble(win_streak = 2L:4L) |>
+cod_round_win_prop_after_x_wins_y_rounds <- tibble(win_streak = 2L:4L) |>
   mutate(
-    data = map(win_streak, summarize_cod_win_prop_after_x_wins_and_rounds)
+    data = map(win_streak, summarize_cod_win_prop_after_x_wins_y_rounds)
   ) |>
   unnest(data)
-save_qs(cod_round_win_prop_after_x_wins_and_rounds)
+save_qs(cod_round_win_prop_after_x_wins_y_rounds)
 ```
 
 ```{r}
@@ -1623,7 +1683,7 @@ save_plot_for_slide(p_cod_round_win_prop_after_x_wins)
 :::
 
 ```{r}
-load_qs('cod_round_win_prop_after_x_wins')
+load_qs('cod_round_win_prop_after_x_wins_y_rounds')
 ggsci_orange <- extract_ggsci_mid_color('orange')
 p_cod_round_win_prop_after_x_wins_y_rounds <- cod_round_win_prop_after_x_wins_y_rounds |> 
   mutate(
