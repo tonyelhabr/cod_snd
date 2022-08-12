@@ -27,11 +27,6 @@ generate_cod_sheets <- function(year = c('2021', '2022')) {
       label = sprintf('S%d %s', s, ifelse(series == 4, 'Major', sprintf('%s%d', !!prefix, series)))
     ) |> 
     pull(label)
-  
-  if(is_2022) {
-    return(labs)
-  }
-  
   c('Champs', labs)
 }
 
