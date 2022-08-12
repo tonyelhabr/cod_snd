@@ -240,4 +240,6 @@ cod_rounds <- cod_series |>
     map = sprintf('%s - %s (%s)', map, game, year)
   )
 cod_rounds
-qs::qsave(cod_rounds, 'cod_rounds.qs')
+filename <- 'cod_rounds.qs'
+sprintf('%s%s', c('', 'paper/'), filename) |> 
+  walk(~qs::qsave(cod_rounds, .x))
