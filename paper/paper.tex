@@ -198,7 +198,7 @@ Finally, I evaluate behavior when teams have two rounds left to win the
 series, observing a peak in COD offensive win percentages in the 4-4
 state, and no such oddity in Valorant.
 \end{abstract}
-\ifdefined\Shaded\renewenvironment{Shaded}{\begin{tcolorbox}[interior hidden, enhanced, boxrule=0pt, borderline west={3pt}{0pt}{shadecolor}, sharp corners, frame hidden, breakable]}{\end{tcolorbox}}\fi
+\ifdefined\Shaded\renewenvironment{Shaded}{\begin{tcolorbox}[interior hidden, boxrule=0pt, enhanced, borderline west={3pt}{0pt}{shadecolor}, frame hidden, sharp corners, breakable]}{\end{tcolorbox}}\fi
 
 \hypertarget{introduction}{%
 \section{Introduction}\label{introduction}}
@@ -229,7 +229,9 @@ round can end in one of four ways:
   plant. (Eliminating team wins.)
 \item
   The offensive team eliminates all members of the defensive team after
-  a bomb plant.\footnote{\begin{itemize}
+  a bomb plant.\footnote{Merchanics regarding the bomb:
+
+    \begin{itemize}
     \tightlist
     \item
       The bomb can be picked up by any member of the offensive team.
@@ -275,9 +277,9 @@ completed as of August 2022.\footnote{CoD is fairly unique compared to
   graphics, game modes, and other facets of gameplay. During the CDL
   era, the games released have been Modern Warfare (2020), Cold War
   (2021) and Vanguard (2022).} The data set consists of all SnD matches
-played in tournaments and qualifiers during the CDL era, totaling 1,704
-series played, in which there were 15,584 rounds played. Data was
-collected in spreadsheets by community member ``IOUTurtle''.\footnote{Data:
+played in tournaments and qualifiers during the CDL era, totaling 15,584
+rounds across 1,704 series. Data was collected in spreadsheets by
+community member ``IOUTurtle''.\footnote{Data:
   https://linktr.ee/CDLArchive. Author: https://twitter.com/IOUTurtle}
 
 I adopt the terminology ``series'' to refer to what CoD SnD players
@@ -292,54 +294,126 @@ National Hockey League, and Major League Baseball. A ``game'' or a
 There have been only a handful of studies of the distribution of games
 played in a series, most of which assume a constant probability \(p\) of
 a given team winning a game in the series, regardless of the series
-state. Observing that the American League had dominated the National
-League in Major League Baseball's (MLB) World Series matchups, implying
-that matchups should not modeled with \(p=0.5\), (Mosteller 1952)
-proposed three approaches for identifying the optimal constant
-probability value of the stronger team in the World Series, finding
-\(p \approx 0.65\) in each case: (1) a ``method of moments'', an
-approach that solves for \(p\) from the empirical average number of
+state. (Mosteller 1952) observed that the American League had dominated
+the National League in Major League Baseball's (MLB) World Series
+matchups, implying that matchups should not modeled with \$p=0.5\$..
+Mosteller proposed three approaches for identifying the optimal constant
+probability value of the stronger team in the World Series, finding \$p
+\textbackslash approx 0.65\$. in each case: (1) a ``method of moments'',
+an approach that solves for \$p\$. from the empirical average number of
 games won by the loser of the series; (2) maximum likelihood, and (3)
-maximum chi-square approach. (Chance 2020) re-examines the constant
-probability notion in Major League Baseball's World Series (1923--2018),
-the National Basketball Association's Finals (1951--2018), and the
-National Hockey League's Stanley Cup (1939--2018). Chance applies
-Mosteller's method 1 and 2 and finds strong evidence against the null
-hypothesis of \(p = 0.5\) in the MLB and NHL championship series. Chance
-outlines a conditional probability framework (likelihood of winning a
-game given the series state) which can exactly explain the distribution
-of the number of games played.
+maximum chi-square approach.
 
-Momentum is one of the most frequently published topics in sports
-analytics. We often use use ``streaks'' and momentum interchangeably,
-but as (Steeger, Dulin, and Gonzalez 2021) note, momentum implies
-dependence between events, whereas streaking does not. (sentence about
-negative recency, hinting at ``hot hand''\ldots{} (Miller and Sanjurjo
-2018) debunking findings from (Gilovich, Vallone, and Tversky 1985))
+(Chance 2020) re-examines the constant probability notion in Major
+League Baseball's World Series (1923--2018), the National Basketball
+Association's Finals (1951--2018), and the National Hockey League's
+Stanley Cup (1939--2018). Chance applies finds strong evidence against
+the null hypothesis of \(p = 0.5\) in the MLB and NHL championship
+series when applying Mosteller's first and second methods.\footnote{Chance
+  goes on to outline a conditional probability framework (likelihood of
+  winning a game given the series state) which can exactly explain the
+  distribution of the number of games played.} Chance's work is closely
+related to ours and, in fact, provides a guide for the first part of our
+investigation.
 
-Despite the plethora of existing research on games played and momentum
-in sports, these topics have yet to be investigated heavily in esports.
-Work has been done to examine in-round win probability in other FPS
-titles such as Counter-Strike ((Xenopoulos, Freeman, and Silva 2022))
-and Valorant ((DeRover 2021)), both of which are round-based like CoD
-SnD. However, research on round-level trends is sparse, perhaps because
-games like Counter-Strike and Valorant both have economic aspects that
-can create clear advantages on side in a given round, given how prior
-rounds played out.\footnote{Additionally, both Counter-Strike and
-  Valorant have overtime rules and blocked offensive/defensive roles
+Momentum, one of most discussed topics in sports analytics, goes
+hand-in-hand with a discussion of the nature of series
+outcomes.\footnote{We often use use ``streaks'' and momentum
+  interchangeably, but as (Steeger, Dulin, and Gonzalez 2021) note,
+  momentum implies dependence between events, whereas streaking does
+  not.} Two opposing fallacies are observed in the context of momentum:
+the ``gambler's fallacy'' (negative recency) and ``hot hand fallacy''
+(positive recency). Per {[}Ayton and Fischer (2004){]}, negative recency
+is ``the belief that, for random events, runs of a particular outcome
+\ldots{} will be balanced by a tendency for the opposite outcome'',
+while positive recency is the expectation of observing future results
+that match recent results.
+
+Studying both player streaks and team streaks in basketball, in both
+observational and controlled settings. (Gilovich, Vallone, and Tversky
+1985) do not find evidence for the hot hand phenomenon. Recently ,
+(Miller and Sanjurjo 2018) refute (Gilovich, Vallone, and Tversky
+1985)'s conclusions, finding mathematical evidence that seems to support
+negative recency. Specifically, they find that a ``bias exists in a
+common measure of the conditional dependence of present outcomes on
+streaks of past outcomes in sequential data'' (streak selection bias)
+that imply that, under i.i.d. conditions, ``the proportion of successes
+among the outcomes that immediately follow a streak of consecutive
+successes is expected to be strictly less than the underlying
+(conditional) probability of success''. We agree with Miller's findings,
+accounting for the streak selection bias in our study of momentum.
+
+Despite the plethora of existing research on games played in a series
+and momentum in sports, these topics have yet to be investigated heavily
+in esports. Work has been done to examine in-round win probability in
+other FPS titles such as Counter-Strike ((Xenopoulos, Freeman, and Silva
+2022)) and Valorant ((DeRover 2021)), both of which are round-based like
+CoD SnD. However, research on round-level trends is sparse, perhaps
+because games like Counter-Strike and Valorant both have economic
+aspects that can create clear advantages on side in a given round, given
+how prior rounds played out.\footnote{Additionally, both Counter-Strike
+  and Valorant have overtime rules and blocked offensive/defensive roles
   (i.e.~playing either offense or defense for many consecutive rounds).}
 
 \hypertarget{methodology-results-and-discussion}{%
 \section{Methodology, results, and
 discussion}\label{methodology-results-and-discussion}}
 
+First, we investigate the constant probability assumption and the
+distribution of rounds played in a series. Afterwards, we investigate
+momentum, building on our learnings from the constant probability
+assumption analysis.
+
+\hypertarget{distribution-of-rounds-played}{%
+\subsection{Distribution of rounds
+played}\label{distribution-of-rounds-played}}
+
+The general formula for the probability \(P(i)\) that a best-of-\(s\)
+series lasts \(i\) rounds given constant probability \(p\) of one
+team\footnote{If \(p > 0.5\), then we might say that this team is the
+  better team (presumably known in hindsight)} winning each round is
+
+\[
+s_1 = \frac{s - 1}{2}, s_2 = \frac{s + 1}{2}
+\]
+
+\[
+P(i) = \frac{(i - 1)!}{s_1!(i - s_2)!}(p^{s_2}(1 - p)^{i - s_2} + p^{i - s_2}(1 - p)^{s_2})
+\]
+
+resulting in Table~\ref{tbl-prob-series-lasting-i-rounds}\} for
+\(s = 11\) and the naive assumption that \(p = 0.5\).
+
+\hypertarget{tbl-prob-series-lasting-i-rounds}{}
+\begin{longtable}[]{@{}rr@{}}
+\caption{\label{tbl-prob-series-lasting-i-rounds}The probabilities that
+a best-of-11 series lasts \(i\) rounds (\(Pr(i)\), where
+\(i = {6, 7, 8, 9, 10, 11}\)) under the assumption that each team has a
+50\% probability (\(p = 0.5\)) of winning each game}\tabularnewline
+\toprule()
+Number of rounds (\(i\)) & \(P(i)\) \\
+\midrule()
+\endfirsthead
+\toprule()
+Number of rounds (\(i\)) & \(P(i)\) \\
+\midrule()
+\endhead
+6 & 3.1\% \\
+7 & 9.4\% \\
+8 & 16.4\% \\
+9 & 21.9\% \\
+10 & 24.6\% \\
+11 & 24.6\% \\
+\bottomrule()
+\end{longtable}
+
 The empirical offensive round win percentage across all rounds is
 47.8\%.\footnote{Offensive round win percentage has been nearly constant
   across the three games during the CDL era: MW (2020) 47.2\%, Cold War
   (2021) 47.9\%, Vanguard (2022) 48.1\%}
 Figure~\ref{fig-cod-o-round-win-prop} shows that offensive round win
-rate is not quite constant, although, on average, never veers more than
-10\% from this global average.
+rate is not quite constant, although never veers more than 10\% from
+this global average.
 
 \begin{figure}
 
@@ -358,6 +432,11 @@ by series state}
 
 \hypertarget{refs}{}
 \begin{CSLReferences}{1}{0}
+\leavevmode\vadjust pre{\hypertarget{ref-ayton2004}{}}%
+Ayton, Peter, and Ilan Fischer. 2004. {``The Hot Hand Fallacy and the
+Gambler{'}s Fallacy: Two Faces of Subjective Randomness?''} \emph{Memory
+\& Cognition} 32 (8): 13691378.
+
 \leavevmode\vadjust pre{\hypertarget{ref-chance2020}{}}%
 Chance, Don. 2020. {``Conditional Probability and the Length of a
 Championship Series in Baseball, Basketball, and Hockey.''}

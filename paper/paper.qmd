@@ -88,7 +88,8 @@ In professional CoD, a team must win six rounds of SnD to win the match.[^1] A r
 3.  The defensive team defuses the bomb after a bomb plant.[^3] (Defense wins.)
 4.  The offensive team does not make a plant by the time the round timer ends. (Defense wins.)
 
-[^2]:
+[^2]: Merchanics regarding the bomb:
+
     -   The bomb can be picked up by any member of the offensive team.
     -   The bomb carrier is not obstructed at all by carrying the bomb (i.e. movement is the same, weapon usage is the same).
     -   The defense does not get any visual indication for who is carrying the bomb.
@@ -102,7 +103,7 @@ Teams take turns playing offense and defense every round.
 
 ## 1. Data
 
-CoD has roughly gone through three eras of professional gaming: (1) Major League Gaming (MLG) tournaments prior to 2016; (2) the CoD World League (CWL), initiated in 2016; and (3) the 12-franchise CoD League (CDL), running since 2020 and completing three year-long "seasons" completed as of August 2022.[^4] The data set consists of all SnD matches played in tournaments and qualifiers during the CDL era, totaling `r scales::comma(cod_n_series)` series played, in which there were `r scales::comma(cod_n_rounds)` rounds played. Data was collected in spreadsheets by community member "IOUTurtle".[^5]
+CoD has roughly gone through three eras of professional gaming: (1) Major League Gaming (MLG) tournaments prior to 2016; (2) the CoD World League (CWL), initiated in 2016; and (3) the 12-franchise CoD League (CDL), running since 2020 and completing three year-long "seasons" completed as of August 2022.[^4] The data set consists of all SnD matches played in tournaments and qualifiers during the CDL era, totaling `r scales::comma(cod_n_rounds)` rounds across `r scales::comma(cod_n_series)` series. Data was collected in spreadsheets by community member "IOUTurtle".[^5]
 
 [^4]: CoD is fairly unique compared to other esports in that it runs on an annual lifecycle (released coming in the late fall), where a new game is published every year under the same title. Each new game bears resemblance to past ones, often introducing relatively small variations ("improvements") to graphics, game modes, and other facets of gameplay. During the CDL era, the games released have been Modern Warfare (2020), Cold War (2021) and Vanguard (2022).
 
@@ -112,19 +113,55 @@ I adopt the terminology "series" to refer to what CoD SnD players typically call
 
 # Literature review
 
-There have been only a handful of studies of the distribution of games played in a series, most of which assume a constant probability $p$ of a given team winning a game in the series, regardless of the series state. Observing that the American League had dominated the National League in Major League Baseball's (MLB) World Series matchups, implying that matchups should not modeled with $p=0.5$, [@mosteller1952] proposed three approaches for identifying the optimal constant probability value of the stronger team in the World Series, finding $p \approx 0.65$ in each case: (1) a "method of moments", an approach that solves for $p$ from the empirical average number of games won by the loser of the series; (2) maximum likelihood, and (3) maximum chi-square approach. [@chance2020] re-examines the constant probability notion in Major League Baseball's World Series (1923--2018), the National Basketball Association's Finals (1951--2018), and the National Hockey League's Stanley Cup (1939--2018). Chance applies Mosteller's method 1 and 2 and finds strong evidence against the null hypothesis of $p = 0.5$ in the MLB and NHL championship series. Chance outlines a conditional probability framework (likelihood of winning a game given the series state) which can exactly explain the distribution of the number of games played.
+There have been only a handful of studies of the distribution of games played in a series, most of which assume a constant probability $p$ of a given team winning a game in the series, regardless of the series state. [@mosteller1952] observed that the American League had dominated the National League in Major League Baseball's (MLB) World Series matchups, implying that matchups should not modeled with \$p=0.5\$.. Mosteller proposed three approaches for identifying the optimal constant probability value of the stronger team in the World Series, finding \$p \\approx 0.65\$. in each case: (1) a "method of moments", an approach that solves for \$p\$. from the empirical average number of games won by the loser of the series; (2) maximum likelihood, and (3) maximum chi-square approach.
 
-Momentum is one of the most frequently published topics in sports analytics. We often use use "streaks" and momentum interchangeably, but as [@steeger2021] note, momentum implies dependence between events, whereas streaking does not. (sentence about negative recency, hinting at "hot hand"... [@miller2018] debunking findings from [@gilovich1985])
+[@chance2020] re-examines the constant probability notion in Major League Baseball's World Series (1923--2018), the National Basketball Association's Finals (1951--2018), and the National Hockey League's Stanley Cup (1939--2018). Chance applies finds strong evidence against the null hypothesis of $p = 0.5$ in the MLB and NHL championship series when applying Mosteller's first and second methods.[^6] Chance's work is closely related to ours and, in fact, provides a guide for the first part of our investigation.
 
-Despite the plethora of existing research on games played and momentum in sports, these topics have yet to be investigated heavily in esports. Work has been done to examine in-round win probability in other FPS titles such as Counter-Strike ([@xenopoulos2022]) and Valorant ([@derover2021]), both of which are round-based like CoD SnD. However, research on round-level trends is sparse, perhaps because games like Counter-Strike and Valorant both have economic aspects that can create clear advantages on side in a given round, given how prior rounds played out.[^6]
+[^6]: Chance goes on to outline a conditional probability framework (likelihood of winning a game given the series state) which can exactly explain the distribution of the number of games played.
 
-[^6]: Additionally, both Counter-Strike and Valorant have overtime rules and blocked offensive/defensive roles (i.e. playing either offense or defense for many consecutive rounds).
+Momentum, one of most discussed topics in sports analytics, goes hand-in-hand with a discussion of the nature of series outcomes.[^7] Two opposing fallacies are observed in the context of momentum: the "gambler's fallacy" (negative recency) and "hot hand fallacy" (positive recency). Per \[@ayton2004\], negative recency is "the belief that, for random events, runs of a particular outcome ... will be balanced by a tendency for the opposite outcome", while positive recency is the expectation of observing future results that match recent results.
+
+[^7]: We often use use "streaks" and momentum interchangeably, but as [@steeger2021] note, momentum implies dependence between events, whereas streaking does not.
+
+Studying both player streaks and team streaks in basketball, in both observational and controlled settings. [@gilovich1985] do not find evidence for the hot hand phenomenon. Recently , [@miller2018] refute [@gilovich1985]'s conclusions, finding mathematical evidence that seems to support negative recency. Specifically, they find that a "bias exists in a common measure of the conditional dependence of present outcomes on streaks of past outcomes in sequential data" (streak selection bias) that imply that, under i.i.d. conditions, "the proportion of successes among the outcomes that immediately follow a streak of consecutive successes is expected to be strictly less than the underlying (conditional) probability of success". We agree with Miller's findings, accounting for the streak selection bias in our study of momentum.
+
+Despite the plethora of existing research on games played in a series and momentum in sports, these topics have yet to be investigated heavily in esports. Work has been done to examine in-round win probability in other FPS titles such as Counter-Strike ([@xenopoulos2022]) and Valorant ([@derover2021]), both of which are round-based like CoD SnD. However, research on round-level trends is sparse, perhaps because games like Counter-Strike and Valorant both have economic aspects that can create clear advantages on side in a given round, given how prior rounds played out.[^8]
+
+[^8]: Additionally, both Counter-Strike and Valorant have overtime rules and blocked offensive/defensive roles (i.e. playing either offense or defense for many consecutive rounds).
 
 # Methodology, results, and discussion
 
-The empirical offensive round win percentage across all rounds is `r scales::percent(cod_o_win_prop, accuracy = 0.1)`.[^7] @fig-cod-o-round-win-prop shows that offensive round win rate is not quite constant, although, on average, never veers more than 10% from this global average.
+First, we investigate the constant probability assumption and the distribution of rounds played in a series. Afterwards, we investigate momentum, building on our learnings from the constant probability assumption analysis.
 
-[^7]: Offensive round win percentage has been nearly constant across the three games during the CDL era: MW (2020) `r pull_cod_o_win_prop_by_game('MW (2020)')`, Cold War (2021) `r pull_cod_o_win_prop_by_game('Cold War (2021)')`, Vanguard (2022) `r pull_cod_o_win_prop_by_game('Vanguard (2022)')`
+## Distribution of rounds played
+
+The general formula for the probability $P(i)$ that a best-of-$s$ series lasts $i$ rounds given constant probability $p$ of one team[^9] winning each round is
+
+[^9]: If $p > 0.5$, then we might say that this team is the better team (presumably known in hindsight)
+
+$$
+s_1 = \frac{s - 1}{2}, s_2 = \frac{s + 1}{2}
+$$
+$$
+P(i) = \frac{(i - 1)!}{s_1!(i - s_2)!}(p^{s_2}(1 - p)^{i - s_2} + p^{i - s_2}(1 - p)^{s_2})
+$$
+
+resulting in @tbl-prob-series-lasting-i-rounds} for $s = 11$ and the naive assumption that $p = 0.5$.
+
+| Number of rounds ($i$) | $P(i)$ |
+|-----------------------:|-------:|
+|                      6 |   3.1% |
+|                      7 |   9.4% |
+|                      8 |  16.4% |
+|                      9 |  21.9% |
+|                     10 |  24.6% |
+|                     11 |  24.6% |
+
+: The probabilities that a best-of-11 series lasts $i$ rounds ($Pr(i)$, where $i = {6, 7, 8, 9, 10, 11}$) under the assumption that each team has a 50% probability ($p = 0.5$) of winning each game {#tbl-prob-series-lasting-i-rounds}
+
+The empirical offensive round win percentage across all rounds is `r scales::percent(cod_o_win_prop, accuracy = 0.1)`.[^10] @fig-cod-o-round-win-prop shows that offensive round win rate is not quite constant, although never veers more than 10% from this global average.
+
+[^10]: Offensive round win percentage has been nearly constant across the three games during the CDL era: MW (2020) `r pull_cod_o_win_prop_by_game('MW (2020)')`, Cold War (2021) `r pull_cod_o_win_prop_by_game('Cold War (2021)')`, Vanguard (2022) `r pull_cod_o_win_prop_by_game('Vanguard (2022)')`
 
 ![Offensive round win percentage by series state](images/cod_o_round_win_prop.png){#fig-cod-o-round-win-prop fig-align="center"}
 

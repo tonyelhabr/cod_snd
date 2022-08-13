@@ -457,13 +457,6 @@ cod_round_and_series_win_prop_by_side <- cod_rounds |>
     win_series_prop = win_series / n
   )
 
-all_possible_outcomes <- tibble(
-  n_rounds = 6L:11L
-) |> 
-  mutate(
-    x = map_dbl(n_rounds, ~sample(c(0L, 1L), size = .x, replace = TRUE))
-  )
-
 cod_e_o_win_series_prop <- crossing(
   pre_cumu_w = 0:5,
   pre_cumu_l = 0:5
@@ -785,7 +778,7 @@ summarize_streaks <- function(rounds) {
   )
 }
 
-plot_series_outcome_prop_over_expected <- function(series_outcome_prop, game) {
+plot_series_outcome_prop_over_expected <- function(series_outcome_prop) {
   .lvls <- sprintf('6-%d', 0:5)
   .axis_x_text_size <- 14
   
@@ -1025,7 +1018,7 @@ cod_series_outcomes_chi
 #| eval: true
 avg_actual_cod_rounds_per_series <- 9.15
 avg_expected_cod_rounds_per_series <- 9.29
-cod_series_outcomes_chi <- '15.4 (<=0.01)'
+cod_series_outcomes_chi <- '16.0 (<=0.01)'
 ```
 
 ::: fragment
