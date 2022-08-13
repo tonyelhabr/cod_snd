@@ -105,12 +105,12 @@ Often the defensive team will try to eliminate all team members prior to making 
 #| label: descriptive-cod-snd-stats
 #| eval: true
 cod_n_series <- cod_rounds |> 
-  distinct(year, sheet, series) |> 
+  distinct(series_id, team) |> 
   nrow() |> 
   scales::comma()
 
 cod_n_rounds <- cod_rounds |> 
-  distinct(year, sheet, series, round) |> 
+  distinct(series_id, team, round) |> 
   nrow() |> 
   scales::comma()
 
@@ -121,6 +121,14 @@ cod_o_win_prop_const <- cod_rounds |>
   filter(win_round) |> 
   pull(prop)
 cod_o_win_pct <- scales::percent(cod_o_win_prop_const, accuracy = 0.1)
+
+cod_rounds |> 
+  filter(is_offense) |> 
+  count(game, win_round) |> 
+  group_by(game) |> 
+  mutate(prop = n / sum(n)) |> 
+  ungroup() |> 
+  filter(win_round)
 
 cod_plant_pct <- cod_rounds |>
   filter(is_offense) |> 
@@ -449,6 +457,13 @@ cod_round_and_series_win_prop_by_side <- cod_rounds |>
     win_series_prop = win_series / n
   )
 
+all_possible_outcomes <- tibble(
+  n_rounds = 6L:11L
+) |> 
+  mutate(
+    x = map_dbl(n_rounds, ~sample(c(0L, 1L), size = .x, replace = TRUE))
+  )
+
 cod_e_o_win_series_prop <- crossing(
   pre_cumu_w = 0:5,
   pre_cumu_l = 0:5
@@ -670,14 +685,8 @@ vectorized_prop_test <- function(x1, n1, x2, n2, conf.level = .95) {
   )
 }
 
-summarize_streaks <- function(rounds) {
-  .max_round <- 11
-  .adj <- 0
-
-  
-  cutoff <- (.max_round + 1) / 2
-  
-  actual_round_streaks <- rounds |> 
+summarize_round_arrangements <- function(rounds, .max_round, .adj = 0) {
+  rounds |> 
     filter(round <= (.max_round - .adj)) |> 
     filter(win_series) |> 
     mutate(across(win_round, as.integer)) |> 
@@ -685,7 +694,7 @@ summarize_streaks <- function(rounds) {
     summarize(
       wins = max(cumu_w),
       losses = max(cumu_l),
-      ws = paste0(win_round, collapse = '')
+      ws = paste0(win_round, collapse = '-')
     ) |> 
     ungroup() |> 
     mutate(n_rounds = wins + losses) |> 
@@ -694,6 +703,22 @@ summarize_streaks <- function(rounds) {
     ) |>
     count(record, n_rounds, ws, sort = TRUE) |> 
     mutate(prop = n / sum(n))
+}
+
+summarize_cod_round_arrangements <- partial(
+  summarize_round_arrangements,
+  .max_round = 11,
+  .adj = 0
+)
+
+summarize_streaks <- function(rounds) {
+  .max_round <- 11
+  .adj <- 0
+
+  cutoff <- (.max_round + 1) / 2
+  
+  actual_round_streaks <- rounds |> 
+    summarize_round_arrangements(.max_round = .max_round, .adj = .adj)
   
   expected_round_streaks <- tibble(
     n_rounds = cutoff:.max_round
@@ -1686,6 +1711,7 @@ save_plot_for_slide(p_cod_round_win_prop_after_x_wins)
 load_qs('cod_round_win_prop_after_x_wins_y_rounds')
 ggsci_orange <- extract_ggsci_mid_color('orange')
 p_cod_round_win_prop_after_x_wins_y_rounds <- cod_round_win_prop_after_x_wins_y_rounds |> 
+  filter(win_streak == 3) |> 
   mutate(
     is_signif = case_when(
       gt_is_signif ~ 'Better',
@@ -1763,6 +1789,7 @@ p_cod_round_win_prop_after_x_wins_y_rounds <- cod_round_win_prop_after_x_wins_y_
   ) +
   facet_wrap(~win_streak)
 p_cod_round_win_prop_after_x_wins_y_rounds
+save_plot_for_slide(p_cod_round_win_prop_after_x_wins_y_rounds)
 ```
 
 ## Is planting at one site better than the other?
@@ -1923,8 +1950,7 @@ o_win_rx_prop_pal <- c(
   `1` = extract_ggsci_mid_color('teal')
 )
 
-plot_round_vs_post_round_slope_chart <- function(df, .roun) {
-  game <- match.arg(game)
+plot_round_vs_post_round_slope_chart <- function(df, .round) {
   o_win_rx_prop <- summarize_map_o_round_win_prop(df, .round)
   x1_label <- sprintf('Round %d<br/>offensive win %%', .round)
   x2_label <- sprintf('Post-round %d<br/>offensive win %%', .round)
