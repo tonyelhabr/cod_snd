@@ -233,11 +233,13 @@ cod_rounds <- cod_series |>
     by = c('year', 'sheet', 'series', 'team')
   ) |> 
   mutate(
-    game = cod_game_mapping[as.character(year)],
+    game = sprintf('%s (%s)', cod_game_mapping[as.character(year)], year),
     .before = 1
   ) |> 
   mutate(
-    map = sprintf('%s - %s (%s)', map, game, year)
+    across(game, ~fct_reorder(.x, year)),
+    map = sprintf('%s - %s', map, game)
   )
-cod_rounds
-qs::qsave(cod_rounds, 'cod_rounds.qs')
+filename <- 'cod_rounds.qs'
+sprintf('%s%s', c('', 'paper/'), filename) |> 
+  walk(~qs::qsave(cod_rounds, .x))
