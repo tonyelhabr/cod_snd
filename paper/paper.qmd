@@ -27,24 +27,68 @@ abstract: |
 bibliography: references.bib  
 ---
 
-# 1. Introduction
+```{r}
+#| label: setup
+#| eval: true
+library(dplyr)
+library(dplyr)
+library(qs)
+library(scales)
 
-## 1.1 Description of Call of Duty Search and Destroy
+cod_rounds <- qs::qread('cod_rounds.qs')
+```
 
-Call of Duty (CoD), first released in 2003, is one of the most popular first-person shooter (FPS) video game franchises of all-time. Tthe most popular mode in the competitive scene is "Search and Destroy" (SnD), which bears resemblance to "Bomb Defusal" in Counter-Strike and "Plant/Defuse" in Valorant, two other FPS games played in professional leagues. SnD is one-sided game mode in which one team, the offensive side, tries to destroy one of two designated bomb sites on the map.[^1]
+```{r}
+#| label: descriptive-cod-snd-stats
+#| eval: true
+cod_n_series <- cod_rounds |> 
+  distinct(series_id, team) |> 
+  nrow()
 
-[^1]: as
+cod_n_rounds <- cod_rounds |> 
+  distinct(series_id, team, round) |> 
+  nrow()
 
-In professional CoD, a team must win six rounds of SnD to win the match.[^2] A round can end in one of four ways:
+cod_o_win_prop <- cod_rounds |> 
+  filter(is_offense) |> 
+  count(win_round) |> 
+  mutate(prop = n / sum(n)) |> 
+  filter(win_round) |> 
+  pull(prop)
 
-[^2]: A maximum of 11 even rounds can be played. There is no "sudden death" or "win by two" rule like there are for SnD equivalent in professional Counter-Strike and Valorant matches.
+cod_o_win_prop_by_game <- cod_rounds |> 
+  filter(is_offense) |> 
+  count(game, win_round) |> 
+  group_by(game) |> 
+  mutate(prop = n / sum(n)) |> 
+  ungroup() |> 
+  filter(win_round) |> 
+  select(game, n, prop)
+
+pull_cod_o_win_prop_by_game <- function(.game) {
+  cod_o_win_prop_by_game |> 
+    filter(game == .game) |> 
+    pull(prop) |> 
+    scales::percent(accuracy = 0.1)
+}
+```
+
+# Introduction
+
+## 1 Description of Call of Duty Search and Destroy
+
+Call of Duty (CoD), first released in 2003, is one of the most popular first-person shooter (FPS) video game franchises of all-time. Tthe most popular mode in the competitive scene is "Search and Destroy" (SnD), which bears resemblance to "Bomb Defusal" in Counter-Strike and "Plant/Defuse" in Valorant, two other FPS games played in professional leagues. SnD is one-sided game mode in which one team, the offensive side, tries to destroy one of two designated bomb sites on the map.
+
+In professional CoD, a team must win six rounds of SnD to win the match.[^1] A round can end in one of four ways:
+
+[^1]: A maximum of 11 even rounds can be played. There is no "sudden death" or "win by two" rule like there are for SnD equivalent in professional Counter-Strike and Valorant matches.
 
 1.  One team eliminates all members of the other team prior to a bomb plant. (Eliminating team wins.)
-2.  The offensive team eliminates all members of the defensive team after a bomb plant.[^3] (Offense wins.)
-3.  The defensive team defuses the bomb after a bomb plant.[^4] (Defense wins.)
+2.  The offensive team eliminates all members of the defensive team after a bomb plant.[^2] (Offense wins.)
+3.  The defensive team defuses the bomb after a bomb plant.[^3] (Defense wins.)
 4.  The offensive team does not make a plant by the time the round timer ends. (Defense wins.)
 
-[^3]:
+[^2]:
     -   The bomb can be picked up by any member of the offensive team.
     -   The bomb carrier is not obstructed at all by carrying the bomb (i.e. movement is the same, weapon usage is the same).
     -   The defense does not get any visual indication for who is carrying the bomb.
@@ -52,35 +96,41 @@ In professional CoD, a team must win six rounds of SnD to win the match.[^2] A r
     -   A bomb defuse takes seven seconds. The timer resets if the player "drops" the bomb.
     -   The bomb takes 45 seconds to defuse after being planted.
 
-[^4]: Often the defensive team will try to eliminate all team members prior to making the defuse, but in some cases, they may try to "ninja" defuse.
+[^3]: Often the defensive team will try to eliminate all team members prior to making the defuse, but in some cases, they may try to "ninja" defuse.
 
 Teams take turns playing offense and defense every round.
 
-## 1.2 Data
+## 1. Data
 
-CoD has roughly gone through three eras of professional gaming: (1) Major League Gaming (MLG) tournaments prior to 2016; (2) the CoD World League (CWL), initiated in 2016; and (3) the 12-franchise CoD League (CDL), running since 2020 and completing three year-long "seasons" completed as of August 2022.[^5] The data set consists of all SnD matches played in tournaments and qualifiers during the CDL era. Data was collected in spreadsheets by community member "IOUTurtle".[^6]
+CoD has roughly gone through three eras of professional gaming: (1) Major League Gaming (MLG) tournaments prior to 2016; (2) the CoD World League (CWL), initiated in 2016; and (3) the 12-franchise CoD League (CDL), running since 2020 and completing three year-long "seasons" completed as of August 2022.[^4] The data set consists of all SnD matches played in tournaments and qualifiers during the CDL era, totaling `r scales::comma(cod_n_series)` series played, in which there were `r scales::comma(cod_n_rounds)` rounds played. Data was collected in spreadsheets by community member "IOUTurtle".[^5]
 
-[^5]: CoD is fairly unique compared to other esports in that it runs on an annual lifecycle (released coming in the late fall), where a new game is published every year under the same title. Each new game bears resemblance to past ones, often introducing relatively small variations ("improvements") to graphics, game modes, and other facets of gameplay. During the CDL era, the games released have been Modern Warfare (2020), Cold War (2021) and Vanguard (2022).
+[^4]: CoD is fairly unique compared to other esports in that it runs on an annual lifecycle (released coming in the late fall), where a new game is published every year under the same title. Each new game bears resemblance to past ones, often introducing relatively small variations ("improvements") to graphics, game modes, and other facets of gameplay. During the CDL era, the games released have been Modern Warfare (2020), Cold War (2021) and Vanguard (2022).
 
-[^6]: Data: https://linktr.ee/CDLArchive. Author: https://twitter.com/IOUTurtle
+[^5]: Data: https://linktr.ee/CDLArchive. Author: https://twitter.com/IOUTurtle
 
 I adopt the terminology "series" to refer to what CoD SnD players typically call a "match", so as to emulate the terminology of playoff series in professional leagues like the National Basketball Association, National Hockey League, and Major League Baseball. A "game" or a "match" in such leagues is analogous to a "round" of CoD SnD.
 
-## 1.3 My contribution
-
-# 2 Literature review
+# Literature review
 
 There have been only a handful of studies of the distribution of games played in a series, most of which assume a constant probability $p$ of a given team winning a game in the series, regardless of the series state. Observing that the American League had dominated the National League in Major League Baseball's (MLB) World Series matchups, implying that matchups should not modeled with $p=0.5$, [@mosteller1952] proposed three approaches for identifying the optimal constant probability value of the stronger team in the World Series, finding $p \approx 0.65$ in each case: (1) a "method of moments", an approach that solves for $p$ from the empirical average number of games won by the loser of the series; (2) maximum likelihood, and (3) maximum chi-square approach. [@chance2020] re-examines the constant probability notion in Major League Baseball's World Series (1923--2018), the National Basketball Association's Finals (1951--2018), and the National Hockey League's Stanley Cup (1939--2018). Chance applies Mosteller's method 1 and 2 and finds strong evidence against the null hypothesis of $p = 0.5$ in the MLB and NHL championship series. Chance outlines a conditional probability framework (likelihood of winning a game given the series state) which can exactly explain the distribution of the number of games played.
 
 Momentum is one of the most frequently published topics in sports analytics. We often use use "streaks" and momentum interchangeably, but as [@steeger2021] note, momentum implies dependence between events, whereas streaking does not. (sentence about negative recency, hinting at "hot hand"... [@miller2018] debunking findings from [@gilovich1985])
 
-Despite the plethora of existing research on games played and momentum in sports, these topics have yet to be investigated heavily in esports. Work has been done to examine in-round win probability in other FPS titles such as Counter-Strike ([@xenopoulos2022]) and Valorant ([@derover2021]), both of which are round-based like CoD SnD. However, research on round-level trends is sparse, perhaps because games like Counter-Strike and Valorant both have economic aspects that can create clear advantages on side in a given round, given how prior rounds played out.[^7]\[\^8\]
+Despite the plethora of existing research on games played and momentum in sports, these topics have yet to be investigated heavily in esports. Work has been done to examine in-round win probability in other FPS titles such as Counter-Strike ([@xenopoulos2022]) and Valorant ([@derover2021]), both of which are round-based like CoD SnD. However, research on round-level trends is sparse, perhaps because games like Counter-Strike and Valorant both have economic aspects that can create clear advantages on side in a given round, given how prior rounds played out.[^6]
 
-[^7]: Additionally, both Counter-Strike and Valorant have overtime rules and blocked offensive/defensive roles (i.e. playing either offense or defense for many consecutive rounds).
+[^6]: Additionally, both Counter-Strike and Valorant have overtime rules and blocked offensive/defensive roles (i.e. playing either offense or defense for many consecutive rounds).
 
-# 3. Methodology
+# Methodology, results, and discussion
 
-# 4. Results and discussion
+The empirical offensive round win percentage across all rounds is `r scales::percent(cod_o_win_prop, accuracy = 0.1)`.[^7] @fig-cod-o-round-win-prop shows that offensive round win rate is not quite constant, although, on average, never veers more than 10% from this global average.
+
+[^7]: Offensive round win percentage has been nearly constant across the three games during the CDL era: MW (2020) `r pull_cod_o_win_prop_by_game('MW (2020)')`, Cold War (2021) `r pull_cod_o_win_prop_by_game('Cold War (2021)')`, Vanguard (2022) `r pull_cod_o_win_prop_by_game('Vanguard (2022)')`
+
+::: {#fig-cod-o-round-win-prop}
+![](images/cod_o_round_win_prop.png){fig-align="center"}
+
+Offensive round win percentage by series state
+:::
 
 # References {.unnumbered}
 
