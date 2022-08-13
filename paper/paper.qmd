@@ -126,11 +126,7 @@ The empirical offensive round win percentage across all rounds is `r scales::per
 
 [^7]: Offensive round win percentage has been nearly constant across the three games during the CDL era: MW (2020) `r pull_cod_o_win_prop_by_game('MW (2020)')`, Cold War (2021) `r pull_cod_o_win_prop_by_game('Cold War (2021)')`, Vanguard (2022) `r pull_cod_o_win_prop_by_game('Vanguard (2022)')`
 
-::: {#fig-cod-o-round-win-prop}
-![](images/cod_o_round_win_prop.png){fig-align="center"}
-
-Offensive round win percentage by series state
-:::
+![Offensive round win percentage by series state](images/cod_o_round_win_prop.png){#fig-cod-o-round-win-prop fig-align="center"}
 
 # References {.unnumbered}
 
