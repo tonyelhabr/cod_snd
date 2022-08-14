@@ -208,12 +208,15 @@ cod_rounds <- cod_series |>
   ungroup() |> 
   inner_join(
     cod_series |> 
-      filter(round == 1L) |> 
-      distinct(year, sheet, series, team, starts_as_offense = is_offense) |> 
+      distinct(year, sheet, series) |> 
       mutate(
-        series_id = row_number(),
-        .before = 1
-      ), 
+        series_id = row_number()
+      )
+  ) |> 
+  inner_join(
+    cod_series |> 
+      filter(round == 1L) |> 
+      distinct(year, sheet, series, team, starts_as_offense = is_offense), 
     by = c('year', 'sheet', 'series', 'team')
   ) |> 
   inner_join(
@@ -239,7 +242,8 @@ cod_rounds <- cod_series |>
   mutate(
     across(game, ~fct_reorder(.x, year)),
     map = sprintf('%s - %s', map, game)
-  )
+  ) |> 
+  relocate(series_id, .after = 'game')
 filename <- 'cod_rounds.qs'
 sprintf('%s%s', c('', 'paper/'), filename) |> 
   walk(~qs::qsave(cod_rounds, .x))
