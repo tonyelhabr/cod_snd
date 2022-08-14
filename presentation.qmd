@@ -707,7 +707,7 @@ summarize_cod_round_arrangements <- partial(
 summarize_streaks <- function(rounds) {
   .max_round <- 11
   .adj <- 0
-
+  
   cutoff <- (.max_round + 1) / 2
   
   actual_round_streaks <- rounds |> 
@@ -898,6 +898,47 @@ save_plot_for_slide(p_cod_series_outcome_prop_over_expected)
 ::: fragment
 [Chance (2019)](https://content.iospress.com/articles/journal-of-sports-analytics/jsa200422) finds that the probability of winning a game in the title series in the MLB and NHL is **not** constant (at 50%)
 :::
+
+```{r}
+#| label: cod_streak_series
+cod_streaks_res$series |> 
+  arrange(n_rounds) |> 
+  transmute(
+    `# of rounds (i)` = n_rounds, 
+    `P(i)` = scales::percent(prop_expected, accuracy = 0.1)
+  ) |> 
+  knitr::kable()
+
+cod_streaks_res$series |> 
+  select(
+    n_rounds,
+    prop_expected,
+    prop_actual,
+    n_actual
+  ) |> 
+  arrange(n_rounds) |> 
+  gt::gt() |> 
+  gt::cols_label(
+    n_rounds = '# of rounds (i)', 
+    prop_expected = 'P(i)',
+    prop_actual = '%',
+    n_actual = 'N'
+  ) |> 
+  gt::fmt_percent(
+    decimals = 1,
+    columns = c('prop_expected', 'prop_actual')
+  ) |> 
+  gt::cols_align(
+    align = 'right',
+    columns = c('prop_expected', 'prop_actual')
+  ) |> 
+  gt::tab_spanner(
+    label = 'Observed',
+    columns = c('prop_actual', 'n_actual')
+  ) |> 
+  gt::as_latex() |> 
+  pluck(1)
+```
 
 ```{r}
 #| label: chance-2019
@@ -1106,7 +1147,7 @@ cod_theoretical_series_lengths2 <- cod_ps |>
   )
 
 cod_theoretical_constant_p2 <- cod_theoretical_series_lengths2 |> 
-  slice_max(theoretical_series_length, n = 1) |> 
+  slice_max(theoretical_series_length, n = 1, with_ties = FALSE) |> 
   pull(p)
 
 pretty_cod_theoretical_constant_p2 <- cod_theoretical_constant_p2 |> 
@@ -1442,19 +1483,19 @@ cod_round_streaks <- cod_rounds |>
     filter(won_prior_round1, !!!col_syms)
   
   suppressMessages(
-  round_win_prop_after_x_wins_w_probs <- round_win_prop_after_x_wins |> 
-    group_by(n_rounds, ...) |> 
-    mutate(
-      total = sum(n),
-      prop = n / total
-    ) |> 
-    ungroup() |> 
-    filter(win_round) |> 
-    select(n_rounds, ..., n, total, prop) |> 
-    arrange(n_rounds, ...) |> 
-    inner_join(
-      probs_nx_k
-    )
+    round_win_prop_after_x_wins_w_probs <- round_win_prop_after_x_wins |> 
+      group_by(n_rounds, ...) |> 
+      mutate(
+        total = sum(n),
+        prop = n / total
+      ) |> 
+      ungroup() |> 
+      filter(win_round) |> 
+      select(n_rounds, ..., n, total, prop) |> 
+      arrange(n_rounds, ...) |> 
+      inner_join(
+        probs_nx_k
+      )
   )
   
   round_win_prop_after_x_wins_w_probs |> 
@@ -1954,7 +1995,7 @@ plot_round_vs_post_round_slope_chart <- function(df, .round) {
   
   y_lo <- 0.25
   y_hi <- 0.75
-
+  
   
   p <- o_win_rx_prop |> 
     ggplot() +

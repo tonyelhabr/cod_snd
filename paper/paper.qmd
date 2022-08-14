@@ -31,8 +31,9 @@ bibliography: references.bib
 #| label: setup
 #| eval: true
 library(dplyr)
-library(dplyr)
 library(qs)
+library(tidyr)
+# library(gt)
 library(scales)
 
 cod_rounds <- qs::qread('cod_rounds.qs')
@@ -42,11 +43,11 @@ cod_rounds <- qs::qread('cod_rounds.qs')
 #| label: descriptive-cod-snd-stats
 #| eval: true
 cod_n_series <- cod_rounds |> 
-  distinct(series_id, team) |> 
+  distinct(series_id) |> 
   nrow()
 
 cod_n_rounds <- cod_rounds |> 
-  distinct(series_id, team, round) |> 
+  distinct(series_id, round) |> 
   nrow()
 
 cod_o_win_prop <- cod_rounds |> 
@@ -75,7 +76,7 @@ pull_cod_o_win_prop_by_game <- function(.game) {
 
 # Introduction
 
-## 1 Description of Call of Duty Search and Destroy
+## Description of Call of Duty Search and Destroy
 
 Call of Duty (CoD), first released in 2003, is one of the most popular first-person shooter (FPS) video game franchises of all-time. Tthe most popular mode in the competitive scene is "Search and Destroy" (SnD), which bears resemblance to "Bomb Defusal" in Counter-Strike and "Plant/Defuse" in Valorant, two other FPS games played in professional leagues. SnD is one-sided game mode in which one team, the offensive side, tries to destroy one of two designated bomb sites on the map.
 
@@ -90,44 +91,139 @@ In professional CoD, a team must win six rounds of SnD to win the match.[^1] A r
 
 [^2]: Merchanics regarding the bomb:
 
-    -   The bomb can be picked up by any member of the offensive team.
-    -   The bomb carrier is not obstructed at all by carrying the bomb (i.e. movement is the same, weapon usage is the same).
-    -   The defense does not get any visual indication for who is carrying the bomb.
-    -   A bomb plant takes five seconds. The timer resets if the player stops planting site prior to completing it.
-    -   A bomb defuse takes seven seconds. The timer resets if the player "drops" the bomb.
-    -   The bomb takes 45 seconds to defuse after being planted.
-
 [^3]: Often the defensive team will try to eliminate all team members prior to making the defuse, but in some cases, they may try to "ninja" defuse.
+
+-   The bomb can be picked up by any member of the offensive team.
+-   The bomb carrier is not obstructed at all by carrying the bomb (i.e. movement is the same, weapon usage is the same).
+-   The defense does not get any visual indication for who is carrying the bomb.
+-   A bomb plant takes five seconds. The timer resets if the player stops planting site prior to completing it.
+-   A bomb defuse takes seven seconds. The timer resets if the player "drops" the bomb.
+-   The bomb takes 45 seconds to defuse after being planted.
 
 Teams take turns playing offense and defense every round.
 
-## 1. Data
+We adopt the terminology "series" to refer to what CoD SnD players typically call a "match", so as to emulate the terminology of playoff series in professional leagues like the National Basketball Association, National Hockey League, and Major League Baseball. A "game" or a "match" in such leagues is analogous to a "round" of CoD SnD.
 
-CoD has roughly gone through three eras of professional gaming: (1) Major League Gaming (MLG) tournaments prior to 2016; (2) the CoD World League (CWL), initiated in 2016; and (3) the 12-franchise CoD League (CDL), running since 2020 and completing three year-long "seasons" completed as of August 2022.[^4] The data set consists of all SnD matches played in tournaments and qualifiers during the CDL era, totaling `r scales::comma(cod_n_rounds)` rounds across `r scales::comma(cod_n_series)` series. Data was collected in spreadsheets by community member "IOUTurtle".[^5]
+## Data
+
+CoD has roughly gone through three eras of professional gaming: (1) Major League Gaming (MLG) tournaments prior to 2016; (2) the CoD World League (CWL), initiated in 2016; and (3) the 12-franchise CoD League (CDL), running since 2020 and completing three year-long "seasons" completed as of August 2022.[^4] The data set consists of all SnD matches played in tournaments and qualifiers during the CDL era, totaling 7,792 rounds across 852 series. Data was collected in spreadsheets by community member "IOUTurtle".[^5]
 
 [^4]: CoD is fairly unique compared to other esports in that it runs on an annual lifecycle (released coming in the late fall), where a new game is published every year under the same title. Each new game bears resemblance to past ones, often introducing relatively small variations ("improvements") to graphics, game modes, and other facets of gameplay. During the CDL era, the games released have been Modern Warfare (2020), Cold War (2021) and Vanguard (2022).
 
 [^5]: Data: https://linktr.ee/CDLArchive. Author: https://twitter.com/IOUTurtle
 
-I adopt the terminology "series" to refer to what CoD SnD players typically call a "match", so as to emulate the terminology of playoff series in professional leagues like the National Basketball Association, National Hockey League, and Major League Baseball. A "game" or a "match" in such leagues is analogous to a "round" of CoD SnD.
+The empirical offensive round win percentage across all rounds is 47.8%.[^6] To contextualize our subsequent discussion of series length and momentum, table 1 shows round win percentages by series "state" (i.e. the number of round wins by each team prior to an upcoming round). Offensive round win rate is not quite constant, although never veers more than 10% from this global average.
 
+[^6]: Offensive round win percentage has been nearly constant across the three games during the CDL era: MW (2020) `r pull_cod_o_win_prop_by_game('MW (2020)')`, Cold War (2021) `r pull_cod_o_win_prop_by_game('Cold War (2021)')`, Vanguard (2022) `r pull_cod_o_win_prop_by_game('Vanguard (2022)')`
+
+```{r}
+#| label: cod_o_win_prop
+#| eval: false
+cod_round_and_series_win_prop_by_side <- cod_rounds |>
+  group_by(pre_cumu_w, pre_cumu_l, is_offense) |>
+  summarize(
+    n = n(),
+    across(c(win_round, win_series), sum)
+  ) |>
+  ungroup() |>
+  mutate(
+    win_round_prop = win_round / n,
+    win_series_prop = win_series / n
+  )
+
+cod_round_and_series_win_prop_by_side |>
+  filter(is_offense) |>
+  transmute(
+    pre_cumu_w,
+    pre_cumu_l,
+    lab = sprintf('%.1f%%\n(%s)', round(100 * win_round_prop, 1), n)
+  ) |>
+  pivot_wider(
+    names_from = pre_cumu_l,
+    values_from = lab
+  ) |>
+  arrange(pre_cumu_w) |>
+  gt::gt() |>
+  gt::cols_label(
+    pre_cumu_w = "Defensive team's round wins",
+  ) |>
+  gt::tab_spanner(
+    label = "Offensive team's round wins",
+    columns = `0`:`5`
+  ) |>
+  gt::as_latex()
+```
+
+```{=tex}
+\captionsetup[table]{labelformat=empty,skip=1pt}
+\begin{longtable}{rrrrrrr}
+\toprule
+ & \multicolumn{6}{c}{Offensive team's round wins} \\ 
+\cmidrule(lr){2-7}
+Defensive team's round wins & 0 & 1 & 2 & 3 & 4 & 5 \\ 
+\midrule
+0 & 47.8\%
+(852) & 46.6\%
+(408) & 43.1\%
+(216) & 43.5\%
+(115) & 43.3\%
+(67) & 40.5\%
+(37) \\ 
+1 & 48.6\%
+(444) & 49.3\%
+(418) & 51.5\%
+(309) & 43.4\%
+(205) & 43.3\%
+(120) & 39.4\%
+(99) \\ 
+2 & 52.8\%
+(218) & 48.9\%
+(305) & 48.9\%
+(315) & 46.6\%
+(262) & 48.7\%
+(189) & 42.1\%
+(133) \\ 
+3 & 54.5\%
+(123) & 46.0\%
+(200) & 49.6\%
+(250) & 45.6\%
+(248) & 44.4\%
+(214) & 44.8\%
+(174) \\ 
+4 & 56.9\%
+(65) & 54.5\%
+(145) & 47.2\%
+(193) & 44.7\%
+(228) & 55.2\%
+(221) & 50.5\%
+(208) \\ 
+5 & 47.4\%
+(38) & 49.4\%
+(83) & 47.1\%
+(136) & 50.9\%
+(175) & 45.2\%
+(177) & 46.0\%
+(202) \\ 
+\bottomrule
+\end{longtable}
+```
 # Literature review
 
-There have been only a handful of studies of the distribution of games played in a series, most of which assume a constant probability $p$ of a given team winning a game in the series, regardless of the series state. [@mosteller1952] observed that the American League had dominated the National League in Major League Baseball's (MLB) World Series matchups, implying that matchups should not modeled with \$p=0.5\$.. Mosteller proposed three approaches for identifying the optimal constant probability value of the stronger team in the World Series, finding \$p \\approx 0.65\$. in each case: (1) a "method of moments", an approach that solves for \$p\$. from the empirical average number of games won by the loser of the series; (2) maximum likelihood, and (3) maximum chi-square approach.
+There have been only a handful of studies of the distribution of games played in a series, most of which assume a constant probability $p$ of a given team winning a game in the series, regardless of the series state. [@mosteller1952] observed that the American League had dominated the National League in Major League Baseball's (MLB) World Series matchups, implying that matchups should not modeled with \$p=0.5\$. Mosteller proposed three approaches for identifying the optimal constant probability value of the stronger team in the World Series, finding $p \approx 0.65$. in each case: (1) a "method of moments" approach in which one solves for $p$. from the empirical average number of games won by the loser of the series; (2) maximizing the likelihood that the sample would have been drawn from a population in which the probability of a team winning a game is constant across the series, and (3) minimizing the chi-square goodness of fit estimate for $p$.
 
-[@chance2020] re-examines the constant probability notion in Major League Baseball's World Series (1923--2018), the National Basketball Association's Finals (1951--2018), and the National Hockey League's Stanley Cup (1939--2018). Chance applies finds strong evidence against the null hypothesis of $p = 0.5$ in the MLB and NHL championship series when applying Mosteller's first and second methods.[^6] Chance's work is closely related to ours and, in fact, provides a guide for the first part of our investigation.
+[@chance2020] re-examines the constant probability notion in Major League Baseball's World Series (1923--2018), the National Basketball Association's Finals (1951--2018), and the National Hockey League's Stanley Cup (1939--2018). Chance applies finds strong evidence against the null hypothesis of $p = 0.5$ in the MLB and NHL championship series when applying Mosteller's first and second methods.[^7] Chance's work is closely related to ours and, in fact, provides a guide for the first part of our investigation.
 
-[^6]: Chance goes on to outline a conditional probability framework (likelihood of winning a game given the series state) which can exactly explain the distribution of the number of games played.
+[^7]: Chance goes on to outline a conditional probability framework (likelihood of winning a game given the series state) which can exactly explain the distribution of the number of games played.
 
-Momentum, one of most discussed topics in sports analytics, goes hand-in-hand with a discussion of the nature of series outcomes.[^7] Two opposing fallacies are observed in the context of momentum: the "gambler's fallacy" (negative recency) and "hot hand fallacy" (positive recency). Per \[@ayton2004\], negative recency is "the belief that, for random events, runs of a particular outcome ... will be balanced by a tendency for the opposite outcome", while positive recency is the expectation of observing future results that match recent results.
+Momentum, one of most discussed topics in sports analytics, goes hand-in-hand with a discussion of the nature of series outcomes.[^8] Two opposing fallacies are observed in the context of momentum: the "gambler's fallacy" (negative recency) and "hot hand fallacy" (positive recency). Per [@ayton2004], negative recency is "the belief that, for random events, runs of a particular outcome ... will be balanced by a tendency for the opposite outcome", while positive recency is the expectation of observing future results that match recent results.
 
-[^7]: We often use use "streaks" and momentum interchangeably, but as [@steeger2021] note, momentum implies dependence between events, whereas streaking does not.
+[^8]: We often use use "streaks" and momentum interchangeably, but as [@steeger2021] note, momentum implies dependence between events, whereas streaking does not.
 
 Studying both player streaks and team streaks in basketball, in both observational and controlled settings. [@gilovich1985] do not find evidence for the hot hand phenomenon. Recently , [@miller2018] refute [@gilovich1985]'s conclusions, finding mathematical evidence that seems to support negative recency. Specifically, they find that a "bias exists in a common measure of the conditional dependence of present outcomes on streaks of past outcomes in sequential data" (streak selection bias) that imply that, under i.i.d. conditions, "the proportion of successes among the outcomes that immediately follow a streak of consecutive successes is expected to be strictly less than the underlying (conditional) probability of success". We agree with Miller's findings, accounting for the streak selection bias in our study of momentum.
 
-Despite the plethora of existing research on games played in a series and momentum in sports, these topics have yet to be investigated heavily in esports. Work has been done to examine in-round win probability in other FPS titles such as Counter-Strike ([@xenopoulos2022]) and Valorant ([@derover2021]), both of which are round-based like CoD SnD. However, research on round-level trends is sparse, perhaps because games like Counter-Strike and Valorant both have economic aspects that can create clear advantages on side in a given round, given how prior rounds played out.[^8]
+Despite the plethora of existing research on games played in a series and momentum in sports, these topics have yet to be investigated heavily in esports. Work has been done to examine in-round win probability in other FPS titles such as Counter-Strike ([@xenopoulos2022]) and Valorant ([@derover2021]), both of which are round-based like CoD SnD. However, research on round-level trends is sparse, perhaps because games like Counter-Strike and Valorant both have economic aspects that can create clear advantages on side in a given round, given how prior rounds played out.[^9]
 
-[^8]: Additionally, both Counter-Strike and Valorant have overtime rules and blocked offensive/defensive roles (i.e. playing either offense or defense for many consecutive rounds).
+[^9]: Additionally, both Counter-Strike and Valorant have overtime rules and blocked offensive/defensive roles (i.e. playing either offense or defense for many consecutive rounds).
 
 # Methodology, results, and discussion
 
@@ -135,35 +231,451 @@ First, we investigate the constant probability assumption and the distribution o
 
 ## Distribution of rounds played
 
-The general formula for the probability $P(i)$ that a best-of-$s$ series lasts $i$ rounds given constant probability $p$ of one team[^9] winning each round is
+The general formula for the probability $P_E(i)$ that a best-of-$s$ series lasts $i$ rounds given constant probability $p$ of one team[^10] winning each round is
 
-[^9]: If $p > 0.5$, then we might say that this team is the better team (presumably known in hindsight)
+[^10]: If $p > 0.5$, then we might say that this team is the better team (presumably known in hindsight)
 
 $$
-s_1 = \frac{s - 1}{2}, s_2 = \frac{s + 1}{2}
-$$
-$$
-P(i) = \frac{(i - 1)!}{s_1!(i - s_2)!}(p^{s_2}(1 - p)^{i - s_2} + p^{i - s_2}(1 - p)^{s_2})
+q = 1 - p, s_1 = \frac{s - 1}{2}, s_2 = \frac{s + 1}{2}, s_2^{'} = 1 - s_2
 $$
 
-resulting in @tbl-prob-series-lasting-i-rounds} for $s = 11$ and the naive assumption that $p = 0.5$.
+$$
+P_E(i) = \frac{(i - 1)!}{s_1!(i - s_2)!}(p^{s_2}q^{s_2^{'}} + p^{s_2^{'}}q^{s_2}).
+$$ {#eq-series-length}
 
-| Number of rounds ($i$) | $P(i)$ |
-|-----------------------:|-------:|
-|                      6 |   3.1% |
-|                      7 |   9.4% |
-|                      8 |  16.4% |
-|                      9 |  21.9% |
-|                     10 |  24.6% |
-|                     11 |  24.6% |
+```{r}
+#| label: cod_series_outcome_prop
+#| eval: true
+.max_round <- 11
+.cutoff <- 6
+prob_of_series_lasting_n_games <- function(n, p = 0.5, max_round = .max_round) {
+  s <- ceiling(max_round / 2)
+  (factorial(n - 1) / (factorial(s - 1) * factorial(n - s))) * (p^s * (1 - p)^(n - s) + p^(n - s) * (1 - p)^s)
+}
 
-: The probabilities that a best-of-11 series lasts $i$ rounds ($Pr(i)$, where $i = {6, 7, 8, 9, 10, 11}$) under the assumption that each team has a 50% probability ($p = 0.5$) of winning each game {#tbl-prob-series-lasting-i-rounds}
+expected_series_streaks_of_outcomes <- function(m, n) {
+  factorial(m + n) / (factorial(m) * factorial(n))
+}
 
-The empirical offensive round win percentage across all rounds is `r scales::percent(cod_o_win_prop, accuracy = 0.1)`.[^10] @fig-cod-o-round-win-prop shows that offensive round win rate is not quite constant, although never veers more than 10% from this global average.
+# https://raw.githubusercontent.com/dgrtwo/splittestr/master/R/vectorized-prop-test.R
+vectorized_prop_test_approx <- function(a, b, c, d) {
+  n1 <- a + b
+  n2 <- c + d
+  n <- n1 + n2
+  p <- (a + c) / n
+  E <- cbind(p * n1, (1 - p) * n1, p * n2, (1 - p) * n2)
+  
+  x <- cbind(a, b, c, d)
+  
+  DELTA <- a / n1 - c / n2
+  YATES <- pmin(.5, abs(DELTA) / sum(1 / n1 + 1 / n2))
+  
+  STATISTIC <- rowSums((abs(x - E) - YATES)^2 / E)
+  PVAL <- pchisq(STATISTIC, 1, lower.tail = FALSE)
+  PVAL
+}
 
-[^10]: Offensive round win percentage has been nearly constant across the three games during the CDL era: MW (2020) `r pull_cod_o_win_prop_by_game('MW (2020)')`, Cold War (2021) `r pull_cod_o_win_prop_by_game('Cold War (2021)')`, Vanguard (2022) `r pull_cod_o_win_prop_by_game('Vanguard (2022)')`
+vectorized_prop_test_exact <- function(a, b, c, d) {
+  sapply(seq_along(a), function(i) {
+    fisher.test(cbind(c(a[i], c[i]), c(b[i], d[i])))$p.value
+  })
+}
 
-![Offensive round win percentage by series state](images/cod_o_round_win_prop.png){#fig-cod-o-round-win-prop fig-align="center"}
+vectorized_prop_test <- function(x1, n1, x2, n2, conf.level = 0.95) {
+  a <- x1
+  b <- n1 - x1
+  c <- x2
+  d <- n2 - x2
+  
+  # if any values are < 20, use Fisher's exact test
+  exact <- (a < 20 | b < 20 | c < 20 | d < 20)
+  
+  pvalue <- rep(NA, length(a))
+  
+  if (any(exact)) {
+    pvalue[exact] <- vectorized_prop_test_exact(a[exact], b[exact], c[exact], d[exact])
+  }
+  if (any(!exact)) {
+    pvalue[!exact] <- vectorized_prop_test_approx(a[!exact], b[!exact], c[!exact], d[!exact])
+  }
+  
+  mu1 <- a / (a + b)
+  mu2 <- c / (c + d)
+  
+  ## confidence interval
+  alpha2 <- (1 - conf.level) / 2
+  DELTA <- mu2 - mu1
+  WIDTH <- qnorm(alpha2)
+  alpha <- (a + .5) / (a + b + 1)
+  beta <- (c + .5) / (c + d + 1)
+  
+  n <- n1 + n2
+  YATES <- pmin(.5, abs(DELTA) / sum(1 / n1 + 1 / n2))
+  
+  z <- qnorm((1 + conf.level) / 2)
+  WIDTH <- z * sqrt(mu1 * (1 - mu1) / n1 + mu2 * (1 - mu2) / n2)
+  
+  tibble(
+    estimate = DELTA,
+    conf.low = pmax(DELTA - WIDTH, -1),
+    conf.high = pmin(DELTA + WIDTH, 1),
+    p.value = pvalue
+  )
+}
+
+cod_actual_round_streaks <- cod_rounds |> 
+  filter(round <= .max_round) |> 
+  filter(win_series) |> 
+  mutate(across(win_round, as.integer)) |> 
+  group_by(series_id) |> 
+  summarize(
+    wins = max(cumu_w),
+    losses = max(cumu_l),
+    ws = paste0(win_round, collapse = '-')
+  ) |> 
+  ungroup() |> 
+  mutate(n_rounds = wins + losses) |> 
+  unite(
+    record, wins, losses, sep = '-'
+  ) |>
+  count(record, n_rounds, ws, sort = TRUE) |> 
+  mutate(prop = n / sum(n))
+
+summarize_cod_streaks <- function(p = 0.5) {
+  
+  expected_round_streaks <- tibble(
+    n_rounds = .cutoff:.max_round
+  ) |> 
+    mutate(
+      series_prop = map_dbl(n_rounds, ~prob_of_series_lasting_n_games(.x, max_round = .max_round, p = !!p)),
+      n_expected_series_streaks = map_dbl(n_rounds, ~expected_series_streaks_of_outcomes(.cutoff, .x - .cutoff))
+    ) |> 
+    transmute(
+      n_rounds,
+      series_prop,
+      prop = series_prop / n_expected_series_streaks
+    )
+  
+  round_streaks <- full_join(
+    cod_actual_round_streaks |> 
+      rename_with(~sprintf('%s_actual', .x), c(n, prop)),
+    expected_round_streaks |> 
+      rename_with(~sprintf('%s_expected', .x), prop),
+    by = 'n_rounds'
+  )
+  
+  round_streak_prop <- round_streaks |> 
+    drop_na() |> 
+    mutate(
+      prop_diff = prop_actual - prop_expected,
+      total_actual = sum(n_actual),
+      n_expected = round(prop_expected * total_actual),
+      p = vectorized_prop_test(n_actual, total_actual, n_expected, total_actual)
+    ) |> 
+    select(-total_actual) |> 
+    unnest_wider(p) |> 
+    arrange(p.value)
+  
+  series_outcomes <- full_join(
+    cod_actual_round_streaks |> 
+      group_by(record, n_rounds) |> 
+      summarize(
+        across(n, sum)
+      ) |> 
+      ungroup() |> 
+      mutate(prop = n / sum(n)) |> 
+      rename_with(~sprintf('%s_actual', .x), c(n, prop)),
+    expected_round_streaks |> 
+      select(n_rounds, prop_expected = series_prop),
+    by = 'n_rounds'
+  )
+  
+  series_outcome_prop <- series_outcomes |> 
+    drop_na() |> 
+    mutate(
+      prop_diff = prop_actual - prop_expected,
+      total_actual = sum(n_actual),
+      n_expected = round(prop_expected * total_actual),
+      p = vectorized_prop_test(n_actual, total_actual, n_expected, total_actual)
+    ) |> 
+    select(-total_actual) |> 
+    unnest_wider(p) |> 
+    arrange(p.value)
+  
+  list(
+    rounds = round_streak_prop,
+    series = series_outcome_prop
+  )
+}
+
+cod_streaks_naive_res <- summarize_cod_streaks(p = 0.5)
+```
+
+```{r}
+#| label: cod_series_outcome_prop-table
+cod_streaks_naive_res$series |>
+  select(
+    n_rounds,
+    prop_expected,
+    prop_actual,
+    n_actual
+  ) |>
+  arrange(n_rounds) |>
+  gt::gt() |>
+  gt::cols_label(
+    n_rounds = 'Series lasts\ni rounds',
+    prop_expected = 'P_{E}(i)',
+    prop_actual = 'P_{O}(i)',
+    n_actual = 'N_O'
+  ) |>
+  gt::fmt_percent(
+    decimals = 1,
+    columns = c('prop_expected', 'prop_actual')
+  ) |>
+  gt::tab_spanner(
+    label = 'Observed',
+    columns = c('prop_actual', 'n_actual')
+  ) |>
+  gt::as_latex()
+```
+
+Table 2 shows the expected proportion for $s = 11$ and the naive assumption that $p = 0.5$, along with the observed proportion $P_{O}(i)$ for CoD SnD.
+
+```{=tex}
+\captionsetup[table]{labelformat=empty,skip=1pt}
+\begin{longtable}{rrrr}
+\toprule
+&  & \multicolumn{2}{c}{Observed} \\ 
+\cmidrule(lr){3-4}
+Series lasts $i$ rounds & $P_E(i)$ & $P_O(i)$ & $N_O(i)$ \\ 
+\midrule
+6 & $3.1\%$ & $4.7\%$ & 40 \\ 
+7 & $9.4\%$ & $11.9\%$ & 101 \\ 
+8 & $16.4\%$ & $16.5\%$ & 141 \\ 
+9 & $21.9\%$ & $21.7\%$ & 185 \\ 
+10 & $24.6\%$ & $21.5\%$ & 183 \\ 
+11 & $24.6\%$ & $23.7\%$ & 202 \\ 
+\bottomrule
+\end{longtable}
+```
+The probabilities that a best-of-11 series lasts $i$ rounds ($P(i)$, where $i \in R = [6, 7, 8, 9, 10, 11]$) under the assumption that each team has a 50% probability ($p = 0.5$) of winning each game {#tbl-prob-series-lasting-i-rounds} along with the observed frequencies of series lasting $i$ rounds, expressed as a percentage $P_O(i)$ and as a count ($N_O$)
+
+```{r}
+#| label: cod_series_outcomes_chi
+#| eval: false
+generate_chi_label <- function(statistic, p.value) {
+  sprintf('%.1f (%s)', statistic, ifelse(p.value <= 0.01, '<=0.01', as.character(round(p.value, 2))))
+}
+
+perform_series_chi_test <- function(series) {
+  chisq.test(
+    series$n_actual, 
+    p = series$prop_expected
+  ) |> 
+    broom::tidy()
+}
+
+cod_series_outcomes_naive_chi <- cod_streaks_naive_res$series |> 
+  perform_series_chi_test()
+```
+
+Calculating the chi-square goodness of fit statistic
+
+$$
+\chi^2 = \sum^{11}_{i=6} \frac{(P_O(i) - P_E(i))^2}{P_E(i)}, i \in R = [6, 7, 8, 9, 10, 11]
+$$
+
+as `r scales::number(cod_series_outcomes_naive_chi$statistic, accuracy = 0.1)` (p-value of `r scales::number(cod_series_outcomes_naive_chi$p.value, accuracy = 0.0001)`), we can comfortably reject the constant probability null hypothesis, event at a confidence level of $\alpha = 0.01$.
+
+```{r}
+#| label: cod-alternative-to-p=0.5-method-prep
+#| eval: false
+min_p1 <- 0.5
+max_p1 <- 0.7
+interval_p1 <- 0.0025
+cod_ps <- tibble(p = seq(min_p1, max_p1, by = 0.0025))
+```
+
+```{r}
+#| label: cod-alternative-to-p=0.5-method-1
+#| eval: false
+# p. 365 on https://math.mit.edu/classes/18.095/2016IAP/lec9/Sports_Mosteller1952_WorldSeries.pdf
+theoretical_cod_series_length <- function(p) {
+  6 * prob_of_series_lasting_n_games(n = 6, p = p, max_round = 11) +
+    7 * prob_of_series_lasting_n_games(n = 7, p = p, max_round = 11) +
+    8 * prob_of_series_lasting_n_games(n = 8, p = p, max_round = 11) +
+    9 * prob_of_series_lasting_n_games(n = 9, p = p, max_round = 11) +
+    10 * prob_of_series_lasting_n_games(n = 10, p = p, max_round = 11) +
+    11 * prob_of_series_lasting_n_games(n = 11, p = p, max_round = 11)
+}
+cod_rounds_per_series <- cod_streaks_naive_res$series |>
+  summarize(
+    actual = sum(n_rounds * prop_actual),
+    expected = sum(n_rounds * prop_expected)
+  )
+
+cod_theoretical_series_lengths1 <- cod_ps |>
+  mutate(
+    theoretical_series_length = map_dbl(p, theoretical_cod_series_length),
+    diff = theoretical_series_length - cod_rounds_per_series$actual
+  )
+
+cod_theoretical_p1 <- cod_theoretical_series_lengths1 |>
+  slice_min(abs(diff), n = 1) |>
+  pull(p)
+```
+
+```{r}
+#| label: cod-alternative-to-p=0.5-method-2
+#| eval: false
+pluck_cod_n <- function(.n_rounds) {
+  cod_streaks_naive_res$series |>
+    filter(n_rounds == .n_rounds) |>
+    pull(n_actual)
+}
+
+cod_n6 <- pluck_cod_n(6)
+cod_n7 <- pluck_cod_n(7)
+cod_n8 <- pluck_cod_n(8)
+cod_n9 <- pluck_cod_n(9)
+cod_n10 <- pluck_cod_n(10)
+cod_n11 <- pluck_cod_n(11)
+
+## This adjustment is something that is not done in the paper. I do it here to reduce
+##   the magnitude of the exponents.
+cod_pm <- pmin(cod_n6, cod_n7, cod_n8, cod_n9, cod_n10, cod_n11)
+cod_n6adj <- round(10 * cod_n6 / cod_pm)
+cod_n7adj <- round(10 * cod_n7 / cod_pm)
+cod_n8adj <- round(10 * cod_n8 / cod_pm)
+cod_n9adj <- round(10 * cod_n9 / cod_pm)
+cod_n10adj <- round(10 * cod_n10 / cod_pm)
+cod_n11adj <- round(10 * cod_n11 / cod_pm)
+
+maximize_cod_series_p <- function(p) {
+  prob_of_series_lasting_n_games(n = 6, p = p, max_round = 11)^cod_n6adj *
+    prob_of_series_lasting_n_games(n = 7, p = p, max_round = 11)^cod_n7adj *
+    prob_of_series_lasting_n_games(n = 8, p = p, max_round = 11)^cod_n8adj *
+    prob_of_series_lasting_n_games(n = 9, p = p, max_round = 11)^cod_n9adj *
+    prob_of_series_lasting_n_games(n = 10, p = p, max_round = 11)^cod_n10adj *
+    prob_of_series_lasting_n_games(n = 11, p = p, max_round = 11)^cod_n11adj
+}
+
+cod_theoretical_series_lengths2 <- cod_ps |>
+  mutate(
+    theoretical_series_length = map_dbl(p, maximize_cod_series_p)
+  )
+
+cod_theoretical_p2 <- cod_theoretical_series_lengths2 |>
+  slice_max(theoretical_series_length, n = 1) |>
+  pull(p)
+```
+
+```{r}
+#| label: cod-alternative-to-p=0.5-method-3
+#| eval: false
+summarize_cod_series_chi <- function(p) {
+  summarize_cod_streaks(p) |> 
+    pluck('series') |> 
+    perform_series_chi_test()
+}
+
+cod_theoretical_series_lengths3 <- cod_ps |> 
+  filter(p >= 0.56, p < 0.585) |> 
+  mutate(
+    chi_squ = map_dbl(
+      p,
+      ~summarize_cod_series_chi(.x) |> 
+        pluck('statistic')
+    )
+  )
+
+cod_theoretical_p3 <- cod_theoretical_series_lengths3 |> 
+  slice_min(chi_squ, n = 1) |> 
+  pull(p)
+```
+
+```{r}
+#| label: cod-alternatives-to-p=0.5
+#| eval: false
+cod_streaks_other_res <- tibble(
+  p = c(0.5, cod_theoretical_p1, cod_theoretical_p2, cod_theoretical_p3),
+  idx = 0L:3L,
+  name = c('0. Naive', '1. Method of moments', '2. Maximum likelihood', '3. Minimum Chi-square')
+) |> 
+  mutate(
+    series_streaks = map(
+      p,
+      ~summarize_cod_streaks(.x) |> 
+        pluck('series') 
+    ),
+    chi_squ = map(
+      series_streaks,
+      ~.x |> 
+        perform_series_chi_test() |> 
+        select(statistic, p.value)
+    )
+  )
+
+cod_streaks_other_res |>
+  select(name, p, chi_squ) |>
+  unnest(chi_squ) |>
+  mutate(
+    lab = generate_chi_label(statistic, p.value)
+  ) |>
+  select(
+    `Method` = name,
+    `$p$` = p,
+    `$\\chi^2$ (p-value)` = lab
+  ) |>
+  knitr::kable()
+
+cod_streaks_other_res |>
+  mutate(
+    lab = sprintf('%s. p = %s', idx, p)
+  ) |>
+  select(lab, series_streaks) |>
+  unnest(series_streaks) |>
+  select(lab, n_rounds, prop_expected) |>
+  mutate(
+    across(prop_expected, ~scales::percent(.x, accuracy = 0.1))
+  ) |>
+  pivot_wider(
+    names_from = lab,
+    values_from = prop_expected
+  ) |>
+  inner_join(
+    cod_streaks_naive_res$series |>
+      transmute(n_rounds, `$P_O(i)$` = scales::percent(prop_actual, accuracy = 0.1)),
+    by = 'n_rounds'
+  ) |>
+  arrange(n_rounds) |>
+  rename(`Series lasts $i$ rounds` = n_rounds) |>
+  knitr::kable()
+```
+
+@tbl-mosteller-methods shows the alternate values for the constant round win probability $p$ for winning a given round in a CoD SnD that we find when applying the three methods suggested by [@mosteller1952]. Each is approximately or equal to 0.575, and each results in a $chi^2$ value for which we cannot reject constant probability null hypothesis.
+
+| Method                 |    $p$ | $\chi^2$ (p-value) |
+|:-----------------------|-------:|-------------------:|
+| 0\. Naive              | 0.5000 |     16.0 (\<=0.01) |
+| 1\. Method of moments  | 0.5725 |          3.6 (0.6) |
+| 2\. Maximum likelihood | 0.5750 |         3.5 (0.62) |
+| 3\. Minimum $\chi^2$   | 0.5775 |         3.5 (0.62) |
+
+: Alternate estimates of the constant probability $p$ for winning a given round in a CoD SnD, applying the three methods suggested by [@mosteller1952], in addition to the naive $p = 0.5$. {#tbl-mosteller-methods}
+
+@tbl-expected-series-lengths-alternative-ps shows the new $P_E(i)$ when re-applying @eq-series-length for each new $p$. We observe that $P_E(i)$ is notably smaller for $p_{1,2,3}$ when $i \in [10, 11]$ and higher for $i \in [6, 7]$, more closely matching $P_O(i)$.
+
+| Series lasts $i$ rounds | 0\. $p$= 0.5 | 1\. $p$ = 0.5725 | 2\. $p$ = 0.575 | 3\. $p$ = 0.5775 | $P_O(i)$ |
+|------------------------:|-------------:|-----------------:|----------------:|-----------------:|---------:|
+|                       6 |         3.1% |             4.1% |            4.2% |             4.3% |     4.7% |
+|                       7 |         9.4% |            11.1% |           11.2% |            11.4% |    11.9% |
+|                       8 |        16.4% |            17.7% |           17.8% |            17.9% |    16.5% |
+|                       9 |        21.9% |            21.8% |           21.8% |            21.8% |    21.7% |
+|                      10 |        24.6% |            23.1% |           23.0% |            22.9% |    21.5% |
+|                      11 |        24.6% |            22.1% |           22.0% |            21.8% |    23.7% |
+
+: Caption {#tbl-expected-series-lengths-alternative-ps}
 
 # References {.unnumbered}
 
