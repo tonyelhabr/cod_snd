@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.141592653-2.6-1.40.24 (TeX Live 2022) (preloaded format=pdflatex 2022.8.12)  14 AUG 2022 09:05
+This is pdfTeX, Version 3.141592653-2.6-1.40.24 (TeX Live 2022) (preloaded format=pdflatex 2022.8.12)  14 AUG 2022 09:33
 entering extended mode
  restricted \write18 enabled.
  %&-line parsing enabled.
@@ -323,8 +323,11 @@ File: t1lmr.fd 2015/05/01 v1.6.1 Font defs for Latin Modern
 File: l3backend-pdftex.def 2022-08-05 L3 backend support: PDF output (pdfTeX)
 \l__color_backend_stack_int=\count288
 \l__pdf_internal_box=\box57
+) (./paper2.aux
+
+LaTeX Warning: Label `tbl:expected-series-lengths-alternative-ps' multiply defined.
+
 )
-No file paper2.aux.
 \openout1 = `paper2.aux'.
 
 LaTeX Font Info:    Checking defaults for OML/cmm/m/it on input line 63.
@@ -412,6 +415,7 @@ LaTeX Font Info:    ... okay on input line 63.
 * (1in=72.27pt=25.4mm, 1cm=28.453pt)
 
 Package hyperref Info: Link coloring OFF on input line 63.
+(./paper2.out) (./paper2.out)
 \@outlinefile=\write3
 \openout3 = `paper2.out'.
 
@@ -491,43 +495,50 @@ LaTeX Font Warning: Font shape `T1/lmr/bx/sc' undefined
 (Font)              using `T1/lmr/bx/n' instead on input line 67.
 
 LaTeX Font Info:    External font `lmex10' loaded for size
-(Font)              <9> on input line 100.
+(Font)              <9> on input line 94.
 LaTeX Font Info:    External font `lmex10' loaded for size
-(Font)              <6> on input line 100.
-LaTeX Font Info:    Trying to load font information for TS1+lmr on input line 129.
+(Font)              <6> on input line 94.
+LaTeX Font Info:    Trying to load font information for TS1+lmr on input line 131.
 (c:/Users/antho/AppData/Roaming/TinyTeX/texmf-dist/tex/latex/lm/ts1lmr.fd
 File: ts1lmr.fd 2015/05/01 v1.6.1 Font defs for Latin Modern
 ) [1
 
 
 {c:/Users/antho/AppData/Roaming/TinyTeX/texmf-var/fonts/map/pdftex/updmap/pdftex.map}]
-
-LaTeX Warning: Reference `tbl:cod-o-win-prop-by-series-state' on page 2 undefined on input line 173.
-
-
-Overfull \hbox (12.85522pt too wide) in alignment at lines 178--228
+Overfull \hbox (12.85522pt too wide) in alignment at lines 179--229
  [] [] [] [] [] [] [] 
  []
 
-[2]
+[2] [3]
+pdfTeX warning (ext4): destination with the same identifier (name{eq-series-length}) has been already used, duplicate ignored
+<to be read again> 
+                   \relax 
+l.350 ...}\protect\hypertarget{eq-series-length}{}
+                                                  { [4]
+No file paper2.bbl.
+[5] (./paper2.aux)
 
-LaTeX Warning: Reference `tbl:cod-prob-series-lasting-i-rounds' on page 3 undefined on input line 325.
+LaTeX Font Warning: Some font shapes were not available, defaults substituted.
 
-)
-Runaway argument?
-{The probabilities that a best-of-11 series lasts $i$ rounds ($P_E(i)\ETC.
-! File ended while scanning use of \@xdblarg.
-<inserted text> 
-                \par 
-<*> paper2.tex
-               
+
+LaTeX Warning: There were multiply-defined labels.
+
+Package rerunfilecheck Info: File `paper2.out' has not changed.
+(rerunfilecheck)             Checksum: 6F3005DED9D97D807A4B64DFC5DA03DF;1156.
+ ) 
 Here is how much of TeX's memory you used:
- 11710 strings out of 479618
- 193402 string characters out of 5876233
- 531592 words of memory out of 5000000
- 29925 multiletter control sequences out of 15000+600000
- 527208 words of font info for 132 fonts, out of 8000000 for 9000
+ 11794 strings out of 479618
+ 194557 string characters out of 5876233
+ 534327 words of memory out of 5000000
+ 29951 multiletter control sequences out of 15000+600000
+ 532365 words of font info for 142 fonts, out of 8000000 for 9000
  14 hyphenation exceptions out of 8191
- 72i,12n,77p,1003b,552s stack positions out of 10000i,1000n,20000p,200000b,200000s
+ 72i,12n,77p,1003b,550s stack positions out of 10000i,1000n,20000p,200000b,200000s
+{c:/Users/antho/AppData/Roaming/TinyTeX/texmf-dist/fonts/enc/dvips/lm/lm-ec.enc}{c:/Users/antho/AppData/Roaming/TinyTeX/texmf-dist/fonts/enc/dvips/lm/lm-mathsy.enc}{c:/Users/antho/AppData/Roaming/TinyTeX/texmf-dist/fonts/enc/dvips/lm/lm-rm.enc}{c:/Users/antho/AppData/Roaming/TinyTeX/texmf-dist/fonts/enc/dvips/lm/lm-mathex.enc}{c:/Users/antho/AppData/Roaming/TinyTeX/texmf-dist/fonts/enc/dvips/lm/lm-mathit.enc}{c:/Users/antho/AppData/Roaming/TinyTeX/texmf-dist/fonts/enc/dvips/lm/lm-ts1.enc}<c:/Users/antho/AppData/Roaming/TinyTeX/texmf-dist/fonts/type1/public/lm/lmbx10.pfb><c:/Users/antho/AppData/Roaming/TinyTeX/texmf-dist/fonts/type1/public/lm/lmbx12.pfb><c:/Users/antho/AppData/Roaming/TinyTeX/texmf-dist/fonts/type1/public/lm/lmcsc10.pfb><c:/Users/antho/AppData/Roaming/TinyTeX/texmf-dist/fonts/type1/public/lm/lmex10.pfb><c:/Users/antho/AppData/Roaming/TinyTeX/texmf-dist/fonts/type1/public/lm/lmmi10.pfb><c:/Users/antho/AppData/Roaming/TinyTeX/texmf-dist/fonts/type1/public/lm/lmmi7.pfb><c:/Users/antho/AppData/Roaming/TinyTeX/texmf-dist/fonts/type1/public/lm/lmmi9.pfb><c:/Users/antho/AppData/Roaming/TinyTeX/texmf-dist/fonts/type1/public/lm/lmr10.pfb><c:/Users/antho/AppData/Roaming/TinyTeX/texmf-dist/fonts/type1/public/lm/lmr5.pfb><c:/Users/antho/AppData/Roaming/TinyTeX/texmf-dist/fonts/type1/public/lm/lmr6.pfb><c:/Users/antho/AppData/Roaming/TinyTeX/texmf-dist/fonts/type1/public/lm/lmr7.pfb><c:/Users/antho/AppData/Roaming/TinyTeX/texmf-dist/fonts/type1/public/lm/lmr9.pfb><c:/Users/antho/AppData/Roaming/TinyTeX/texmf-dist/fonts/type1/public/lm/lmri10.pfb><c:/Users/antho/AppData/Roaming/TinyTeX/texmf-dist/fonts/type1/public/lm/lmsy10.pfb><c:/Users/antho/AppData/Roaming/TinyTeX/texmf-dist/fonts/type1/public/lm/lmsy5.pfb><c:/Users/antho/AppData/Roaming/TinyTeX/texmf-dist/fonts/type1/public/lm/lmsy9.pfb><c:/Users/antho/AppData/Roaming/TinyTeX/texmf-dist/fonts/type1/public/lm/lmtt10.pfb><c:/Users/antho/AppData/Roaming/TinyTeX/texmf-dist/fonts/type1/public/lm/lmtt9.pfb>
+Output written on paper2.pdf (5 pages, 338639 bytes).
+PDF statistics:
+ 244 PDF objects out of 1000 (max. 8388607)
+ 194 compressed objects within 2 object streams
+ 52 named destinations out of 1000 (max. 500000)
+ 35897 words of extra memory for PDF output out of 42996 (max. 10000000)
 
-!  ==> Fatal error occurred, no output PDF file produced!

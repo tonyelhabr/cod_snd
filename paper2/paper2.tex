@@ -67,9 +67,9 @@
 \begin{abstract}
 My research investigates patterns in round win percentages in
 professional Search and Destroy (SnD) matches of the popular
-first-person shooter game Call of Duty (CoD). I find evidence in CoD
-supprting the hypothesis that round win probability can be modeled as
-constant across the series, although not at a naive 50\%. Second, I
+first-person shooter game Call of Duty (CoD). First, I find evidence
+supprting the hypothesis that round win probability can be modeled as a
+constant across the series, although not at the naive 50\%. Second, I
 examine post-streak round win probability, in search of evidence
 positive recency (the ``hot hand'' fallacy) or negative recency (the
 ``gambler's falacy''). I find that teams perform significantly worse
@@ -88,17 +88,19 @@ Destroy}\label{description-of-call-of-duty-search-and-destroy}}
 
 Call of Duty (CoD), first released in 2003, is one of the most popular
 first-person shooter (FPS) video game franchises of all-time. The most
-popular mode in the competitive scene is ``Search and Destroy'' (SnD),
-which bears resemblance to ``Bomb Defusal'' in Counter-Strike and
-``Plant/Defuse'' in Valorant, two other FPS games played in professional
-leagues. SnD is one-sided game mode in which one team, the offensive
-side, tries to destroy one of two designated bomb sites on the map.
+popular mode in the competitive scene is ``Search and Destroy''
+(SnD).\footnote{SnD bears resemblance to ``Bomb Defusal'' in
+  Counter-Strike and ``Plant/Defuse'' in Valorant, two other FPS games
+  played in more popular professional leagues.} SnD is a one-sided game
+mode in which one team, the offensive side, tries to destroy one of two
+designated bomb sites on the map.
 
-In professional CoD, a team must win six rounds of SnD to win the
-match.\footnote{A maximum of 11 even rounds can be played. There is no
-  ``sudden death'' or ``win by two'' rule like there are for SnD
-  equivalent in professional Counter-Strike and Valorant matches.} A
-round can end in one of fmy ways:
+In professional CoD SnD, a team take turns playing offense and defense
+every round. They must win six rounds to win the series.\footnote{A
+  maximum of 11 even rounds can be played. There is no ``sudden death''
+  or ``win by two'' rule like there are for SnD equivalent in
+  professional Counter-Strike and Valorant matches.} A round can end in
+one of five ways:
 
 \begin{enumerate}
 \def\labelenumi{\arabic{enumi}.}
@@ -137,8 +139,6 @@ round can end in one of fmy ways:
   ends. (Defense wins.)
 \end{enumerate}
 
-Teams take turns playing offense and defense every round.
-
 I adopt the terminology ``series'' to refer to what CoD SnD players
 typically call a ``match'', so as to emulate the terminology of playoff
 series in professional leagues like the National Basketball Association,
@@ -149,22 +149,23 @@ National Hockey League, and Major League Baseball. A ``game'' or a
 \subsection{Data}\label{data}}
 
 CoD has roughly gone through three eras of professional gaming: (1)
-Major League Gaming (MLG) tmynaments prior to 2016; (2) the CoD World
+Major League Gaming (MLG) tournaments prior to 2016; (2) the CoD World
 League (CWL), initiated in 2016; and (3) the 12-franchise CoD League
-(CDL), running since 2020 and completing three year-long ``seasons''
-completed as of August 2022.\footnote{CoD is fairly unique compared to
+(CDL), operating since 2020. The CDL has completed three year-long
+``seasons'' as of August 2022.\footnote{CoD is fairly unique compared to
   other esports in that it runs on an annual lifecycle (released coming
   in the late fall), where a new game is published every year under the
   same title. Each new game bears resemblance to past ones, often
   introducing relatively small variations (``improvements'') to
   graphics, game modes, and other facets of gameplay. During the CDL
   era, the games released have been Modern Warfare (2020), Cold War
-  (2021) and Vanguard (2022).} The data set consists of all SnD matches
-played in tmynaments and qualifiers during the CDL era, totaling 7,792
-rounds across 852 series. Data was collected in spreadsheets by
-community member ``IOUTurtle''.\footnote{Data:
-  \url{https://linktr.ee/CDLArchive}. Author:
-  \url{https://twitter.com/IOUTurtle}}
+  (2021) and Vanguard (2022).}
+
+The data set consists of all SnD matches played in tournanaments and
+qualifiers during the CDL era, totaling 7,792 rounds across 852 series.
+Data was collected in spreadsheets by community member
+``IOUTurtle''.\footnote{Data: \url{https://linktr.ee/CDLArchive}.
+  Author: \url{https://twitter.com/IOUTurtle}}
 
 The empirical offensive round win percentage across all rounds is
 47.8\%.\footnote{Offensive round win percentage has been nearly constant
@@ -230,31 +231,32 @@ although never veers more than 10\% from this global average.
 \hypertarget{literature-review}{%
 \section{Literature review}\label{literature-review}}
 
-There have been only a handful of studies of the distribution of games
-played in a series, most of which assume a constant probability \(p\) of
-a given team winning a game in the series, regardless of the series
-state. (Mosteller 1952) observed that the American League had dominated
-the National League in Major League Baseball's (MLB) World Series
-matchups, implying that matchups should not modeled with \(p = 0.5\).
-Mosteller proposed three approaches for identifying the optimal constant
-probability value of the stronger team in the World Series, finding
-\(p \approx 0.65\). in each case: (1) a ``method of moments'' approach
-in which one solves for \(p\). from the empirical average number of
-games won by the loser of the series; (2) maximizing the likelihood that
-the sample would have been drawn from a population in which the
-probability of a team winning a game is constant across the series, and
-(3) minimizing the chi-square goodness of fit estimate for \(p\).
+There have been a handful of studies of the distribution of games played
+in a series of a professional sport. Most assume a constant probability
+\(p\) of a given team winning a game in the series, regardless of the
+series state. Mosteller (1952) observed that the American League had
+dominated the National League in Major League Baseball's (MLB) World
+Series matchups, implying that matchups should not modeled with
+\(p = 0.5\). Mosteller proposed three approaches for identifying the
+optimal constant probability value of the stronger team in the World
+Series, finding \(p \approx 0.65\). in each case: (1) solving for \(p\)
+from the empirical average number of games won by the loser of the
+series, which he called the ``method of moments'' approach; (2)
+maximizing the likelihood that the sample would have been drawn from a
+population in which the probability of a team winning a game is constant
+across the series (i.e.~maximum likelihood), and (3) minimizing the
+chi-square goodness of fit statistic for \(p\).
 
-(Chance 2020) re-examines the constant probability notion in Major
+Chance (2020) re-examines the constant probability notion in Major
 League Baseball's World Series (1923--2018), the National Basketball
 Association's Finals (1951--2018), and the National Hockey League's
-Stanley Cup (1939--2018). Chance applies finds strong evidence against
-the null hypothesis of \(p = 0.5\) in the MLB and NHL championship
-series when applying Mosteller's first and second methods.\footnote{Chance
-  goes on to outline a conditional probability framework (likelihood of
-  winning a game given the series state) which can exactly explain the
+Stanley Cup (1939--2018). Chance finds strong evidence against the null
+hypothesis of \(p = 0.5\) in the MLB and NHL championship series when
+applying Mosteller's first and second methods.\footnote{Chance goes on
+  to outline a conditional probability framework (likelihood of winning
+  a game given the series state) which can exactly explain the
   distribution of the number of games played.} Chance's work is closely
-related to mys and, in fact, provides a guide for the first part of my
+related to mine, and, in fact, provides a guide for the first part of my
 investigation.
 
 Momentum, one of most discussed topics in sports analytics, goes
@@ -264,25 +266,25 @@ outcomes.\footnote{We often use use ``streaks'' and momentum
   momentum implies dependence between events, whereas streaking does
   not.} Two opposing fallacies are observed in the context of momentum:
 the ``gambler's fallacy'' (negative recency) and ``hot hand fallacy''
-(positive recency). Per (Ayton and Fischer 2004), negative recency is
-``the belief that, for random events, runs of a particular outcome
-\ldots{} will be balanced by a tendency for the opposite outcome'',
-while positive recency is the expectation of observing future results
-that match recent results.
+(positive recency). Per Ayton et al. (2004), negative recency is ``the
+belief that, for random events, runs of a particular outcome \ldots{}
+will be balanced by a tendency for the opposite outcome'', while
+positive recency is the expectation of observing future results that
+match recent results.
 
 Studying both player streaks and team streaks in basketball, in both
-observational and controlled settings. (Gilovich, Vallone, and Tversky
-1985) do not find evidence for the hot hand phenomenon. Recently ,
-(Miller and Sanjurjo 2018) refute (Gilovich, Vallone, and Tversky
-1985)'s conclusions, finding mathematical evidence that seems to support
-negative recency. Specifically, they find that a ``bias exists in a
-common measure of the conditional dependence of present outcomes on
-streaks of past outcomes in sequential data'' (streak selection bias)
-that imply that, under i.i.d. conditions, ``the proportion of successes
-among the outcomes that immediately follow a streak of consecutive
-successes is expected to be strictly less than the underlying
-(conditional) probability of success''. I agree with Miller's findings,
-accounting for the streak selection bias in my study of momentum.
+observational and controlled settings. Gilovich et al. (1985) do not
+find evidence for the hot hand phenomenon. Recently, Miller et al.
+(2018) refuted the conclusions of Gilovich et al.~, finding mathematical
+evidence that seems to support negative recency. Specifically, they find
+that a ``bias exists in a common measure of the conditional dependence
+of present outcomes on streaks of past outcomes in sequential data''
+(streak selection bias) that imply that, under i.i.d. conditions, ``the
+proportion of successes among the outcomes that immediately follow a
+streak of consecutive successes is expected to be strictly less than the
+underlying (conditional) probability of success''. I agree with Miller's
+findings, accounting for the streak selection bias in my study of
+momentum.
 
 Despite the plethora of existing research on games played in a series
 and momentum in sports, these topics have yet to be investigated heavily
@@ -315,7 +317,7 @@ team\footnote{If \(p > 0.5\), then I might say that this team is the
   better team (known omnisciently).} winning each round is
 
 \[
-q = 1 - p, s_1 = \frac{s - 1}{2}, s_2 = \frac{s + 1}{2}, s_2^{'} = 1 - s_2
+q = 1 - p, s_1 = \frac{s_1 - 1}{2}, s_2 = \frac{s_1 + 1}{2}, s_2^{'} = 1 - s_2
 \]
 
 \begin{equation}\protect\hypertarget{eq-series-length}{}{
@@ -324,11 +326,11 @@ P_E(i) = \frac{(i - 1)!}{s_1!(i - s_2)!}(p^{s_2}q^{s_2^{'}} + p^{s_2^{'}}q^{s_2}
 
 Table \ref{tbl:cod-prob-series-lasting-i-rounds} shows the expected
 probabilities for \(s = 11\) under the naive assumption that
-\(p_0 = 0.5\) for a given round, along with the observed frequencies
-observed in CoD SnD (\(P_O(i)\), \(N_O(i)\))).
+\(p_0 = 0.5\) for a given round, along with the observed proportions
+\(P_O(i)\) in CoD SnD.
 
 \begin{longtable}{rrrr}
-  \caption{The probabilities that a best-of-11 series lasts $i$ rounds ($P_E(i)$, where $i = {6, 7, 8, 9, 10, 11}$) under the assumption that each team has a 50% probability ($p_0 = 0.5$) of winning each game. The observed frequencies observed are shown as a count $N_O(i)$ and as a proportion $P_O(i)$ of all series.}\label{tbl:cod-prob-series-lasting-i-rounds} \\
+  \caption{The probabilities that a best-of-11 series lasts $i$ rounds ($P_E(i)$, where $i \in [6, 7, 8, 9, 10, 11]$) under the assumption that each team has a 50\% probability ($p_0 = 0.5$) of winning each game. The observed frequencies observed are shown as a count $N_O(i)$ and as a proportion $P_O(i)$ of all series.}\label{tbl:cod-prob-series-lasting-i-rounds} \\
   \toprule
   &  & \multicolumn{2}{c}{Observed} \\ 
   \cmidrule(lr){3-4}
@@ -343,13 +345,6 @@ observed in CoD SnD (\(P_O(i)\), \(N_O(i)\))).
   \bottomrule
 \end{longtable}
 
-The probabilities that a best-of-11 series lasts \(i\) rounds (\(P(i)\),
-where \(i \in R = [6, 7, 8, 9, 10, 11]\)) under the assumption that each
-team has a 50\% probability (\(p_0 = 0.5\)) of winning each game
-\{\#tbl-prob-series-lasting-i-rounds\} along with the observed
-frequencies of series lasting \(i\) rounds, expressed as a percentage
-\(P_O(i)\) and as a count (\(N_O\))
-
 Calculating the chi-square goodness of fit statistic
 
 \begin{equation}\protect\hypertarget{eq-series-length}{}{
@@ -361,12 +356,11 @@ probability null hypothesis for \(p_0 = 0.5\), event at a confidence
 level of \(\alpha = 0.01\).
 
 Table \ref{tbl:mosteller-methods-results} shows the alternate values for
-the constant round win probability \(p\) for winning a given round in a
-CoD SnD that I find when applying the three methods suggested by
-Mosteller (1952). Each is approximately or equal to 0.575, and, when
-applying Equation \ref{eq:chi-squ-test}, each results in a \(\chi^2\)
-value for which I cannot reject the constant probability null
-hypothesis.
+the constant round win probability \(p\) that I find when applying the
+three methods suggested by Mosteller (1952). Each is approximately or
+equal to 0.575, and, when applying Equation \ref{eq:chi-squ-test}, each
+results in a \(\chi^2\) value for which I cannot reject the constant
+probability null hypothesis.
 
 \begin{longtable}[]{@{}lrr@{}}
   \caption{Alternate estimates of the constant probability \(p\) for winning a given round in a CoD SnD, applying the three methods suggested by Mosteller (1952), in addition to the naive \(p = 0.5\).}\label{tbl:mosteller-methods-results} \\
@@ -386,7 +380,7 @@ hypothesis.
 \end{longtable}
 
 Table \ref{tbl:expected-series-lengths-alternative-ps} shows the new
-\(P_E(i)\) when re-applying Equation \ref{eq:series-length} for each the
+\(P_E(i)\) when re-applying Equation \ref{eq:series-length} for the
 maximum likelihood estimate \(p_2 = 0.575\).\footnote{The method of
   moments and minimum \(\chi^2\) estimates for \(p\) are omitted simply
   because the results would be nearly identical to those for the maximum
@@ -411,9 +405,9 @@ Series lasts \(i\) rounds & \(p_0\) = 0.5 & \(p_2\) = 0.575 & \(P_O(i)\) \\
 \bottomrule()
 \end{longtable}
 
-So I conclude that the constant round win probability assumption can be
-valid in CoD SnD series with the appropriate choice of \(p\)
-(\(\approx 0.575\)).
+It is fair to conclude that the constant round win probability
+assumption can be valid in CoD SnD series with the appropriate choice of
+\(p\) (\(\approx 0.575\)).
 
 \hypertarget{references}{%
 \section*{References}\label{references}}

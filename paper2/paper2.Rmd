@@ -7,7 +7,7 @@ authors:
     email: anthonyelhabr@gmail.com
     url: https://tonyelhabr.rbind.io
 abstract: |
-  My research investigates patterns in round win percentages in professional Search and Destroy (SnD) matches of the popular first-person shooter game Call of Duty (CoD). I find evidence in CoD supprting the hypothesis that round win probability can be modeled as constant across the series, although not at a naive 50%. Second, I examine post-streak round win probability, in search of evidence positive recency (the "hot hand" fallacy) or negative recency (the "gambler's falacy"). I find that teams perform significantly worse than expected after streaks of 2, 3, and 4 wins when series end up going to 9, 10, or 11 (maximum) rounds, suggesting the presence of negative recency.
+  My research investigates patterns in round win percentages in professional Search and Destroy (SnD) matches of the popular first-person shooter game Call of Duty (CoD). First, I find evidence supprting the hypothesis that round win probability can be modeled as a constant across the series, although not at the naive 50%. Second, I examine post-streak round win probability, in search of evidence positive recency (the "hot hand" fallacy) or negative recency (the "gambler's falacy"). I find that teams perform significantly worse than expected after streaks of 2, 3, and 4 wins when series end up going to 9, 10, or 11 (maximum) rounds, suggesting the presence of negative recency.
 bibliography: references.bib  
 output:
   rticles::arxiv_article:
@@ -79,18 +79,20 @@ pull_cod_o_win_prop_by_game <- function(.game) {
 
 ## Description of Call of Duty Search and Destroy
 
-Call of Duty (CoD), first released in 2003, is one of the most popular first-person shooter (FPS) video game franchises of all-time. The most popular mode in the competitive scene is "Search and Destroy" (SnD), which bears resemblance to "Bomb Defusal" in Counter-Strike and "Plant/Defuse" in Valorant, two other FPS games played in professional leagues. SnD is one-sided game mode in which one team, the offensive side, tries to destroy one of two designated bomb sites on the map.
+Call of Duty (CoD), first released in 2003, is one of the most popular first-person shooter (FPS) video game franchises of all-time. The most popular mode in the competitive scene is "Search and Destroy" (SnD).[^1] SnD is a one-sided game mode in which one team, the offensive side, tries to destroy one of two designated bomb sites on the map.
 
-In professional CoD, a team must win six rounds of SnD to win the match.[^1] A round can end in one of fmy ways:
+[^1]: SnD bears resemblance to "Bomb Defusal" in Counter-Strike and "Plant/Defuse" in Valorant, two other FPS games played in more popular professional leagues.
 
-[^1]: A maximum of 11 even rounds can be played. There is no "sudden death" or "win by two" rule like there are for SnD equivalent in professional Counter-Strike and Valorant matches.
+In professional CoD SnD, a team take turns playing offense and defense every round. They must win six rounds to win the series.[^2] A round can end in one of five ways:
+
+[^2]: A maximum of 11 even rounds can be played. There is no "sudden death" or "win by two" rule like there are for SnD equivalent in professional Counter-Strike and Valorant matches.
 
 1.  One team eliminates all members of the other team prior to a bomb plant. (Eliminating team wins.)
-2.  The offensive team eliminates all members of the defensive team after a bomb plant.[^2] (Offense wins.)
-3.  The defensive team defuses the bomb after a bomb plant.[^3] (Defense wins.)
+2.  The offensive team eliminates all members of the defensive team after a bomb plant.[^3] (Offense wins.)
+3.  The defensive team defuses the bomb after a bomb plant.[^4] (Defense wins.)
 4.  The offensive team does not make a plant by the time the round timer ends. (Defense wins.)
 
-[^2]:
+[^3]:
     -   The bomb can be picked up by any member of the offensive team.
     -   The bomb carrier is not obstructed at all by carrying the bomb (i.e. movement is the same, weapon usage is the same).
     -   The defense does not get any visual indication for who is carrying the bomb.
@@ -98,23 +100,23 @@ In professional CoD, a team must win six rounds of SnD to win the match.[^1] A r
     -   A bomb defuse takes seven seconds. The timer resets if the player "drops" the bomb.
     -   The bomb takes 45 seconds to defuse after being planted.
 
-[^3]: Often the defensive team will try to eliminate all team members prior to making the defuse, but in some cases, they may try to "ninja" defuse.
-
-Teams take turns playing offense and defense every round.
+[^4]: Often the defensive team will try to eliminate all team members prior to making the defuse, but in some cases, they may try to "ninja" defuse.
 
 I adopt the terminology "series" to refer to what CoD SnD players typically call a "match", so as to emulate the terminology of playoff series in professional leagues like the National Basketball Association, National Hockey League, and Major League Baseball. A "game" or a "match" in such leagues is analogous to a "round" of CoD SnD.
 
 ## Data
 
-CoD has roughly gone through three eras of professional gaming: (1) Major League Gaming (MLG) tmynaments prior to 2016; (2) the CoD World League (CWL), initiated in 2016; and (3) the 12-franchise CoD League (CDL), running since 2020 and completing three year-long "seasons" completed as of August 2022.[^4] The data set consists of all SnD matches played in tmynaments and qualifiers during the CDL era, totaling 7,792 rounds across 852 series. Data was collected in spreadsheets by community member "IOUTurtle".[^5]
+CoD has roughly gone through three eras of professional gaming: (1) Major League Gaming (MLG) tournaments prior to 2016; (2) the CoD World League (CWL), initiated in 2016; and (3) the 12-franchise CoD League (CDL), operating since 2020. The CDL has completed three year-long "seasons" as of August 2022.[^5]
 
-[^4]: CoD is fairly unique compared to other esports in that it runs on an annual lifecycle (released coming in the late fall), where a new game is published every year under the same title. Each new game bears resemblance to past ones, often introducing relatively small variations ("improvements") to graphics, game modes, and other facets of gameplay. During the CDL era, the games released have been Modern Warfare (2020), Cold War (2021) and Vanguard (2022).
+[^5]: CoD is fairly unique compared to other esports in that it runs on an annual lifecycle (released coming in the late fall), where a new game is published every year under the same title. Each new game bears resemblance to past ones, often introducing relatively small variations ("improvements") to graphics, game modes, and other facets of gameplay. During the CDL era, the games released have been Modern Warfare (2020), Cold War (2021) and Vanguard (2022).
 
-[^5]: Data: <https://linktr.ee/CDLArchive>. Author: <https://twitter.com/IOUTurtle>
+The data set consists of all SnD matches played in tournanaments and qualifiers during the CDL era, totaling 7,792 rounds across 852 series. Data was collected in spreadsheets by community member "IOUTurtle".[^6]
 
-The empirical offensive round win percentage across all rounds is 47.8%.[^6] Table \ref{tbl:cod-o-win-prop-by-series-state} shows round win percentages by series "state" (i.e. the number of round wins by each team prior to an upcoming round). Offensive round win rate is not quite constant, although never veers more than 10% from this global average.
+[^6]: Data: <https://linktr.ee/CDLArchive>. Author: <https://twitter.com/IOUTurtle>
 
-[^6]: Offensive round win percentage has been nearly constant across the three games during the CDL era: 1. 47.2% in MW (2020) 2. 47.9% in Cold War (2021) 3. 48.1% in Vanguard (2022)
+The empirical offensive round win percentage across all rounds is 47.8%.[^7] Table \ref{tbl:cod-o-win-prop-by-series-state} shows round win percentages by series "state" (i.e. the number of round wins by each team prior to an upcoming round). Offensive round win rate is not quite constant, although never veers more than 10% from this global average.
+
+[^7]: Offensive round win percentage has been nearly constant across the three games during the CDL era: 1. 47.2% in MW (2020) 2. 47.9% in Cold War (2021) 3. 48.1% in Vanguard (2022)
 
 ```{r}
 #| label: cod_o_win_prop
@@ -208,21 +210,21 @@ cod_round_and_series_win_prop_by_side |>
 ```
 # Literature review
 
-There have been only a handful of studies of the distribution of games played in a series, most of which assume a constant probability $p$ of a given team winning a game in the series, regardless of the series state. [@mosteller1952] observed that the American League had dominated the National League in Major League Baseball's (MLB) World Series matchups, implying that matchups should not modeled with $p = 0.5$. Mosteller proposed three approaches for identifying the optimal constant probability value of the stronger team in the World Series, finding $p \approx 0.65$. in each case: (1) a "method of moments" approach in which one solves for $p$. from the empirical average number of games won by the loser of the series; (2) maximizing the likelihood that the sample would have been drawn from a population in which the probability of a team winning a game is constant across the series, and (3) minimizing the chi-square goodness of fit estimate for $p$.
+There have been a handful of studies of the distribution of games played in a series of a professional sport. Most assume a constant probability $p$ of a given team winning a game in the series, regardless of the series state. Mosteller [-@mosteller1952] observed that the American League had dominated the National League in Major League Baseball's (MLB) World Series matchups, implying that matchups should not modeled with $p = 0.5$. Mosteller proposed three approaches for identifying the optimal constant probability value of the stronger team in the World Series, finding $p \approx 0.65$. in each case: (1) solving for $p$ from the empirical average number of games won by the loser of the series, which he called the "method of moments" approach; (2) maximizing the likelihood that the sample would have been drawn from a population in which the probability of a team winning a game is constant across the series (i.e. maximum likelihood), and (3) minimizing the chi-square goodness of fit statistic for $p$.
 
-[@chance2020] re-examines the constant probability notion in Major League Baseball's World Series (1923--2018), the National Basketball Association's Finals (1951--2018), and the National Hockey League's Stanley Cup (1939--2018). Chance applies finds strong evidence against the null hypothesis of $p = 0.5$ in the MLB and NHL championship series when applying Mosteller's first and second methods.[^7] Chance's work is closely related to mys and, in fact, provides a guide for the first part of my investigation.
+Chance [-@chance2020] re-examines the constant probability notion in Major League Baseball's World Series (1923--2018), the National Basketball Association's Finals (1951--2018), and the National Hockey League's Stanley Cup (1939--2018). Chance finds strong evidence against the null hypothesis of $p = 0.5$ in the MLB and NHL championship series when applying Mosteller's first and second methods.[^8] Chance's work is closely related to mine, and, in fact, provides a guide for the first part of my investigation.
 
-[^7]: Chance goes on to outline a conditional probability framework (likelihood of winning a game given the series state) which can exactly explain the distribution of the number of games played.
+[^8]: Chance goes on to outline a conditional probability framework (likelihood of winning a game given the series state) which can exactly explain the distribution of the number of games played.
 
-Momentum, one of most discussed topics in sports analytics, goes hand-in-hand with a discussion of the nature of series outcomes.[^8] Two opposing fallacies are observed in the context of momentum: the "gambler's fallacy" (negative recency) and "hot hand fallacy" (positive recency). Per [@ayton2004], negative recency is "the belief that, for random events, runs of a particular outcome ... will be balanced by a tendency for the opposite outcome", while positive recency is the expectation of observing future results that match recent results.
+Momentum, one of most discussed topics in sports analytics, goes hand-in-hand with a discussion of the nature of series outcomes.[^9] Two opposing fallacies are observed in the context of momentum: the "gambler's fallacy" (negative recency) and "hot hand fallacy" (positive recency). Per Ayton et al. [-@ayton2004], negative recency is "the belief that, for random events, runs of a particular outcome ... will be balanced by a tendency for the opposite outcome", while positive recency is the expectation of observing future results that match recent results.
 
-[^8]: We often use use "streaks" and momentum interchangeably, but as [@steeger2021] note, momentum implies dependence between events, whereas streaking does not.
+[^9]: We often use use "streaks" and momentum interchangeably, but as [@steeger2021] note, momentum implies dependence between events, whereas streaking does not.
 
-Studying both player streaks and team streaks in basketball, in both observational and controlled settings. [@gilovich1985] do not find evidence for the hot hand phenomenon. Recently , [@miller2018] refute [@gilovich1985]'s conclusions, finding mathematical evidence that seems to support negative recency. Specifically, they find that a "bias exists in a common measure of the conditional dependence of present outcomes on streaks of past outcomes in sequential data" (streak selection bias) that imply that, under i.i.d. conditions, "the proportion of successes among the outcomes that immediately follow a streak of consecutive successes is expected to be strictly less than the underlying (conditional) probability of success". I agree with Miller's findings, accounting for the streak selection bias in my study of momentum.
+Studying both player streaks and team streaks in basketball, in both observational and controlled settings. Gilovich et al. [-@gilovich1985] do not find evidence for the hot hand phenomenon. Recently, Miller et al. [-@miller2018] refuted the conclusions of Gilovich et al. , finding mathematical evidence that seems to support negative recency. Specifically, they find that a "bias exists in a common measure of the conditional dependence of present outcomes on streaks of past outcomes in sequential data" (streak selection bias) that imply that, under i.i.d. conditions, "the proportion of successes among the outcomes that immediately follow a streak of consecutive successes is expected to be strictly less than the underlying (conditional) probability of success". I agree with Miller's findings, accounting for the streak selection bias in my study of momentum.
 
-Despite the plethora of existing research on games played in a series and momentum in sports, these topics have yet to be investigated heavily in esports. Work has been done to examine in-round win probability in other FPS titles such as Counter-Strike [@xenopoulos2022] and Valorant [@derover2021], both of which are round-based like CoD SnD. However, research on round-level trends is sparse, perhaps because games like Counter-Strike and Valorant both have economic aspects that can create clear advantages on side in a given round, given how prior rounds played out.[^9]
+Despite the plethora of existing research on games played in a series and momentum in sports, these topics have yet to be investigated heavily in esports. Work has been done to examine in-round win probability in other FPS titles such as Counter-Strike [@xenopoulos2022] and Valorant [@derover2021], both of which are round-based like CoD SnD. However, research on round-level trends is sparse, perhaps because games like Counter-Strike and Valorant both have economic aspects that can create clear advantages on side in a given round, given how prior rounds played out.[^10]
 
-[^9]: Additionally, both Counter-Strike and Valorant have overtime rules and blocked offensive/defensive roles (i.e. playing either offense or defense for many consecutive rounds).
+[^10]: Additionally, both Counter-Strike and Valorant have overtime rules and blocked offensive/defensive roles (i.e. playing either offense or defense for many consecutive rounds).
 
 # Methodology, results, and discussion
 
@@ -230,12 +232,12 @@ First, I investigate the constant probability assumption and the distribution of
 
 ## Distribution of rounds played
 
-The general formula for the probability $P_E(i)$ that a best-of-$s$ series lasts $i$ rounds given constant probability $p$ of one team[^10] winning each round is
+The general formula for the probability $P_E(i)$ that a best-of-$s$ series lasts $i$ rounds given constant probability $p$ of one team[^11] winning each round is
 
-[^10]: If $p > 0.5$, then I might say that this team is the better team (known omnisciently).
+[^11]: If $p > 0.5$, then I might say that this team is the better team (known omnisciently).
 
 $$
-q = 1 - p, s_1 = \frac{s - 1}{2}, s_2 = \frac{s + 1}{2}, s_2^{'} = 1 - s_2
+q = 1 - p, s_1 = \frac{s_1 - 1}{2}, s_2 = \frac{s_1 + 1}{2}, s_2^{'} = 1 - s_2
 $$
 
 ```{=tex}
@@ -438,11 +440,11 @@ cod_streaks_naive_res$series |>
   gt::as_latex()
 ```
 
-Table \ref{tbl:cod-prob-series-lasting-i-rounds} shows the expected probabilities for $s = 11$ under the naive assumption that $p_0 = 0.5$ for a given round, along with the observed frequencies observed in CoD SnD ($P_O(i)$, $N_O(i)$)).
+Table \ref{tbl:cod-prob-series-lasting-i-rounds} shows the expected probabilities for $s = 11$ under the naive assumption that $p_0 = 0.5$ for a given round, along with the observed proportions $P_O(i)$ in CoD SnD.
 
 ```{=tex}
 \begin{longtable}{rrrr}
-  \caption{The probabilities that a best-of-11 series lasts $i$ rounds ($P_E(i)$, where $i = {6, 7, 8, 9, 10, 11}$) under the assumption that each team has a 50% probability ($p_0 = 0.5$) of winning each game. The observed frequencies observed are shown as a count $N_O(i)$ and as a proportion $P_O(i)$ of all series.}\label{tbl:cod-prob-series-lasting-i-rounds} \\
+  \caption{The probabilities that a best-of-11 series lasts $i$ rounds ($P_E(i)$, where $i \in [6, 7, 8, 9, 10, 11]$) under the assumption that each team has a 50\% probability ($p_0 = 0.5$) of winning each game. The observed frequencies observed are shown as a count $N_O(i)$ and as a proportion $P_O(i)$ of all series.}\label{tbl:cod-prob-series-lasting-i-rounds} \\
   \toprule
   &  & \multicolumn{2}{c}{Observed} \\ 
   \cmidrule(lr){3-4}
@@ -457,8 +459,6 @@ Table \ref{tbl:cod-prob-series-lasting-i-rounds} shows the expected probabilitie
   \bottomrule
 \end{longtable}
 ```
-The probabilities that a best-of-11 series lasts $i$ rounds ($P(i)$, where $i \in R = [6, 7, 8, 9, 10, 11]$) under the assumption that each team has a 50% probability ($p_0 = 0.5$) of winning each game {#tbl-prob-series-lasting-i-rounds} along with the observed frequencies of series lasting $i$ rounds, expressed as a percentage $P_O(i)$ and as a count ($N_O$)
-
 ```{r}
 #| label: cod_series_outcomes_naive_chi
 generate_chi_label <- function(statistic, p.value) {
@@ -648,7 +648,7 @@ cod_streaks_other_res |>
   knitr::kable()
 ```
 
-Table \ref{tbl:mosteller-methods-results} shows the alternate values for the constant round win probability $p$ for winning a given round in a CoD SnD that I find when applying the three methods suggested by Mosteller [-@mosteller1952]. Each is approximately or equal to 0.575, and, when applying Equation \ref{eq:chi-squ-test}, each results in a $\chi^2$ value for which I cannot reject the constant probability null hypothesis.
+Table \ref{tbl:mosteller-methods-results} shows the alternate values for the constant round win probability $p$ that I find when applying the three methods suggested by Mosteller [-@mosteller1952]. Each is approximately or equal to 0.575, and, when applying Equation \ref{eq:chi-squ-test}, each results in a $\chi^2$ value for which I cannot reject the constant probability null hypothesis.
 
 ```{=tex}
 \begin{longtable}[]{@{}lrr@{}}
@@ -668,9 +668,9 @@ Table \ref{tbl:mosteller-methods-results} shows the alternate values for the con
   \bottomrule()
 \end{longtable}
 ```
-Table \ref{tbl:expected-series-lengths-alternative-ps} shows the new $P_E(i)$ when re-applying Equation \ref{eq:series-length} for each the maximum likelihood estimate $p_2 = 0.575$.[^11] I observe that $P_E(i)$ is notably larger for $p_{2}$ when $i \in [6, 7]$, more closely matching $P_O(i)$. $p_{2}$ is also closer to $P_O(i)$ for $i \in [9, 10]$, although not for $i \in [8, 11]$.
+Table \ref{tbl:expected-series-lengths-alternative-ps} shows the new $P_E(i)$ when re-applying Equation \ref{eq:series-length} for the maximum likelihood estimate $p_2 = 0.575$.[^12] I observe that $P_E(i)$ is notably larger for $p_{2}$ when $i \in [6, 7]$, more closely matching $P_O(i)$. $p_{2}$ is also closer to $P_O(i)$ for $i \in [9, 10]$, although not for $i \in [8, 11]$.
 
-[^11]: The method of moments and minimum $\chi^2$ estimates for $p$ are omitted simply because the results would be nearly identical to those for the maximum likelihood estimate of $p$ (since they are all $\approx 0.575$.
+[^12]: The method of moments and minimum $\chi^2$ estimates for $p$ are omitted simply because the results would be nearly identical to those for the maximum likelihood estimate of $p$ (since they are all $\approx 0.575$.
 
 ```{=tex}
 \begin{longtable}[]{@{}rrrr@{}}
@@ -688,7 +688,7 @@ Series lasts \(i\) rounds & \(p_0\) = 0.5 & \(p_2\) = 0.575 & \(P_O(i)\) \\
 \bottomrule()
 \end{longtable}
 ```
-So I conclude that the constant round win probability assumption can be valid in CoD SnD series with the appropriate choice of $p$ ($\approx 0.575$).
+It is fair to conclude that the constant round win probability assumption can be valid in CoD SnD series with the appropriate choice of $p$ ($\approx 0.575$).
 
 # References {.unnumbered}
 
