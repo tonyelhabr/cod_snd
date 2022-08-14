@@ -690,6 +690,183 @@ Series lasts \(i\) rounds & \(p_0\) = 0.5 & \(p_2\) = 0.575 & \(P_O(i)\) \\
 ```
 It is fair to conclude that the constant round win probability assumption can be valid in CoD SnD series with the appropriate choice of $p$ ($\approx 0.575$).
 
+# Momentum
+
+```{r}
+#| label: qs-funcs
+#| eval: true
+load_qs <- function(name) {
+  res <- qs::qread(sprintf('../data/%s.qs', name))
+  assign(name, value = res, envir = .GlobalEnv)
+}
+save_qs <- function(df, name = deparse(substitute(df))) {
+  qs::qsave(df, sprintf('../data/%s.qs', name))
+}
+```
+
+```{r}
+#| label: cod_round_win_prop_after_x_wins
+## http://keyonvafa.com/hot-hand/
+get_post_streak_prob <- function(n, k, p = 0.5) {
+  tosses <- rbinom(n, 1, p)
+  runs <- rle(tosses)
+  n_neg_after <- length(which(runs$values == 1 & runs$lengths >= k))
+  n_pos_after <- sum(runs$lengths[which(runs$values == 1 & runs$lengths >= k)] - k)
+  
+  ## edge case
+  if (n %in% cumsum(runs$lengths)[which(runs$values == 1 & runs$lengths >= k)]) {
+    n_neg_after <- n_neg_after - 1
+  }
+  
+  n_pos_after / (n_pos_after + n_neg_after)
+}
+
+simulate_post_streak_prob <- function(sims = 10000, seed = 42, ...) {
+  withr::local_seed(seed)
+  rerun(
+    sims,
+    get_post_streak_prob(...)
+  ) |> 
+    flatten_dbl() |> 
+    mean(na.rm = TRUE)
+}
+
+cod_round_streaks <- cod_rounds |> 
+  group_by(series_id, team) |> 
+  mutate(
+    won_prior_round1 = lag(win_round, n = 1, default = NA),
+    won_prior_round2 = lag(win_round, n = 2, default = NA),
+    won_prior_round3 = lag(win_round, n = 3, default = NA),
+    won_prior_round4 = lag(win_round, n = 4, default = NA),
+    won_prior_round5 = lag(win_round, n = 5, default = NA)
+  ) |> 
+  ungroup() |>
+  select(
+    series_id,
+    team,
+    is_offense,
+    round,
+    n_rounds,
+    win_round,
+    starts_with('won_prior_round')
+  )
+
+.postprocess_round_streaks <- function(k, round_streaks, probs_nx_k, ...) {
+  
+  cols <- sprintf('won_prior_round%d', 2:k)
+  col_syms <- syms(cols)
+  round_streaks_after_x <- round_streaks |> 
+    drop_na(!!!col_syms) |> 
+    count(n_rounds, ..., win_round, won_prior_round1, !!!col_syms, sort = TRUE)
+  
+  round_win_prop_after_x_wins <- round_streaks_after_x |> 
+    filter(won_prior_round1, !!!col_syms)
+  
+  suppressMessages(
+    round_win_prop_after_x_wins_w_probs <- round_win_prop_after_x_wins |> 
+      group_by(n_rounds, ...) |> 
+      mutate(
+        total = sum(n),
+        prop = n / total
+      ) |> 
+      ungroup() |> 
+      filter(win_round) |> 
+      select(n_rounds, ..., n, total, prop) |> 
+      arrange(n_rounds, ...) |> 
+      inner_join(
+        probs_nx_k
+      )
+  )
+  
+  round_win_prop_after_x_wins_w_probs |> 
+    nest(data = -c(n_rounds, ...)) |> 
+    mutate(
+      gt_p_value = map_dbl(
+        data, 
+        ~binom.test(.x$n, .x$total, .x$expected_poststreak_p, alternative = 'greater') |> 
+          broom::tidy() |>
+          pull(p.value)
+      ),
+      lt_p_value = map_dbl(
+        data, 
+        ~binom.test(.x$n, .x$total, .x$expected_poststreak_p, alternative = 'less') |> 
+          broom::tidy() |>
+          pull(p.value)
+      ),
+      gt_is_signif = gt_p_value <= 0.05,
+      lt_is_signif = lt_p_value <= 0.05,
+      is_signif = case_when(
+        gt_is_signif ~ 'Better',
+        lt_is_signif ~ 'Worse',
+        TRUE ~ 'Neither'
+      )
+    ) |> 
+    unnest(data)
+}
+
+summarize_cod_win_prop_after_x_wins <- function(k) {
+  probs_nx_k <- tibble(
+    n_rounds = 7L:11L
+  ) |> 
+    mutate(
+      prior_p = 6L / n_rounds,
+      expected_poststreak_p = map2_dbl(
+        n_rounds, prior_p, 
+        ~simulate_post_streak_prob(n = ..1, k = !!k, p = ..2)
+      )
+    )
+  
+  .postprocess_round_streaks(
+    k = k,
+    round_streaks = cod_round_streaks,
+    probs_nx_k = probs_nx_k
+  )
+}
+
+cod_round_win_prop_after_x_wins <- tibble(win_streak = 2L:4L) |>
+  mutate(
+    data = map(win_streak, summarize_cod_win_prop_after_x_wins)
+  ) |>
+  unnest(data)
+save_qs(cod_round_win_prop_after_x_wins)
+```
+
+```{r}
+#| label: cod_round_win_prop_after_x_wins_and_rounds
+summarize_cod_win_prop_after_x_wins_y_rounds <- function(k) {
+  probs_nx_k <- crossing(
+    n_rounds = 7L:11L,
+    round = 3L:11L
+  ) |> 
+    filter(round >= (k + 1L)) |> 
+    mutate(
+      prior_p = 6L / n_rounds,
+      expected_poststreak_p = map2_dbl(
+        n_rounds, prior_p, 
+        ~simulate_post_streak_prob(n = ..1, k = !!k, p = ..2)
+      )
+    )
+  
+  .postprocess_round_streaks(
+    k = k,
+    round_streaks = cod_round_streaks,
+    probs_nx_k = probs_nx_k,
+    round
+  )
+}
+
+cod_round_win_prop_after_x_wins_y_rounds <- tibble(win_streak = 2L:4L) |>
+  mutate(
+    data = map(win_streak, summarize_cod_win_prop_after_x_wins_y_rounds)
+  ) |>
+  unnest(data)
+save_qs(cod_round_win_prop_after_x_wins_y_rounds)
+```
+
+Despite the implication that one can model team round win probability in CoD SnD as a constant, anecdotally many believe in momentum and positive recency, i.e. the "hot hand".
+
+Miller et al. [-@miller2018]
+
 # References {.unnumbered}
 
 ::: {#refs}
