@@ -337,7 +337,7 @@ val_rounds <- bind_rows(
     more_weird_val_series_outcomes |> distinct(series_id),
     by = 'series_id'
   )
-qs::qsave(val_rounds, 'valorant_rounds.qs')
+qs::qsave(val_rounds, 'data/valorant_rounds.qs')
 
 # val_rounds |> 
 #   group_by(team, series_id) |> 

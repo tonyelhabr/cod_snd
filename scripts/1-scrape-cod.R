@@ -245,5 +245,5 @@ cod_rounds <- cod_series |>
   ) |> 
   relocate(series_id, .after = 'game')
 filename <- 'cod_rounds.qs'
-sprintf('%s%s', c('', 'paper/'), filename) |> 
+sprintf('%s%s', c('data/', 'paper/'), filename) |> 
   walk(~qs::qsave(cod_rounds, .x))
