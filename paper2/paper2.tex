@@ -59,6 +59,7 @@
 \newcommand{\CSLRightInline}[1]{\parbox[t]{\linewidth - \csllabelwidth}{#1}\break}
 \newcommand{\CSLIndent}[1]{\hspace{\cslhangindent}#1}
 
+\usepackage{longtable}
 \begin{document}
 \maketitle
 
@@ -66,16 +67,15 @@
 \begin{abstract}
 My research investigates patterns in round win percentages in
 professional Search and Destroy (SnD) matches of the popular
-first-person shooter game Call of Duty (CoD).
-
-First, I find evidence in CoD defying the naive hypothesis that a series
-represents a sequence of independent events (rounds), with each team
-having a constant 50\% probability of winning a given round.
-
-Second, I examine post-streak round win probability. I find that teams
-perform significantly worse than expected after streaks of 2, 3, and 4
-wins when series end up going to 9, 10, or 11 (maximum) rounds, even
-after accounting for the ``hot-hand'' phenomenon.
+first-person shooter game Call of Duty (CoD). I find evidence in CoD
+supprting the hypothesis that round win probability can be modeled as
+constant across the series, although not at a naive 50\%. Second, I
+examine post-streak round win probability, in search of evidence
+positive recency (the ``hot hand'' fallacy) or negative recency (the
+``gambler's falacy''). I find that teams perform significantly worse
+than expected after streaks of 2, 3, and 4 wins when series end up going
+to 9, 10, or 11 (maximum) rounds, suggesting the presence of negative
+recency.
 \end{abstract}
 
 
@@ -169,12 +169,11 @@ community member ``IOUTurtle''.\footnote{Data:
 The empirical offensive round win percentage across all rounds is
 47.8\%.\footnote{Offensive round win percentage has been nearly constant
   across the three games during the CDL era: 1. 47.2\% in MW (2020) 2.
-  47.9\% in Cold War (2021) 3. 48.1\% in Vanguard (2022)} To
-contextualize my subsequent discussion of series length and momentum,
-table \ref{tbl:cod-o-win-prop-by-series-state} shows round win
-percentages by series ``state'' (i.e.~the number of round wins by each
-team prior to an upcoming round). Offensive round win rate is not quite
-constant, although never veers more than 10\% from this global average.
+  47.9\% in Cold War (2021) 3. 48.1\% in Vanguard (2022)} Table
+\ref{tbl:cod-o-win-prop-by-series-state} shows round win percentages by
+series ``state'' (i.e.~the number of round wins by each team prior to an
+upcoming round). Offensive round win rate is not quite constant,
+although never veers more than 10\% from this global average.
 
 \begin{longtable}{crrrrrr}
   \caption{Offensive round win rates for the upcoming round, given both the offensive and defensive team's prior number of round wins}\label{tbl:cod-o-win-prop-by-series-state} \\
@@ -288,8 +287,8 @@ accounting for the streak selection bias in my study of momentum.
 Despite the plethora of existing research on games played in a series
 and momentum in sports, these topics have yet to be investigated heavily
 in esports. Work has been done to examine in-round win probability in
-other FPS titles such as Counter-Strike ((Xenopoulos, Freeman, and Silva
-2022)) and Valorant ((DeRover 2021)), both of which are round-based like
+other FPS titles such as Counter-Strike (Xenopoulos, Freeman, and Silva
+2022) and Valorant (DeRover 2021), both of which are round-based like
 CoD SnD. However, research on round-level trends is sparse, perhaps
 because games like Counter-Strike and Valorant both have economic
 aspects that can create clear advantages on side in a given round, given
@@ -324,13 +323,12 @@ P_E(i) = \frac{(i - 1)!}{s_1!(i - s_2)!}(p^{s_2}q^{s_2^{'}} + p^{s_2^{'}}q^{s_2}
 }\label{eq:series-length}\end{equation}
 
 Table \ref{tbl:cod-prob-series-lasting-i-rounds} shows the expected
-proportion for \(s = 11\) and the naive assumption that \(p = 0.5\),
-along with the observed frequencies observed in CoD SnD, as both a count
-\(N_O(i)\) (of series lasting \(i\) rounds) and a proportion \(P_O(i)\)
-of all series.
+probabilities for \(s = 11\) under the naive assumption that
+\(p_0 = 0.5\) for a given round, along with the observed frequencies
+observed in CoD SnD (\(P_O(i)\), \(N_O(i)\))).
 
 \begin{longtable}{rrrr}
-  \caption{The probabilities that a best-of-11 series lasts $i$ rounds ($Pr(i)$, where $i = {6, 7, 8, 9, 10, 11}$) under the assumption that each team has a 50% probability ($p = 0.5$) of winning each round.}\label{tbl:cod-prob-series-lasting-i-rounds} \\
+  \caption{The probabilities that a best-of-11 series lasts $i$ rounds ($P_E(i)$, where $i = {6, 7, 8, 9, 10, 11}$) under the assumption that each team has a 50% probability ($p_0 = 0.5$) of winning each game. The observed frequencies observed are shown as a count $N_O(i)$ and as a proportion $P_O(i)$ of all series.}\label{tbl:cod-prob-series-lasting-i-rounds} \\
   \toprule
   &  & \multicolumn{2}{c}{Observed} \\ 
   \cmidrule(lr){3-4}
@@ -347,7 +345,7 @@ of all series.
 
 The probabilities that a best-of-11 series lasts \(i\) rounds (\(P(i)\),
 where \(i \in R = [6, 7, 8, 9, 10, 11]\)) under the assumption that each
-team has a 50\% probability (\(p = 0.5\)) of winning each game
+team has a 50\% probability (\(p_0 = 0.5\)) of winning each game
 \{\#tbl-prob-series-lasting-i-rounds\} along with the observed
 frequencies of series lasting \(i\) rounds, expressed as a percentage
 \(P_O(i)\) and as a count (\(N_O\))
@@ -359,8 +357,8 @@ Calculating the chi-square goodness of fit statistic
 }\label{eq:chi-squ-test}\end{equation}
 
 as 16.0 (p-value of 0.0068), I can comfortably reject the constant
-probability null hypothesis, event at a confidence level of
-\(\alpha = 0.01\).
+probability null hypothesis for \(p_0 = 0.5\), event at a confidence
+level of \(\alpha = 0.01\).
 
 Table \ref{tbl:mosteller-methods-results} shows the alternate values for
 the constant round win probability \(p\) for winning a given round in a
@@ -388,57 +386,28 @@ hypothesis.
 \end{longtable}
 
 Table \ref{tbl:expected-series-lengths-alternative-ps} shows the new
-\(P_E(i)\) when re-applying Equation \ref{eq:series-length} for each new
-\(p\). I observe that \(P_E(i)\) is notably smaller for \(p_{1,2,3}\)
-when \(i \in [10, 11]\) and higher for \(i \in [6, 7]\), more closely
-matching \(P_O(i)\).
+\(P_E(i)\) when re-applying Equation \ref{eq:series-length} for each the
+maximum likelihood estimate \(p_2 = 0.575\).\footnote{The method of
+  moments and minimum \(\chi^2\) estimates for \(p\) are omitted simply
+  because the results would be nearly identical to those for the maximum
+  likelihood estimate of \(p\) (since they are all \(\approx 0.575\).} I
+observe that \(P_E(i)\) is notably larger for \(p_{2}\) when
+\(i \in [6, 7]\), more closely matching \(P_O(i)\). \(p_{2}\) is also
+closer to \(P_O(i)\) for \(i \in [9, 10]\), although not for
+\(i \in [8, 11]\).
 
-\begin{longtable}[]{@{}
-  >{\raggedleft\arraybackslash}p{(\columnwidth - 10\tabcolsep) * \real{0.2427}}
-  >{\raggedleft\arraybackslash}p{(\columnwidth - 10\tabcolsep) * \real{0.1456}}
-  >{\raggedleft\arraybackslash}p{(\columnwidth - 10\tabcolsep) * \real{0.1748}}
-  >{\raggedleft\arraybackslash}p{(\columnwidth - 10\tabcolsep) * \real{0.1650}}
-  >{\raggedleft\arraybackslash}p{(\columnwidth - 10\tabcolsep) * \real{0.1748}}
-  >{\raggedleft\arraybackslash}p{(\columnwidth - 10\tabcolsep) * \real{0.0971}}@{}}
-\caption{The probabilities that a best-of-11 series lasts $i$ rounds under various assumptions for $p$.}\label{tbl:expected-series-lengths-alternative-ps} \\
+\begin{longtable}[]{@{}rrrr@{}}
+\caption{The probabilities that a best-of-11 series lasts $i$ rounds under the naive assumption $p_0 = 0.5$ and the maximum likelihood estimation $p_2 = 0.575$.}\label{tbl:expected-series-lengths-alternative-ps} \\
 \toprule()
-\begin{minipage}[b]{\linewidth}\raggedleft
-Series lasts \(i\) rounds
-\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedleft
-0. \(p\) = 0.5
-\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedleft
-1. \(p\) = 0.5725
-\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedleft
-2. \(p\) = 0.575
-\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedleft
-3. \(p\) = 0.5775
-\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedleft
-\(P_O(i)\)
-\end{minipage} \\
-\midrule()
-\endfirsthead
-\toprule()
-\begin{minipage}[b]{\linewidth}\raggedleft
-Series lasts \(i\) rounds
-\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedleft
-0. \(p\) = 0.5
-\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedleft
-1. \(p\) = 0.5725
-\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedleft
-2. \(p\) = 0.575
-\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedleft
-3. \(p\) = 0.5775
-\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedleft
-\(P_O(i)\)
-\end{minipage} \\
+Series lasts \(i\) rounds & \(p_0\) = 0.5 & \(p_2\) = 0.575 & \(P_O(i)\) \\
 \midrule()
 \endhead
-6 & 3.1\% & 4.1\% & 4.2\% & 4.3\% & 4.7\% \\
-7 & 9.4\% & 11.1\% & 11.2\% & 11.4\% & 11.9\% \\
-8 & 16.4\% & 17.7\% & 17.8\% & 17.9\% & 16.5\% \\
-9 & 21.9\% & 21.8\% & 21.8\% & 21.8\% & 21.7\% \\
-10 & 24.6\% & 23.1\% & 23.0\% & 22.9\% & 21.5\% \\
-11 & 24.6\% & 22.1\% & 22.0\% & 21.8\% & 23.7\% \\
+6 & 3.1\% & 4.2\% & 4.7\% \\
+7 & 9.4\% & 11.2\% & 11.9\% \\
+8 & 16.4\% & 17.8\% & 16.5\% \\
+9 & 21.9\% & 21.8\% & 21.7\% \\
+10 & 24.6\% & 23.0\% & 21.5\% \\
+11 & 24.6\% & 22.0\% & 23.7\% \\
 \bottomrule()
 \end{longtable}
 
