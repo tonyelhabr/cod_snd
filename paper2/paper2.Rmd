@@ -1,14 +1,6 @@
 ---
 title: "They're Clutching up! Team Momentum in Round-Based Esports"
-execute: 
-  include: false
-  echo: false
-  eval: false
-format:
-  arxiv-pdf:
-    keep-tex: true  
-  arxiv-html: default
-author:
+authors:
   - name: Tony ElHabr
     affiliations:
       - name: Georgia Institute of Technology
@@ -21,10 +13,26 @@ abstract: |
   
   Second, I examine post-streak round win probability. I find that teams perform significantly worse than expected after streaks of 2, 3, and 4 wins when series end up going to 9, 10, or 11 (maximum) rounds, even after accounting for the "hot-hand" phenomenon.
 bibliography: references.bib  
+biblio-style: unsrt
+output: rticles::arxiv_article
 ---
 
 ```{r}
 #| label: setup
+#| include: false
+#| echo: false
+#| eval: true
+knitr::opts_chunk$set(
+  eval = FALSE,
+  echo = FALSE,
+  include = FALSE,
+  message = FALSE,
+  warning = FALSE
+)
+```
+
+```{r}
+#| label: setup-code
 library(dplyr)
 library(qs)
 library(tidyr)
@@ -103,7 +111,7 @@ CoD has roughly gone through three eras of professional gaming: (1) Major League
 
 [^4]: CoD is fairly unique compared to other esports in that it runs on an annual lifecycle (released coming in the late fall), where a new game is published every year under the same title. Each new game bears resemblance to past ones, often introducing relatively small variations ("improvements") to graphics, game modes, and other facets of gameplay. During the CDL era, the games released have been Modern Warfare (2020), Cold War (2021) and Vanguard (2022).
 
-[^5]: Data: https://linktr.ee/CDLArchive. Author: https://twitter.com/IOUTurtle
+[^5]: Data: <https://linktr.ee/CDLArchive>. Author: <https://twitter.com/IOUTurtle>
 
 The empirical offensive round win percentage across all rounds is 47.8%.[^6] To contextualize my subsequent discussion of series length and momentum, table \ref{tbl:cod-o-win-prop-by-series-state} shows round win percentages by series "state" (i.e. the number of round wins by each team prior to an upcoming round). Offensive round win rate is not quite constant, although never veers more than 10% from this global average.
 
@@ -147,12 +155,8 @@ cod_round_and_series_win_prop_by_side |>
 ```
 
 ```{=tex}
-\captionsetup[table]{
-  labelformat=empty,
-  skip=1pt
-}
 \begin{longtable}{crrrrrr}
-  \caption{Table 1: Offensive round win rates for the upcoming round, given both the offensive and defensive team's prior number of round wins}\label{tbl:cod-o-win-prop-by-series-state} \\
+  \caption{Offensive round win rates for the upcoming round, given both the offensive and defensive team's prior number of round wins}\label{tbl:cod-o-win-prop-by-series-state} \\
   \toprule
    & \multicolumn{6}{c}{Offense round wins} \\ 
   \cmidrule(lr){2-7}
@@ -232,13 +236,14 @@ The general formula for the probability $P_E(i)$ that a best-of-$s$ series lasts
 [^10]: If $p > 0.5$, then I might say that this team is the better team (known omnisciently).
 
 $$
-q = 1 - p, s_1 = \frac{s - 1}{2}, s_2 = \frac{s + 1}{2}, s_2^{'} = 1 \cap s_2
+q = 1 - p, s_1 = \frac{s - 1}{2}, s_2 = \frac{s + 1}{2}, s_2^{'} = 1 - s_2
 $$
 
-$$
+```{=tex}
+\begin{equation}\protect\hypertarget{eq-series-length}{}{
 P_E(i) = \frac{(i - 1)!}{s_1!(i - s_2)!}(p^{s_2}q^{s_2^{'}} + p^{s_2^{'}}q^{s_2}).
-$$ {#eq-series-length}
-
+}\label{eq:series-length}\end{equation}
+```
 ```{r}
 #| label: cod_series_outcome_prop
 .max_round <- 11
@@ -434,15 +439,11 @@ cod_streaks_naive_res$series |>
   gt::as_latex()
 ```
 
-Table 2 shows the expected proportion for $s = 11$ and the naive assumption that $p = 0.5$, along with the observed frequencies observed in CoD SnD, as both a count $N_O(i)$ (of series lasting $i$ rounds) and a proportion $P_O(i)$ of all series.
+Table \ref{tbl:cod-prob-series-lasting-i-rounds} shows the expected proportion for $s = 11$ and the naive assumption that $p = 0.5$, along with the observed frequencies observed in CoD SnD, as both a count $N_O(i)$ (of series lasting $i$ rounds) and a proportion $P_O(i)$ of all series.
 
 ```{=tex}
-\captionsetup[table]{
-  labelformat=empty,
-  skip=1pt
-}
 \begin{longtable}{rrrr}
-  \caption{Table 2: Offensive round win rates for the upcoming round, given both the offensive and defensive team's prior number of round wins}\label{tbl:cod-o-win-prop-by-series-state} \\
+  \caption{The probabilities that a best-of-11 series lasts $i$ rounds ($Pr(i)$, where $i = {6, 7, 8, 9, 10, 11}$) under the assumption that each team has a 50% probability ($p = 0.5$) of winning each round.}\label{tbl:cod-prob-series-lasting-i-rounds} \\
   \toprule
   &  & \multicolumn{2}{c}{Observed} \\ 
   \cmidrule(lr){3-4}
@@ -479,10 +480,11 @@ cod_series_outcomes_naive_chi <- cod_streaks_naive_res$series |>
 
 Calculating the chi-square goodness of fit statistic
 
-$$
-\chi^2 = \sum^{11}_{i=6} \frac{(P_O(i) - P_E(i))^2}{P_E(i)}, i \in R = [6, 7, 8, 9, 10, 11]
-$$
-
+```{=tex}
+\begin{equation}\protect\hypertarget{eq-series-length}{}{
+\chi^2 = \sum^{11}_{i=6} \frac{(P_O(i) - P_E(i))^2}{P_E(i)}, i \in R = [6, 7, 8, 9, 10, 11].
+}\label{eq:chi-squ-test}\end{equation}
+```
 as 16.0 (p-value of 0.0068), I can comfortably reject the constant probability null hypothesis, event at a confidence level of $\alpha = 0.01$.
 
 ```{r}
@@ -646,29 +648,79 @@ cod_streaks_other_res |>
   knitr::kable()
 ```
 
-@tbl-mosteller-methods shows the alternate values for the constant round win probability $p$ for winning a given round in a CoD SnD that I find when applying the three methods suggested by Mosteller [-@mosteller1952]. Each is approximately or equal to 0.575, and each results in a $chi^2$ value for which I cannot reject constant probability null hypothesis.
+Table \ref{tbl:mosteller-methods-results} shows the alternate values for the constant round win probability $p$ for winning a given round in a CoD SnD that I find when applying the three methods suggested by Mosteller [-@mosteller1952]. Each is approximately or equal to 0.575, and, when applying Equation \ref{eq:chi-squ-test}, each results in a $\chi^2$ value for which I cannot reject the constant probability null hypothesis.
 
-| Method                 |    $p$ | $\chi^2$ (p-value) |
-|:-----------------------|-------:|-------------------:|
-| 0\. Naive              | 0.5000 |     16.0 (\<=0.01) |
-| 1\. Method of moments  | 0.5725 |          3.6 (0.6) |
-| 2\. Maximum likelihood | 0.5750 |         3.5 (0.62) |
-| 3\. Minimum $\chi^2$   | 0.5775 |         3.5 (0.62) |
+```{=tex}
+\begin{longtable}[]{@{}lrr@{}}
+  \caption{Alternate estimates of the constant probability \(p\) for winning a given round in a CoD SnD, applying the three methods suggested by Mosteller (1952), in addition to the naive \(p = 0.5\).}\label{tbl:mosteller-methods-results} \\
+  \toprule()
+    Method & \(p\) & \(\chi^2\) (p-value) \\
+    \midrule()
+    \endfirsthead
+    \toprule()
+    Method & \(p\) & \(\chi^2\) (p-value) \\
+    \midrule()
+  \endhead
+  0. Naive & 0.5000 & 16.0 (\textless=0.01) \\
+  1. Method of moments & 0.5725 & 3.6 (0.6) \\
+  2. Maximum likelihood & 0.5750 & 3.5 (0.62) \\
+  3. Minimum \(\chi^2\) & 0.5775 & 3.5 (0.62) \\
+  \bottomrule()
+\end{longtable}
+```
+Table \ref{tbl:expected-series-lengths-alternative-ps} shows the new $P_E(i)$ when re-applying Equation \ref{eq:series-length} for each new $p$. I observe that $P_E(i)$ is notably smaller for $p_{1,2,3}$ when $i \in [10, 11]$ and higher for $i \in [6, 7]$, more closely matching $P_O(i)$.
 
-: Alternate estimates of the constant probability $p$ for winning a given round in a CoD SnD, applying the three methods suggested by Mosteller [-@mosteller1952], in addition to the naive $p = 0.5$. {#tbl-mosteller-methods}
-
-@tbl-expected-series-lengths-alternative-ps shows the new $P_E(i)$ when re-applying @eq-series-length for each new $p$. I observe that $P_E(i)$ is notably smaller for $p_{1,2,3}$ when $i \in [10, 11]$ and higher for $i \in [6, 7]$, more closely matching $P_O(i)$.
-
-| Series lasts $i$ rounds | 0\. $p$= 0.5 | 1\. $p$ = 0.5725 | 2\. $p$ = 0.575 | 3\. $p$ = 0.5775 | $P_O(i)$ |
-|------------------------:|-------------:|-----------------:|----------------:|-----------------:|---------:|
-|                       6 |         3.1% |             4.1% |            4.2% |             4.3% |     4.7% |
-|                       7 |         9.4% |            11.1% |           11.2% |            11.4% |    11.9% |
-|                       8 |        16.4% |            17.7% |           17.8% |            17.9% |    16.5% |
-|                       9 |        21.9% |            21.8% |           21.8% |            21.8% |    21.7% |
-|                      10 |        24.6% |            23.1% |           23.0% |            22.9% |    21.5% |
-|                      11 |        24.6% |            22.1% |           22.0% |            21.8% |    23.7% |
-
-: Caption {#tbl-expected-series-lengths-alternative-ps}
+```{=tex}
+\begin{longtable}[]{@{}
+  >{\raggedleft\arraybackslash}p{(\columnwidth - 10\tabcolsep) * \real{0.2427}}
+  >{\raggedleft\arraybackslash}p{(\columnwidth - 10\tabcolsep) * \real{0.1456}}
+  >{\raggedleft\arraybackslash}p{(\columnwidth - 10\tabcolsep) * \real{0.1748}}
+  >{\raggedleft\arraybackslash}p{(\columnwidth - 10\tabcolsep) * \real{0.1650}}
+  >{\raggedleft\arraybackslash}p{(\columnwidth - 10\tabcolsep) * \real{0.1748}}
+  >{\raggedleft\arraybackslash}p{(\columnwidth - 10\tabcolsep) * \real{0.0971}}@{}}
+\caption{The probabilities that a best-of-11 series lasts $i$ rounds under various assumptions for $p$.}\label{tbl:expected-series-lengths-alternative-ps} \\
+\toprule()
+\begin{minipage}[b]{\linewidth}\raggedleft
+Series lasts \(i\) rounds
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedleft
+0. \(p\) = 0.5
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedleft
+1. \(p\) = 0.5725
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedleft
+2. \(p\) = 0.575
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedleft
+3. \(p\) = 0.5775
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedleft
+\(P_O(i)\)
+\end{minipage} \\
+\midrule()
+\endfirsthead
+\toprule()
+\begin{minipage}[b]{\linewidth}\raggedleft
+Series lasts \(i\) rounds
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedleft
+0. \(p\) = 0.5
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedleft
+1. \(p\) = 0.5725
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedleft
+2. \(p\) = 0.575
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedleft
+3. \(p\) = 0.5775
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedleft
+\(P_O(i)\)
+\end{minipage} \\
+\midrule()
+\endhead
+6 & 3.1\% & 4.1\% & 4.2\% & 4.3\% & 4.7\% \\
+7 & 9.4\% & 11.1\% & 11.2\% & 11.4\% & 11.9\% \\
+8 & 16.4\% & 17.7\% & 17.8\% & 17.9\% & 16.5\% \\
+9 & 21.9\% & 21.8\% & 21.8\% & 21.8\% & 21.7\% \\
+10 & 24.6\% & 23.1\% & 23.0\% & 22.9\% & 21.5\% \\
+11 & 24.6\% & 22.1\% & 22.0\% & 21.8\% & 23.7\% \\
+\bottomrule()
+\end{longtable}
+```
+So I conclude that the constant round win probability assumption can be valid in CoD SnD series with the appropriate choice of $p$ ($\approx 0.575$).
 
 # References {.unnumbered}
 
