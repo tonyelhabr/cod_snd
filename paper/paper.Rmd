@@ -693,7 +693,7 @@ It is fair to conclude that the constant round win probability assumption can be
 ## Momentum {#sec:analysis-2}
 
 ```{r}
-#| label: cod_round_win_prop_after_x_wins
+#| label: cod_round_win_prop_after_k_wins
 ## http://keyonvafa.com/hot-hand/
 get_post_streak_prob <- function(n, k, p = 0.5) {
   tosses <- rbinom(n, 1, p)
@@ -802,7 +802,7 @@ postprocess_round_streaks <- function(k, probs_nx_k, ...) {
     unnest(data)
 }
 
-summarize_cod_win_prop_after_x_wins <- function(k) {
+summarize_cod_win_prop_after_k_wins <- function(k) {
   probs_nx_k <- crossing(
     n_rounds = 7L:11L,
     win_series = c(TRUE, FALSE)
@@ -830,16 +830,16 @@ summarize_cod_win_prop_after_x_wins <- function(k) {
   )
 }
 
-cod_round_win_prop_after_x_wins <- tibble(win_streak = 2L:4L) |>
+cod_round_win_prop_after_k_wins <- tibble(win_streak = 2L:4L) |>
   mutate(
-    data = map(win_streak, summarize_cod_win_prop_after_x_wins)
+    data = map(win_streak, summarize_cod_win_prop_after_k_wins)
   ) |>
   unnest(data)
 ```
 
 ```{r}
-#| label: cod_round_win_prop_after_x_wins-table
-cod_round_win_prop_after_x_wins |> 
+#| label: cod_round_win_prop_after_k_wins-table
+cod_round_win_prop_after_k_wins |> 
   mutate(
     across(
       matches('p_value'), 
@@ -892,13 +892,15 @@ Despite the implication that one can model team round win probability in CoD SnD
 
 ```{=tex}
 \begin{equation}\protect\hypertarget{eq:pki}{}{
-  \hat{P}(\text{win round | k-round winning streak, series lasting i rounds})=\{
+  \hat{P}_{wki} = \hat{P}(\text{win round | k-round winning streak, series lasting i rounds})=\{
   \begin{array}{cl}
     \frac{6 - k}{i - k}, & \text{team wins series} \\
     \frac{11 - 6 - k}{i - k}, & \text{team loses series}
   \end{array}.
 }\label{eq:pki}\end{equation}
 ```
+$\hat{P}_{lki} = \hat{P}(\text{lose round | k-round losing streak, series lasting i rounds})$ can be formulated symmetrically.
+
 Miller et al. [-@miller2018] provide evidence for negative recency suggesting that
 
 ```{=tex}
@@ -912,41 +914,11 @@ Miller et al. [-@miller2018] provide evidence for negative recency suggesting th
 ```
 given a deterministic i.i.d. Bernoulli probability (Equation \ref{eq:pki}.[^13]
 
-[^13]: Note that these probabilites are separate from those in Section \ref{sec:analysis-1}.
+[^13]: Note that these probabilities are separate from those in Section \ref{sec:analysis-1}.
 
-Given that people typically perceive streaks as beginning after the third success (or failure) at minimum [@carlson2007], I focus on round win percentages in rounds immediately following streaks of three wins, $k = 3$.[^14]
+Given that people typically perceive streaks as beginning after the third success (or failure) at minimum [@carlson2007], I focus on round win percentages in rounds immediately following streaks of three wins.[^14] Table \ref{tbl:cod-round-win-prop-after-k-wins} shows $\hat{P}_{wki}$ for $k = 3$ winning streaks, for both teams that empirically won and lost the series. (Some combinations of $i$ and $\text{team loses series}$ are irrelevant, such as the case when $i \in [7, 8, 9]$, so these combinations are excluded.)
 
 [^14]: Three happens to also be a reasonable number for series that lasts at maximum 11 rounds.
-
-```{r}
-#| label: cod_round_win_prop_after_x_wins_and_rounds
-summarize_cod_win_prop_after_x_wins_y_rounds <- function(k) {
-  probs_nx_k <- crossing(
-    n_rounds = 7L:11L,
-    round = 3L:11L
-  ) |> 
-    filter(round >= (k + 1L)) |> 
-    mutate(
-      prior_p = 6L / n_rounds,
-      expected_poststreak_p = map2_dbl(
-        n_rounds, prior_p, 
-        ~simulate_post_streak_prob(n = ..1, k = !!k, p = ..2)
-      )
-    )
-  
-  postprocess_round_streaks(
-    k = k,
-    probs_nx_k = probs_nx_k,
-    round
-  )
-}
-
-cod_round_win_prop_after_x_wins_y_rounds <- tibble(win_streak = 2L:4L) |>
-  mutate(
-    data = map(win_streak, summarize_cod_win_prop_after_x_wins_y_rounds)
-  ) |>
-  unnest(data)
-```
 
 # References {.unnumbered}
 
