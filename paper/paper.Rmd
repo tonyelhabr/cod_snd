@@ -910,9 +910,9 @@ Miller et al. [-@miller2018] provide evidence for negative recency suggesting th
   \end{array}
 }\label{eq:pkid}\end{equation}
 ```
-given a deterministic i.i.d. Bernoulli probability $\hat{p}(\text{win round | k-round winning streak, series lasting i rounds)}$ (Equation \ref{eq:pki}.[^13]
+given a deterministic i.i.d. Bernoulli probability (Equation \ref{eq:pki}.[^13]
 
-[^13]: Note that these probabilites are separate from those in Section \\ref{sec:analysis-1}.
+[^13]: Note that these probabilites are separate from those in Section \ref{sec:analysis-1}.
 
 Given that people typically perceive streaks as beginning after the third success (or failure) at minimum [@carlson2007], I focus on round win percentages in rounds immediately following streaks of three wins, $k = 3$.[^14]
 
