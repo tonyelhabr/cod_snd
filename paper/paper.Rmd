@@ -232,7 +232,7 @@ First, I investigate the constant probability assumption and the distribution of
 
 ## Distribution of rounds played {#sec:analysis-1}
 
-The general formula for the probability $P_E(i)$ that a best-of-$s$ series lasts $i$ rounds given constant probability $p$ of one team[^11] winning each round is
+The general formula for the probability $P_E(r)$ that a best-of-$s$ series lasts $r$ rounds given constant probability $p$ of one team[^11] winning each round is
 
 [^11]: If $p > 0.5$, then I might say that this team is the better team (known omnisciently).
 
@@ -242,7 +242,7 @@ $$
 
 ```{=tex}
 \begin{equation}\protect\hypertarget{eq-series-length}{}{
-P_E(i) = \frac{(i - 1)!}{s_1!(i - s_2)!}(p^{s_2}q^{s_2^{'}} + p^{s_2^{'}}q^{s_2}).
+P_E(r) = \frac{(r - 1)!}{s_1!(r - s_2)!}(p^{s_2}q^{s_2^{'}} + p^{s_2^{'}}q^{s_2}).
 }\label{eq:series-length}\end{equation}
 ```
 ```{r}
@@ -424,9 +424,9 @@ cod_streaks_naive_res$series |>
   arrange(n_rounds) |>
   gt::gt() |>
   gt::cols_label(
-    n_rounds = 'Series lasts\ni rounds',
-    prop_expected = 'P_{E}(i)',
-    prop_actual = 'P_{O}(i)',
+    n_rounds = 'Series lasts\nr rounds',
+    prop_expected = 'P_{E}(r)',
+    prop_actual = 'P_{O}(r)',
     n_actual = 'N_O'
   ) |>
   gt::fmt_percent(
@@ -440,15 +440,15 @@ cod_streaks_naive_res$series |>
   gt::as_latex()
 ```
 
-Table \ref{tbl:cod-prob-series-lasting-i-rounds} shows the expected probabilities for $s = 11$ under the naive assumption that $p_0 = 0.5$ for a given round, along with the observed proportions $P_O(i)$ in CoD SnD.
+Table \ref{tbl:cod-prob-series-lasting-r-rounds} shows the expected probabilities for $s = 11$ under the naive assumption that $p_0 = 0.5$ for a given round, along with the observed proportions $P_O(r)$ in CoD SnD.
 
 ```{=tex}
 \begin{longtable}{rrrr}
-\caption{The probabilities that a best-of-11 series lasts $i$ rounds ($P_E(i)$, where $i \in [6, 7, 8, 9, 10, 11]$) under the assumption that each team has a 50\% probability ($p_0 = 0.5$) of winning each game. The observed frequencies observed are shown as a count $N_O(i)$ and as a proportion $P_O(i)$ of all series.}\label{tbl:cod-prob-series-lasting-i-rounds} \\
+\caption{The probabilities that a best-of-11 series lasts $r$ rounds ($P_E(r)$, where $r \in [6, 7, 8, 9, 10, 11]$) under the assumption that each team has a 50\% probability ($p_0 = 0.5$) of winning each game. The observed frequencies observed are shown as a count $N_O(r)$ and as a proportion $P_O(r)$ of all series.}\label{tbl:cod-prob-series-lasting-r-rounds} \\
 \toprule
 &  & \multicolumn{2}{c}{Observed} \\ 
 \cmidrule(lr){3-4}
-Series lasts $i$ rounds & $P_E(i)$ & $P_O(i)$ & $N_O(i)$ \\ 
+Series lasts $r$ rounds & $P_E(r)$ & $P_O(r)$ & $N_O(r)$ \\ 
 \midrule
 6 & $3.1\%$ & $4.7\%$ & 40 \\ 
 7 & $9.4\%$ & $11.9\%$ & 101 \\ 
@@ -481,7 +481,7 @@ Calculating the chi-square goodness of fit statistic
 
 ```{=tex}
 \begin{equation}\protect\hypertarget{eq:series-length}{}{
-\chi^2 = \sum^{11}_{i=6} \frac{(P_O(i) - P_E(i))^2}{P_E(i)}, i \in R = [6, 7, 8, 9, 10, 11].
+\chi^2 = \sum^{11}_{i=6} \frac{(P_O(r) - P_E(r))^2}{P_E(r)}, r \in R = [6, 7, 8, 9, 10, 11].
 }\label{eq:chi-squ-test}\end{equation}
 ```
 as 16.0 (p-value of 0.0068), I can comfortably reject the constant probability null hypothesis for $p_0 = 0.5$, event at a confidence level of $\alpha = 0.01$.
@@ -640,11 +640,11 @@ cod_streaks_other_res |>
   ) |>
   inner_join(
     cod_streaks_naive_res$series |>
-      transmute(n_rounds, `$P_O(i)$` = scales::percent(prop_actual, accuracy = 0.1)),
+      transmute(n_rounds, `$P_O(r)$` = scales::percent(prop_actual, accuracy = 0.1)),
     by = 'n_rounds'
   ) |>
   arrange(n_rounds) |>
-  rename(`Series lasts $i$ rounds` = n_rounds) |>
+  rename(`Series lasts $r$ rounds` = n_rounds) |>
   knitr::kable()
 ```
 
@@ -654,11 +654,11 @@ Table \ref{tbl:mosteller-methods-results} shows the alternate values for the con
 \begin{longtable}[]{@{}lrr@{}}
 \caption{Alternate estimates of the constant probability \(p\) for winning a given round in a CoD SnD, applying the three methods suggested by Mosteller (1952), in addition to the naive \(p = 0.5\).}\label{tbl:mosteller-methods-results} \\
 \toprule()
-Method & \(p\) & \(\chi^2\) (p-value) \\
+Method & \(p(r)\) & \(\chi^2\) (p-value) \\
 \midrule()
 \endfirsthead
 \toprule()
-Method & \(p\) & \(\chi^2\) (p-value) \\
+Method & \(p(r)\) & \(\chi^2\) (p-value) \\
 \midrule()
 \endhead
 0. Naive & 0.5000 & 16.0 (\textless=0.01) \\
@@ -668,15 +668,15 @@ Method & \(p\) & \(\chi^2\) (p-value) \\
 \bottomrule()
 \end{longtable}
 ```
-Table \ref{tbl:expected-series-lengths-alternative-ps} shows the new $P_E(i)$ when re-applying Equation \ref{eq:series-length} for the maximum likelihood estimate $p_2 = 0.575$.[^12] I observe that $P_E(i)$ is notably larger for $p_{2}$ when $i \in [6, 7]$, more closely matching $P_O(i)$. $p_{2}$ is also closer to $P_O(i)$ for $i \in [9, 10]$, although not for $i \in [8, 11]$.
+Table \ref{tbl:expected-series-lengths-alternative-ps} shows the new $P_E(r)$ when re-applying Equation \ref{eq:series-length} for the maximum likelihood estimate $p_2 = 0.575$.[^12] I observe that $P_E(r)$ is notably larger for $p_{2}$ when $r \in [6, 7]$, more closely matching $P_O(r)$. $p_{2}$ is also closer to $P_O(r)$ for $r \in [9, 10]$, although not for $r \in [8, 11]$.
 
 [^12]: The method of moments and minimum $\chi^2$ estimates for $p$ are omitted simply because the results would be nearly identical to those for the maximum likelihood estimate of $p$ (since they are all $\approx 0.575$.
 
 ```{=tex}
 \begin{longtable}[]{@{}rrrr@{}}
-\caption{The probabilities that a best-of-11 series lasts $i$ rounds under the naive assumption $p_0 = 0.5$ and the maximum likelihood estimation $p_2 = 0.575$.}\label{tbl:expected-series-lengths-alternative-ps} \\
+\caption{The probabilities that a best-of-11 series lasts $r$ rounds under the naive assumption $p_0 = 0.5$ and the maximum likelihood estimation $p_2 = 0.575$.}\label{tbl:expected-series-lengths-alternative-ps} \\
 \toprule()
-Series lasts \(i\) rounds & \(p_0\) = 0.5 & \(p_2\) = 0.575 & \(P_O(i)\) \\
+Series lasts \(r\) rounds & \(p_0(r)\) = 0.5 & \(p_2(r)\) = 0.575 & \(P_O(r)\) \\
 \midrule()
 \endhead
 6 & 3.1\% & 4.2\% & 4.7\% \\
@@ -850,11 +850,12 @@ cod_round_win_prop_after_k_wins |>
       )
     )
   ) |>
-  # filter(win_streak == 3) |> 
-  select(
-    win_streak,
-    win_series,
+  filter(win_streak == 3) |> 
+  arrange(win_streak, n_rounds, win_series) |> 
+  transmute(
+    # win_streak,
     n_rounds,
+    across(win_series, ~ifelse(.x, 'win', 'lose')),
     total,
     prop,
     prior_p,
@@ -868,58 +869,74 @@ cod_round_win_prop_after_k_wins |>
     columns = c(prop, prior_p, expected_poststreak_p)
   ) |> 
   gt::cols_label(
-    win_streak = 'Streak',
+    # win_streak = 'Streak',
     win_series = 'Win Series?',
-    n_rounds = 'Series lasts $i$ rounds',
+    n_rounds = 'Series lasts r rounds',
     total = 'N',
-    prop = 'Obs.',
-    prior_p = 'Naive',
-    expected_poststreak_p = 'Discounted',
-    gt_p_value = 'Naive',
-    gt_p_value_adj = 'Discounted'
+    prop = 'O',
+    prior_p = 'a',
+    expected_poststreak_p = 'b',
+    gt_p_value = 'a',
+    gt_p_value_adj = 'b'
   ) |> 
   gt::tab_spanner(
-    label = '%s',
+    label = 'x',
     columns = c(prop, prior_p, expected_poststreak_p)
   ) |> 
   gt::tab_spanner(
-    label = 'Binom. > p-value',
+    label = 'y',
     columns = c(gt_p_value, gt_p_value_adj)
-  )
+  ) |> 
+  gt::tab_footnote(
+    footnote = 'Binom',
+    locations = gt::cells_column_labels(columns = c(gt_p_value))
+  ) |> 
+  gt::as_latex()
 ```
 
-Despite the implication that one can model team round win probability in CoD SnD as a constant, anecdotally many believe in momentum i.e. streaks not due to random chance. I now evaluate win frequency in rounds following a streak of length $k$. I account for the length of the series ($i$ rounds), modeling the expected round win probability after a streak of length $k$ as
+Despite the implication that one can model team round win probability in CoD SnD as a constant, anecdotally many believe in momentum i.e. streaks not due to random chance. I now evaluate win frequency in rounds following a streak of length $k$. I account for the length of the series ($r$ rounds), modeling the expected round win probability after a streak of length $k$ as
 
 ```{=tex}
-\begin{equation}\protect\hypertarget{eq:pki}{}{
-  \hat{P}_{wki} = \hat{P}(\text{win round | k-round winning streak, series lasting i rounds})=\{
-  \begin{array}{cl}
+\begin{equation}\protect\hypertarget{eq:pwkr}{}{
+  \hat{p}^{kr,\text{win}}_E = \hat{p}(\text{win round | k-round winning streak, series lasting r rounds})=\{
+    \begin{array}{cl}
     \frac{6 - k}{i - k}, & \text{team wins series} \\
     \frac{11 - 6 - k}{i - k}, & \text{team loses series}
-  \end{array}.
-}\label{eq:pki}\end{equation}
+    \end{array}.
+  }\label{eq:pwkr}
+\end{equation}
 ```
-$\hat{P}_{lki} = \hat{P}(\text{lose round | k-round losing streak, series lasting i rounds})$ can be formulated symmetrically.
+$\hat{p}^{kr,loss}_E = \hat{p}(\text{lose round | k-round losing streak, series lasting r rounds})$ can be formulated symmetrically.
 
-Miller et al. [-@miller2018] provide evidence for negative recency suggesting that
-
-```{=tex}
-\begin{equation}\protect\hypertarget{eq:pkid}{}{
-  \begin{array}{rcl}
-  \hat{P}_{ki,\text{diff}} & = & \hat{P}(\text{win round | k-round winning streak, series lasting i rounds}) -  \\
-    & & \hat{P}(\text{lose round | k-round losing streak, series lasting i rounds}) \\
-    E[\hat{P}_{ki,\text{diff}}] & \neq & 0
-  \end{array}
-}\label{eq:pkid}\end{equation}
-```
-given a deterministic i.i.d. Bernoulli probability (Equation \ref{eq:pki}.[^13]
+While one might think that $E[\hat{p}^{kr,\text{win}} - \hat{p}^{kr,\text{loss}}] = 0$, Miller et al. [-@miller2018] suggest that, given a deterministic i.i.d. Bernoulli probability (Equation \ref{pwkr}, this is not true due to streak-selection bias.[^13][^14]
 
 [^13]: Note that these probabilities are separate from those in Section \ref{sec:analysis-1}.
 
-Given that people typically perceive streaks as beginning after the third success (or failure) at minimum [@carlson2007], I focus on round win percentages in rounds immediately following streaks of three wins.[^14] Table \ref{tbl:cod-round-win-prop-after-k-wins} shows $\hat{P}_{wki}$ for $k = 3$ winning streaks, for both teams that empirically won and lost the series. (Some combinations of $i$ and $\text{team loses series}$ are irrelevant, such as the case when $i \in [7, 8, 9]$, so these combinations are excluded.)
-
 [^14]: Three happens to also be a reasonable number for series that lasts at maximum 11 rounds.
 
+I don't attempt to measure this expectation like Miller et al. [-@miller2018], who perform their analysis longitudinally per study participant; nonetheless, I apply their formulation for applying the "downward bias" on post-streak success to come up with estimates $\hat{P}_{kr,\text{win}}^{\text{adj.}}$, specifying $r$ as the number of trials.
+
+Given that people typically perceive streaks as beginning after the third success (or failure) at minimum [@carlson2007], I focus on round win percentages in rounds immediately following streaks of three wins.[^15] Table \ref{tbl:cod-round-win-prop-after-k-wins} shows $\hat{P}_{kr,\text{win}}$ for $k = 3$ winning streaks, for both teams that empirically won and lost the series. (Some combinations of $r$ and $\text{team loses series}$ are irrelevant, such as the case when $r \in [7, 8, 9]$, so these combinations are excluded.)
+
+[^15]: Three happens to also be a reasonable number for series that lasts at maximum 11 rounds.
+
+```{=tex}
+\begin{longtable}{rrrrrrrr}
+\toprule
+&  &  & \multicolumn{3}{c}{$\hat{p}^{kr,\text{win}}$} & \multicolumn{2}{c}{$p$-value} \\
+\cmidrule(lr){4-6} \cmidrule(lr){7-8}
+Series lasts $r$ rounds & Win Series? & $N^{kr,\text{win}}_O$ & $O$ & $E$ & $\text{adj.}$ & $E$ & $\text{adj.}$ \\ 
+\midrule
+7 & win & 209 & $75\%$ & $75\%$ & $61\%$ & 0.58 & <=0.01 \\ 
+8 & win & 209 & $62\%$ & $60\%$ & $45\%$ & 0.28 & <=0.01 \\ 
+9 & win & 193 & $52\%$ & $50\%$ & $35\%$ & 0.33 & <=0.01 \\ 
+10 & lose & 60 & $13\%$ & $14\%$ & $10\%$ & 0.64 & 0.26 \\ 
+10 & win & 151 & $44\%$ & $43\%$ & $29\%$ & 0.45 & <=0.01 \\ 
+11 & lose & 129 & $24\%$ & $25\%$ & $16\%$ & 0.63 & <=0.01 \\ 
+11 & win & 150 & $40\%$ & $38\%$ & $25\%$ & 0.29 & <=0.01 \\ 
+\bottomrule
+\end{longtable}
+```
 # References {.unnumbered}
 
 ::: {#refs}
