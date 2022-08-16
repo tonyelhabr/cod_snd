@@ -1,0 +1,390 @@
+name,href,level,title,index,h2,h3
+Opening up the court: analyzing player performance across tennis Grand Slams,https://www.degruyter.com/document/doi/10.1515/jqas-2019-0015/html,h2,Introduction,1,1,
+Opening up the court: analyzing player performance across tennis Grand Slams,https://www.degruyter.com/document/doi/10.1515/jqas-2019-0015/html,h2,Data and exploratory data analysis,2,2,
+Opening up the court: analyzing player performance across tennis Grand Slams,https://www.degruyter.com/document/doi/10.1515/jqas-2019-0015/html,h2,Statistical models to analyze differences,3,3,
+Opening up the court: analyzing player performance across tennis Grand Slams,https://www.degruyter.com/document/doi/10.1515/jqas-2019-0015/html,h2,Discussion,4,4,
+Opening up the court: analyzing player performance across tennis Grand Slams,https://www.degruyter.com/document/doi/10.1515/jqas-2019-0015/html,h3,Data,2.1,2,1
+Opening up the court: analyzing player performance across tennis Grand Slams,https://www.degruyter.com/document/doi/10.1515/jqas-2019-0015/html,h3,Distribution of points scored,2.2,2,2
+Opening up the court: analyzing player performance across tennis Grand Slams,https://www.degruyter.com/document/doi/10.1515/jqas-2019-0015/html,h3,Home court advantage,2.3,2,3
+Opening up the court: analyzing player performance across tennis Grand Slams,https://www.degruyter.com/document/doi/10.1515/jqas-2019-0015/html,h3,Spanish players at the French Open,2.4,2,4
+Opening up the court: analyzing player performance across tennis Grand Slams,https://www.degruyter.com/document/doi/10.1515/jqas-2019-0015/html,h3,Patterns in aces and unforced errors,2.5,2,5
+Opening up the court: analyzing player performance across tennis Grand Slams,https://www.degruyter.com/document/doi/10.1515/jqas-2019-0015/html,h3,Mixed-effect models,3.1,3,1
+Opening up the court: analyzing player performance across tennis Grand Slams,https://www.degruyter.com/document/doi/10.1515/jqas-2019-0015/html,h3,Individualized player models,3.2,3,2
+Opening up the court: analyzing player performance across tennis Grand Slams,https://www.degruyter.com/document/doi/10.1515/jqas-2019-0015/html,h3,A.1 Mixed-effects model for wins,A.1 Mixed-effects model for wins,,
+Opening up the court: analyzing player performance across tennis Grand Slams,https://www.degruyter.com/document/doi/10.1515/jqas-2019-0015/html,h3,A.2 Modeling results of individuals,A.2 Modeling results of individuals,,
+Opening up the court: analyzing player performance across tennis Grand Slams,https://www.degruyter.com/document/doi/10.1515/jqas-2019-0015/html,h3,References,References,,
+Winning and losing streaks in the National Hockey League: are teams experiencing momentum or are games a sequence of random events?,https://www.degruyter.com/document/doi/10.1515/jqas-2020-0077/html,h2,Introduction,1,1,
+Winning and losing streaks in the National Hockey League: are teams experiencing momentum or are games a sequence of random events?,https://www.degruyter.com/document/doi/10.1515/jqas-2020-0077/html,h2,Literature review,2,2,
+Winning and losing streaks in the National Hockey League: are teams experiencing momentum or are games a sequence of random events?,https://www.degruyter.com/document/doi/10.1515/jqas-2020-0077/html,h2,Methodology,3,3,
+Winning and losing streaks in the National Hockey League: are teams experiencing momentum or are games a sequence of random events?,https://www.degruyter.com/document/doi/10.1515/jqas-2020-0077/html,h2,Analysis,4,4,
+Winning and losing streaks in the National Hockey League: are teams experiencing momentum or are games a sequence of random events?,https://www.degruyter.com/document/doi/10.1515/jqas-2020-0077/html,h2,Discussion,5,5,
+Winning and losing streaks in the National Hockey League: are teams experiencing momentum or are games a sequence of random events?,https://www.degruyter.com/document/doi/10.1515/jqas-2020-0077/html,h2,Conclusion,6,6,
+Winning and losing streaks in the National Hockey League: are teams experiencing momentum or are games a sequence of random events?,https://www.degruyter.com/document/doi/10.1515/jqas-2020-0077/html,h3,References,References,,
+A Bayesian marked spatial point processes model for basketball shot chart,https://www.degruyter.com/document/doi/10.1515/jqas-2019-0106/html,h2,Introduction,1,1,
+A Bayesian marked spatial point processes model for basketball shot chart,https://www.degruyter.com/document/doi/10.1515/jqas-2019-0106/html,h2,Shot charts of NBA players,2,2,
+A Bayesian marked spatial point processes model for basketball shot chart,https://www.degruyter.com/document/doi/10.1515/jqas-2019-0106/html,h2,Bayesian marked spatial point process model,3,3,
+A Bayesian marked spatial point processes model for basketball shot chart,https://www.degruyter.com/document/doi/10.1515/jqas-2019-0106/html,h2,Bayesian computation,4,4,
+A Bayesian marked spatial point processes model for basketball shot chart,https://www.degruyter.com/document/doi/10.1515/jqas-2019-0106/html,h2,Simulation studies,5,5,
+A Bayesian marked spatial point processes model for basketball shot chart,https://www.degruyter.com/document/doi/10.1515/jqas-2019-0106/html,h2,NBA players shot chart analysis,6,6,
+A Bayesian marked spatial point processes model for basketball shot chart,https://www.degruyter.com/document/doi/10.1515/jqas-2019-0106/html,h2,Discussion,7,7,
+A Bayesian marked spatial point processes model for basketball shot chart,https://www.degruyter.com/document/doi/10.1515/jqas-2019-0106/html,h3,Marked spatial point process,3.1,3,1
+A Bayesian marked spatial point processes model for basketball shot chart,https://www.degruyter.com/document/doi/10.1515/jqas-2019-0106/html,h3,Prior specification,3.2,3,2
+A Bayesian marked spatial point processes model for basketball shot chart,https://www.degruyter.com/document/doi/10.1515/jqas-2019-0106/html,h3,The MCMC sampling schemes,4.1,4,1
+A Bayesian marked spatial point processes model for basketball shot chart,https://www.degruyter.com/document/doi/10.1515/jqas-2019-0106/html,h3,Bayesian model comparison,4.2,4,2
+A Bayesian marked spatial point processes model for basketball shot chart,https://www.degruyter.com/document/doi/10.1515/jqas-2019-0106/html,h3,Covariates construction,6.1,6,1
+A Bayesian marked spatial point processes model for basketball shot chart,https://www.degruyter.com/document/doi/10.1515/jqas-2019-0106/html,h3,Model comparison,6.2,6,2
+A Bayesian marked spatial point processes model for basketball shot chart,https://www.degruyter.com/document/doi/10.1515/jqas-2019-0106/html,h3,Fitted results,6.3,6,3
+A Bayesian marked spatial point processes model for basketball shot chart,https://www.degruyter.com/document/doi/10.1515/jqas-2019-0106/html,h3,Application to top 50 most frequent shooters,6.4,6,4
+A Bayesian marked spatial point processes model for basketball shot chart,https://www.degruyter.com/document/doi/10.1515/jqas-2019-0106/html,h3,References,References,,
+Smart kills and worthless deaths: eSports analytics for League of Legends,https://www.degruyter.com/document/doi/10.1515/jqas-2019-0096/html,h2,Introduction,1,1,
+Smart kills and worthless deaths: eSports analytics for League of Legends,https://www.degruyter.com/document/doi/10.1515/jqas-2019-0096/html,h2,Literature review,2,2,
+Smart kills and worthless deaths: eSports analytics for League of Legends,https://www.degruyter.com/document/doi/10.1515/jqas-2019-0096/html,h2,Methodology,3,3,
+Smart kills and worthless deaths: eSports analytics for League of Legends,https://www.degruyter.com/document/doi/10.1515/jqas-2019-0096/html,h2,Results and discussion,4,4,
+Smart kills and worthless deaths: eSports analytics for League of Legends,https://www.degruyter.com/document/doi/10.1515/jqas-2019-0096/html,h2,Conclusion,5,5,
+Smart kills and worthless deaths: eSports analytics for League of Legends,https://www.degruyter.com/document/doi/10.1515/jqas-2019-0096/html,h2,Appendix 1 Additional description of league of legends,Appendix 1 Additional description of league of legends,,
+Smart kills and worthless deaths: eSports analytics for League of Legends,https://www.degruyter.com/document/doi/10.1515/jqas-2019-0096/html,h2,Appendix 2 Pseudocode for determining a champion’s role,Appendix 2 Pseudocode for determining a champion’s role,,
+Smart kills and worthless deaths: eSports analytics for League of Legends,https://www.degruyter.com/document/doi/10.1515/jqas-2019-0096/html,h3,Description of League of Legends,1.1,1,1
+Smart kills and worthless deaths: eSports analytics for League of Legends,https://www.degruyter.com/document/doi/10.1515/jqas-2019-0096/html,h3,League of Legends data,1.2,1,2
+Smart kills and worthless deaths: eSports analytics for League of Legends,https://www.degruyter.com/document/doi/10.1515/jqas-2019-0096/html,h3,Our contribution,1.3,1,3
+Smart kills and worthless deaths: eSports analytics for League of Legends,https://www.degruyter.com/document/doi/10.1515/jqas-2019-0096/html,h3,Data methodology,3.1,3,1
+Smart kills and worthless deaths: eSports analytics for League of Legends,https://www.degruyter.com/document/doi/10.1515/jqas-2019-0096/html,h3,Analytics methodology,3.2,3,2
+Smart kills and worthless deaths: eSports analytics for League of Legends,https://www.degruyter.com/document/doi/10.1515/jqas-2019-0096/html,h3,Examples of advanced analytics,4.1,4,1
+Smart kills and worthless deaths: eSports analytics for League of Legends,https://www.degruyter.com/document/doi/10.1515/jqas-2019-0096/html,h3,Pseudocode: automatic categorization of champion roles,Pseudocode: automatic categorization of champion roles,,
+Smart kills and worthless deaths: eSports analytics for League of Legends,https://www.degruyter.com/document/doi/10.1515/jqas-2019-0096/html,h3,References,References,,
+Evaluating the effectiveness of different network flow mofits in association football,https://www.degruyter.com/document/doi/10.1515/jqas-2019-0097/html,h2,Introduction,1,1,
+Evaluating the effectiveness of different network flow mofits in association football,https://www.degruyter.com/document/doi/10.1515/jqas-2019-0097/html,h2,Experimental setup,2,2,
+Evaluating the effectiveness of different network flow mofits in association football,https://www.degruyter.com/document/doi/10.1515/jqas-2019-0097/html,h2,Results and discussion,3,3,
+Evaluating the effectiveness of different network flow mofits in association football,https://www.degruyter.com/document/doi/10.1515/jqas-2019-0097/html,h2,Concluding remarks,4,4,
+Evaluating the effectiveness of different network flow mofits in association football,https://www.degruyter.com/document/doi/10.1515/jqas-2019-0097/html,h3,Generalized additive models,2.1,2,1
+Evaluating the effectiveness of different network flow mofits in association football,https://www.degruyter.com/document/doi/10.1515/jqas-2019-0097/html,h3,Model description,2.2,2,2
+Evaluating the effectiveness of different network flow mofits in association football,https://www.degruyter.com/document/doi/10.1515/jqas-2019-0097/html,h3,Regression results,3.1,3,1
+Evaluating the effectiveness of different network flow mofits in association football,https://www.degruyter.com/document/doi/10.1515/jqas-2019-0097/html,h3,Distribution of motif types in Eliteserien,3.2,3,2
+Evaluating the effectiveness of different network flow mofits in association football,https://www.degruyter.com/document/doi/10.1515/jqas-2019-0097/html,h3,Comparison with existing literature,3.3,3,3
+Evaluating the effectiveness of different network flow mofits in association football,https://www.degruyter.com/document/doi/10.1515/jqas-2019-0097/html,h3,Final evaluation,3.4,3,4
+Evaluating the effectiveness of different network flow mofits in association football,https://www.degruyter.com/document/doi/10.1515/jqas-2019-0097/html,h3,References,References,,
+Profiting from overreaction in soccer betting odds,https://www.degruyter.com/document/doi/10.1515/jqas-2019-0009/html,h2,Introduction,1,1,
+Profiting from overreaction in soccer betting odds,https://www.degruyter.com/document/doi/10.1515/jqas-2019-0009/html,h2,Biases in sports betting,2,2,
+Profiting from overreaction in soccer betting odds,https://www.degruyter.com/document/doi/10.1515/jqas-2019-0009/html,h2,Background,3,3,
+Profiting from overreaction in soccer betting odds,https://www.degruyter.com/document/doi/10.1515/jqas-2019-0009/html,h2,Defining the combined odds distribution (COD) statistic,4,4,
+Profiting from overreaction in soccer betting odds,https://www.degruyter.com/document/doi/10.1515/jqas-2019-0009/html,h2,Data,5,5,
+Profiting from overreaction in soccer betting odds,https://www.degruyter.com/document/doi/10.1515/jqas-2019-0009/html,h2,Demonstration – 2017/18 premier league season,6,6,
+Profiting from overreaction in soccer betting odds,https://www.degruyter.com/document/doi/10.1515/jqas-2019-0009/html,h2,Methodology,7,7,
+Profiting from overreaction in soccer betting odds,https://www.degruyter.com/document/doi/10.1515/jqas-2019-0009/html,h2,Results,8,8,
+Profiting from overreaction in soccer betting odds,https://www.degruyter.com/document/doi/10.1515/jqas-2019-0009/html,h2,Discussion,9,9,
+Profiting from overreaction in soccer betting odds,https://www.degruyter.com/document/doi/10.1515/jqas-2019-0009/html,h3,Odds-implied probabilities,3.1,3,1
+Profiting from overreaction in soccer betting odds,https://www.degruyter.com/document/doi/10.1515/jqas-2019-0009/html,h3,Regression analysis,8.1,8,1
+Profiting from overreaction in soccer betting odds,https://www.degruyter.com/document/doi/10.1515/jqas-2019-0009/html,h3,Effect of match history length,8.2,8,2
+Profiting from overreaction in soccer betting odds,https://www.degruyter.com/document/doi/10.1515/jqas-2019-0009/html,h3,References,References,,
+Going deep: models for continuous-time within-play valuation of game outcomes in American football with tracking data,https://www.degruyter.com/document/doi/10.1515/jqas-2019-0056/html,h2,Introduction,1,1,
+Going deep: models for continuous-time within-play valuation of game outcomes in American football with tracking data,https://www.degruyter.com/document/doi/10.1515/jqas-2019-0056/html,h2,Player and ball tracking data,2,2,
+Going deep: models for continuous-time within-play valuation of game outcomes in American football with tracking data,https://www.degruyter.com/document/doi/10.1515/jqas-2019-0056/html,h2,A framework for continuous-time play value in football,3,3,
+Going deep: models for continuous-time within-play valuation of game outcomes in American football with tracking data,https://www.degruyter.com/document/doi/10.1515/jqas-2019-0056/html,h2,The ball-carrier model,4,4,
+Going deep: models for continuous-time within-play valuation of game outcomes in American football with tracking data,https://www.degruyter.com/document/doi/10.1515/jqas-2019-0056/html,h2,Results,5,5,
+Going deep: models for continuous-time within-play valuation of game outcomes in American football with tracking data,https://www.degruyter.com/document/doi/10.1515/jqas-2019-0056/html,h2,Discussion and future directions,6,6,
+Going deep: models for continuous-time within-play valuation of game outcomes in American football with tracking data,https://www.degruyter.com/document/doi/10.1515/jqas-2019-0056/html,h3,Previous work: discrete-time (play-by-play) evaluation of football game outcomes,1.1,1,1
+Going deep: models for continuous-time within-play valuation of game outcomes in American football with tracking data,https://www.degruyter.com/document/doi/10.1515/jqas-2019-0056/html,h3,Previous work: continuous-time models for game outcomes in sports,1.2,1,2
+Going deep: models for continuous-time within-play valuation of game outcomes in American football with tracking data,https://www.degruyter.com/document/doi/10.1515/jqas-2019-0056/html,h3,Previous work: continuous-time models for football,1.3,1,3
+Going deep: models for continuous-time within-play valuation of game outcomes in American football with tracking data,https://www.degruyter.com/document/doi/10.1515/jqas-2019-0056/html,h3,Our contributions,1.4,1,4
+Going deep: models for continuous-time within-play valuation of game outcomes in American football with tracking data,https://www.degruyter.com/document/doi/10.1515/jqas-2019-0056/html,h3,Notation,3.1,3,1
+Going deep: models for continuous-time within-play valuation of game outcomes in American football with tracking data,https://www.degruyter.com/document/doi/10.1515/jqas-2019-0056/html,h3,Framework for continuous-time modeling in American football,3.2,3,2
+Going deep: models for continuous-time within-play valuation of game outcomes in American football with tracking data,https://www.degruyter.com/document/doi/10.1515/jqas-2019-0056/html,h3,Ball-carrier model,3.3,3,3
+Going deep: models for continuous-time within-play valuation of game outcomes in American football with tracking data,https://www.degruyter.com/document/doi/10.1515/jqas-2019-0056/html,h3,Quarterback decision model,3.4,3,4
+Going deep: models for continuous-time within-play valuation of game outcomes in American football with tracking data,https://www.degruyter.com/document/doi/10.1515/jqas-2019-0056/html,h3,Pass target probability model,3.5,3,5
+Going deep: models for continuous-time within-play valuation of game outcomes in American football with tracking data,https://www.degruyter.com/document/doi/10.1515/jqas-2019-0056/html,h3,Global catch probability model,3.6,3,6
+Going deep: models for continuous-time within-play valuation of game outcomes in American football with tracking data,https://www.degruyter.com/document/doi/10.1515/jqas-2019-0056/html,h3,Individual catch probability model,3.7,3,7
+Going deep: models for continuous-time within-play valuation of game outcomes in American football with tracking data,https://www.degruyter.com/document/doi/10.1515/jqas-2019-0056/html,h3,Features for the ball-carrier model,4.1,4,1
+Going deep: models for continuous-time within-play valuation of game outcomes in American football with tracking data,https://www.degruyter.com/document/doi/10.1515/jqas-2019-0056/html,h3,Models,4.2,4,2
+Going deep: models for continuous-time within-play valuation of game outcomes in American football with tracking data,https://www.degruyter.com/document/doi/10.1515/jqas-2019-0056/html,h3,Model validation,4.3,4,3
+Going deep: models for continuous-time within-play valuation of game outcomes in American football with tracking data,https://www.degruyter.com/document/doi/10.1515/jqas-2019-0056/html,h3,Model comparison and selection,5.1,5,1
+Going deep: models for continuous-time within-play valuation of game outcomes in American football with tracking data,https://www.degruyter.com/document/doi/10.1515/jqas-2019-0056/html,h3,Analysis of feature importance,5.2,5,2
+Going deep: models for continuous-time within-play valuation of game outcomes in American football with tracking data,https://www.degruyter.com/document/doi/10.1515/jqas-2019-0056/html,h3,Continuous-time prediction examples,5.3,5,3
+Going deep: models for continuous-time within-play valuation of game outcomes in American football with tracking data,https://www.degruyter.com/document/doi/10.1515/jqas-2019-0056/html,h3,Player evaluation examples,5.4,5,4
+Going deep: models for continuous-time within-play valuation of game outcomes in American football with tracking data,https://www.degruyter.com/document/doi/10.1515/jqas-2019-0056/html,h3,Conditional density estimation,6.1,6,1
+Going deep: models for continuous-time within-play valuation of game outcomes in American football with tracking data,https://www.degruyter.com/document/doi/10.1515/jqas-2019-0056/html,h3,Future work,6.2,6,2
+Going deep: models for continuous-time within-play valuation of game outcomes in American football with tracking data,https://www.degruyter.com/document/doi/10.1515/jqas-2019-0056/html,h3,References,References,,
+Models for generating NCAA men’s basketball tournament bracket pools,https://www.degruyter.com/document/doi/10.1515/jqas-2019-0022/html,h2,Introduction,1,1,
+Models for generating NCAA men’s basketball tournament bracket pools,https://www.degruyter.com/document/doi/10.1515/jqas-2019-0022/html,h2,The power model,2,2,
+Models for generating NCAA men’s basketball tournament bracket pools,https://www.degruyter.com/document/doi/10.1515/jqas-2019-0022/html,h2,Results,3,3,
+Models for generating NCAA men’s basketball tournament bracket pools,https://www.degruyter.com/document/doi/10.1515/jqas-2019-0022/html,h2,Conclusions,4,4,
+Models for generating NCAA men’s basketball tournament bracket pools,https://www.degruyter.com/document/doi/10.1515/jqas-2019-0022/html,h2,Appendix A Appendices,Appendix A Appendices,,
+Models for generating NCAA men’s basketball tournament bracket pools,https://www.degruyter.com/document/doi/10.1515/jqas-2019-0022/html,h3,Estimating win probabilities,2.1,2,1
+Models for generating NCAA men’s basketball tournament bracket pools,https://www.degruyter.com/document/doi/10.1515/jqas-2019-0022/html,h3,Generating brackets,2.2,2,2
+Models for generating NCAA men’s basketball tournament bracket pools,https://www.degruyter.com/document/doi/10.1515/jqas-2019-0022/html,h3,The implicit PMF,2.3,2,3
+Models for generating NCAA men’s basketball tournament bracket pools,https://www.degruyter.com/document/doi/10.1515/jqas-2019-0022/html,h3,Generator evaluation,2.4,2,4
+Models for generating NCAA men’s basketball tournament bracket pools,https://www.degruyter.com/document/doi/10.1515/jqas-2019-0022/html,h3,Power model parameters,3.1,3,1
+Models for generating NCAA men’s basketball tournament bracket pools,https://www.degruyter.com/document/doi/10.1515/jqas-2019-0022/html,h3,Bradley-Terry model parameters,3.2,3,2
+Models for generating NCAA men’s basketball tournament bracket pools,https://www.degruyter.com/document/doi/10.1515/jqas-2019-0022/html,h3,Bracket generation experiments,3.3,3,3
+Models for generating NCAA men’s basketball tournament bracket pools,https://www.degruyter.com/document/doi/10.1515/jqas-2019-0022/html,h3,A.1 Tournament round names,A.1 Tournament round names,,
+Models for generating NCAA men’s basketball tournament bracket pools,https://www.degruyter.com/document/doi/10.1515/jqas-2019-0022/html,h3,A.2 Description of two-stage sampling procedure,A.2 Description of two-stage sampling procedure,,
+Models for generating NCAA men’s basketball tournament bracket pools,https://www.degruyter.com/document/doi/10.1515/jqas-2019-0022/html,h3,A.3 Bradley-Terry model parameters,A.3 Bradley-Terry model parameters,,
+Models for generating NCAA men’s basketball tournament bracket pools,https://www.degruyter.com/document/doi/10.1515/jqas-2019-0022/html,h3,References,References,,
+Bayesian statistics meets sports: a comprehensive review,https://www.degruyter.com/view/j/jqas.2019.15.issue-4/jqas-2018-0106/jqas-2018-0106.xml?format=INT,h2,Introduction,1,1,
+Bayesian statistics meets sports: a comprehensive review,https://www.degruyter.com/view/j/jqas.2019.15.issue-4/jqas-2018-0106/jqas-2018-0106.xml?format=INT,h2,Materials and methods for the comprehensive review process,2,2,
+Bayesian statistics meets sports: a comprehensive review,https://www.degruyter.com/view/j/jqas.2019.15.issue-4/jqas-2018-0106/jqas-2018-0106.xml?format=INT,h2,Results,3,3,
+Bayesian statistics meets sports: a comprehensive review,https://www.degruyter.com/view/j/jqas.2019.15.issue-4/jqas-2018-0106/jqas-2018-0106.xml?format=INT,h2,Discussion,4,4,
+Bayesian statistics meets sports: a comprehensive review,https://www.degruyter.com/view/j/jqas.2019.15.issue-4/jqas-2018-0106/jqas-2018-0106.xml?format=INT,h2,Conclusion,5,5,
+Bayesian statistics meets sports: a comprehensive review,https://www.degruyter.com/view/j/jqas.2019.15.issue-4/jqas-2018-0106/jqas-2018-0106.xml?format=INT,h2,Summary of methods and applications,Summary of methods and applications,,
+Bayesian statistics meets sports: a comprehensive review,https://www.degruyter.com/view/j/jqas.2019.15.issue-4/jqas-2018-0106/jqas-2018-0106.xml?format=INT,h3,Bayesian statistical methods,3.1,3,1
+Bayesian statistics meets sports: a comprehensive review,https://www.degruyter.com/view/j/jqas.2019.15.issue-4/jqas-2018-0106/jqas-2018-0106.xml?format=INT,h3,Sports,3.2,3,2
+Bayesian statistics meets sports: a comprehensive review,https://www.degruyter.com/view/j/jqas.2019.15.issue-4/jqas-2018-0106/jqas-2018-0106.xml?format=INT,h3,Software for Bayesian computation,3.3,3,3
+Bayesian statistics meets sports: a comprehensive review,https://www.degruyter.com/view/j/jqas.2019.15.issue-4/jqas-2018-0106/jqas-2018-0106.xml?format=INT,h3,Summary of methods and applications,3.4,3,4
+Bayesian statistics meets sports: a comprehensive review,https://www.degruyter.com/view/j/jqas.2019.15.issue-4/jqas-2018-0106/jqas-2018-0106.xml?format=INT,h3,References,References,,
+nflWAR: a reproducible method for offensive player evaluation in football,https://www.degruyter.com/view/j/jqas.2019.15.issue-3/jqas-2018-0010/jqas-2018-0010.xml?format=INT,h2,Introduction,1,1,
+nflWAR: a reproducible method for offensive player evaluation in football,https://www.degruyter.com/view/j/jqas.2019.15.issue-3/jqas-2018-0010/jqas-2018-0010.xml?format=INT,h2,Evaluating plays with expected points and win probability,2,2,
+nflWAR: a reproducible method for offensive player evaluation in football,https://www.degruyter.com/view/j/jqas.2019.15.issue-3/jqas-2018-0010/jqas-2018-0010.xml?format=INT,h2,Evaluating players with nflWAR,3,3,
+nflWAR: a reproducible method for offensive player evaluation in football,https://www.degruyter.com/view/j/jqas.2019.15.issue-3/jqas-2018-0010/jqas-2018-0010.xml?format=INT,h2,Results,4,4,
+nflWAR: a reproducible method for offensive player evaluation in football,https://www.degruyter.com/view/j/jqas.2019.15.issue-3/jqas-2018-0010/jqas-2018-0010.xml?format=INT,h2,Discussion and extensions,5,5,
+nflWAR: a reproducible method for offensive player evaluation in football,https://www.degruyter.com/view/j/jqas.2019.15.issue-3/jqas-2018-0010/jqas-2018-0010.xml?format=INT,h2,Supplementary Material,Supplementary Material,,
+nflWAR: a reproducible method for offensive player evaluation in football,https://www.degruyter.com/view/j/jqas.2019.15.issue-3/jqas-2018-0010/jqas-2018-0010.xml?format=INT,h3,Previous work: evaluating plays,1.1,1,1
+nflWAR: a reproducible method for offensive player evaluation in football,https://www.degruyter.com/view/j/jqas.2019.15.issue-3/jqas-2018-0010/jqas-2018-0010.xml?format=INT,h3,Previous work: evaluating players,1.2,1,2
+nflWAR: a reproducible method for offensive player evaluation in football,https://www.degruyter.com/view/j/jqas.2019.15.issue-3/jqas-2018-0010/jqas-2018-0010.xml?format=INT,h3,Our framework for evaluating NFL plays and players,1.3,1,3
+nflWAR: a reproducible method for offensive player evaluation in football,https://www.degruyter.com/view/j/jqas.2019.15.issue-3/jqas-2018-0010/jqas-2018-0010.xml?format=INT,h3,Play-by-play data with nflscrapR,1.4,1,4
+nflWAR: a reproducible method for offensive player evaluation in football,https://www.degruyter.com/view/j/jqas.2019.15.issue-3/jqas-2018-0010/jqas-2018-0010.xml?format=INT,h3,Expected points,2.1,2,1
+nflWAR: a reproducible method for offensive player evaluation in football,https://www.degruyter.com/view/j/jqas.2019.15.issue-3/jqas-2018-0010/jqas-2018-0010.xml?format=INT,h3,Win probability,2.2,2,2
+nflWAR: a reproducible method for offensive player evaluation in football,https://www.degruyter.com/view/j/jqas.2019.15.issue-3/jqas-2018-0010/jqas-2018-0010.xml?format=INT,h3,Expected points added and win probability added,2.3,2,3
+nflWAR: a reproducible method for offensive player evaluation in football,https://www.degruyter.com/view/j/jqas.2019.15.issue-3/jqas-2018-0010/jqas-2018-0010.xml?format=INT,h3,Division of credit,3.1,3,1
+nflWAR: a reproducible method for offensive player evaluation in football,https://www.degruyter.com/view/j/jqas.2019.15.issue-3/jqas-2018-0010/jqas-2018-0010.xml?format=INT,h3,Comparing to replacement Level,3.2,3,2
+nflWAR: a reproducible method for offensive player evaluation in football,https://www.degruyter.com/view/j/jqas.2019.15.issue-3/jqas-2018-0010/jqas-2018-0010.xml?format=INT,h3,Conversion to wins,3.3,3,3
+nflWAR: a reproducible method for offensive player evaluation in football,https://www.degruyter.com/view/j/jqas.2019.15.issue-3/jqas-2018-0010/jqas-2018-0010.xml?format=INT,h3,Uncertainty,3.4,3,4
+nflWAR: a reproducible method for offensive player evaluation in football,https://www.degruyter.com/view/j/jqas.2019.15.issue-3/jqas-2018-0010/jqas-2018-0010.xml?format=INT,h3,Reproducible play and player evaluation,5.1,5,1
+nflWAR: a reproducible method for offensive player evaluation in football,https://www.degruyter.com/view/j/jqas.2019.15.issue-3/jqas-2018-0010/jqas-2018-0010.xml?format=INT,h3,Extensions relevant to NFL teams,5.2,5,2
+nflWAR: a reproducible method for offensive player evaluation in football,https://www.degruyter.com/view/j/jqas.2019.15.issue-3/jqas-2018-0010/jqas-2018-0010.xml?format=INT,h3,References,References,,
+Rao-Blackwellizing field goal percentage,https://www.degruyter.com/view/j/jqas.2019.15.issue-2/jqas-2018-0064/jqas-2018-0064.xml?format=INT,h2,Introduction,1,1,
+Rao-Blackwellizing field goal percentage,https://www.degruyter.com/view/j/jqas.2019.15.issue-2/jqas-2018-0064/jqas-2018-0064.xml?format=INT,h2,The Rao-Blackwellized estimator,2,2,
+Rao-Blackwellizing field goal percentage,https://www.degruyter.com/view/j/jqas.2019.15.issue-2/jqas-2018-0064/jqas-2018-0064.xml?format=INT,h2,Estimating shot-make probabilities,3,3,
+Rao-Blackwellizing field goal percentage,https://www.degruyter.com/view/j/jqas.2019.15.issue-2/jqas-2018-0064/jqas-2018-0064.xml?format=INT,h2,Applications of the RB-FG% estimator,4,4,
+Rao-Blackwellizing field goal percentage,https://www.degruyter.com/view/j/jqas.2019.15.issue-2/jqas-2018-0064/jqas-2018-0064.xml?format=INT,h2,Discussion and conclusion,5,5,
+Rao-Blackwellizing field goal percentage,https://www.degruyter.com/view/j/jqas.2019.15.issue-2/jqas-2018-0064/jqas-2018-0064.xml?format=INT,h3,Measuring shot factors,3.1,3,1
+Rao-Blackwellizing field goal percentage,https://www.degruyter.com/view/j/jqas.2019.15.issue-2/jqas-2018-0064/jqas-2018-0064.xml?format=INT,h3,Modeling shot-make probabilities,3.2,3,2
+Rao-Blackwellizing field goal percentage,https://www.degruyter.com/view/j/jqas.2019.15.issue-2/jqas-2018-0064/jqas-2018-0064.xml?format=INT,h3,Predicting three-point field goal percentage,4.1,4,1
+Rao-Blackwellizing field goal percentage,https://www.degruyter.com/view/j/jqas.2019.15.issue-2/jqas-2018-0064/jqas-2018-0064.xml?format=INT,h3,Predicting true shooting percentage,4.2,4,2
+Rao-Blackwellizing field goal percentage,https://www.degruyter.com/view/j/jqas.2019.15.issue-2/jqas-2018-0064/jqas-2018-0064.xml?format=INT,h3,Example of an improvement in inferring player FG%,4.3,4,3
+Rao-Blackwellizing field goal percentage,https://www.degruyter.com/view/j/jqas.2019.15.issue-2/jqas-2018-0064/jqas-2018-0064.xml?format=INT,h3,References,References,,
+The Advantage of Lefties in One-on-One Sports,https://www.degruyter.com/view/j/jqas.2019.15.issue-1/jqas-2017-0076/jqas-2017-0076.xml?format=INT,h2,Introduction and related literature,1,1,
+The Advantage of Lefties in One-on-One Sports,https://www.degruyter.com/view/j/jqas.2019.15.issue-1/jqas-2017-0076/jqas-2017-0076.xml?format=INT,h2,The latent skill and handedness model,2,2,
+The Advantage of Lefties in One-on-One Sports,https://www.degruyter.com/view/j/jqas.2019.15.issue-1/jqas-2017-0076/jqas-2017-0076.xml?format=INT,h2,Including match-play and handedness data,3,3,
+The Advantage of Lefties in One-on-One Sports,https://www.degruyter.com/view/j/jqas.2019.15.issue-1/jqas-2017-0076/jqas-2017-0076.xml?format=INT,h2,Using external rankings and handedness data,4,4,
+The Advantage of Lefties in One-on-One Sports,https://www.degruyter.com/view/j/jqas.2019.15.issue-1/jqas-2017-0076/jqas-2017-0076.xml?format=INT,h2,Numerical results,5,5,
+The Advantage of Lefties in One-on-One Sports,https://www.degruyter.com/view/j/jqas.2019.15.issue-1/jqas-2017-0076/jqas-2017-0076.xml?format=INT,h2,A dynamic model for L,6,6,
+The Advantage of Lefties in One-on-One Sports,https://www.degruyter.com/view/j/jqas.2019.15.issue-1/jqas-2017-0076/jqas-2017-0076.xml?format=INT,h2,Conclusions and further research,7,7,
+The Advantage of Lefties in One-on-One Sports,https://www.degruyter.com/view/j/jqas.2019.15.issue-1/jqas-2017-0076/jqas-2017-0076.xml?format=INT,h3,Causes and extent of the lefty advantage,1.1,1,1
+The Advantage of Lefties in One-on-One Sports,https://www.degruyter.com/view/j/jqas.2019.15.issue-1/jqas-2017-0076/jqas-2017-0076.xml?format=INT,h3,Latent ability and competition models,1.2,1,2
+The Advantage of Lefties in One-on-One Sports,https://www.degruyter.com/view/j/jqas.2019.15.issue-1/jqas-2017-0076/jqas-2017-0076.xml?format=INT,h3,Contributions of this work,1.3,1,3
+The Advantage of Lefties in One-on-One Sports,https://www.degruyter.com/view/j/jqas.2019.15.issue-1/jqas-2017-0076/jqas-2017-0076.xml?format=INT,h3,Medium-tailed priors for the innate skill distribution,2.1,2,1
+The Advantage of Lefties in One-on-One Sports,https://www.degruyter.com/view/j/jqas.2019.15.issue-1/jqas-2017-0076/jqas-2017-0076.xml?format=INT,h3,Proposition 1,Proposition 1,,
+The Advantage of Lefties in One-on-One Sports,https://www.degruyter.com/view/j/jqas.2019.15.issue-1/jqas-2017-0076/jqas-2017-0076.xml?format=INT,h3,Proof,Proof,,
+The Advantage of Lefties in One-on-One Sports,https://www.degruyter.com/view/j/jqas.2019.15.issue-1/jqas-2017-0076/jqas-2017-0076.xml?format=INT,h3,Large N inference using only aggregate handedness data,2.2,2,2
+The Advantage of Lefties in One-on-One Sports,https://www.degruyter.com/view/j/jqas.2019.15.issue-1/jqas-2017-0076/jqas-2017-0076.xml?format=INT,h3,Interpreting the posterior of L,2.3,2,3
+The Advantage of Lefties in One-on-One Sports,https://www.degruyter.com/view/j/jqas.2019.15.issue-1/jqas-2017-0076/jqas-2017-0076.xml?format=INT,h3,The posterior distribution,3.1,3,1
+The Advantage of Lefties in One-on-One Sports,https://www.degruyter.com/view/j/jqas.2019.15.issue-1/jqas-2017-0076/jqas-2017-0076.xml?format=INT,h3,Inference via MCMC,3.2,3,2
+The Advantage of Lefties in One-on-One Sports,https://www.degruyter.com/view/j/jqas.2019.15.issue-1/jqas-2017-0076/jqas-2017-0076.xml?format=INT,h3,Posterior distribution of L,5.1,5,1
+The Advantage of Lefties in One-on-One Sports,https://www.degruyter.com/view/j/jqas.2019.15.issue-1/jqas-2017-0076/jqas-2017-0076.xml?format=INT,h3,"On the importance of conditioning on Topn,N",5.2,5,2
+The Advantage of Lefties in One-on-One Sports,https://www.degruyter.com/view/j/jqas.2019.15.issue-1/jqas-2017-0076/jqas-2017-0076.xml?format=INT,h3,Posterior of skills with and without the advantage of left-handedness,5.3,5,3
+The Advantage of Lefties in One-on-One Sports,https://www.degruyter.com/view/j/jqas.2019.15.issue-1/jqas-2017-0076/jqas-2017-0076.xml?format=INT,h3,A.1 Proof of proposition 1,A.1 Proof of proposition 1,,
+The Advantage of Lefties in One-on-One Sports,https://www.degruyter.com/view/j/jqas.2019.15.issue-1/jqas-2017-0076/jqas-2017-0076.xml?format=INT,h3,Proof,Proof,,
+The Advantage of Lefties in One-on-One Sports,https://www.degruyter.com/view/j/jqas.2019.15.issue-1/jqas-2017-0076/jqas-2017-0076.xml?format=INT,h3,A.2 Rate of convergence for probability of left-handed top player given normal innate skills,A.2 Rate of convergence for probability of left-handed top player given normal innate skills,,
+The Advantage of Lefties in One-on-One Sports,https://www.degruyter.com/view/j/jqas.2019.15.issue-1/jqas-2017-0076/jqas-2017-0076.xml?format=INT,h3,Proposition 2,Proposition 2,,
+The Advantage of Lefties in One-on-One Sports,https://www.degruyter.com/view/j/jqas.2019.15.issue-1/jqas-2017-0076/jqas-2017-0076.xml?format=INT,h3,Proof,Proof,,
+The Advantage of Lefties in One-on-One Sports,https://www.degruyter.com/view/j/jqas.2019.15.issue-1/jqas-2017-0076/jqas-2017-0076.xml?format=INT,h3,Lemma 1,Lemma 1,,
+The Advantage of Lefties in One-on-One Sports,https://www.degruyter.com/view/j/jqas.2019.15.issue-1/jqas-2017-0076/jqas-2017-0076.xml?format=INT,h3,Proof,Proof,,
+The Advantage of Lefties in One-on-One Sports,https://www.degruyter.com/view/j/jqas.2019.15.issue-1/jqas-2017-0076/jqas-2017-0076.xml?format=INT,h3,Lemma 2,Lemma 2,,
+The Advantage of Lefties in One-on-One Sports,https://www.degruyter.com/view/j/jqas.2019.15.issue-1/jqas-2017-0076/jqas-2017-0076.xml?format=INT,h3,Proof,Proof,,
+The Advantage of Lefties in One-on-One Sports,https://www.degruyter.com/view/j/jqas.2019.15.issue-1/jqas-2017-0076/jqas-2017-0076.xml?format=INT,h3,Lemma 3,Lemma 3,,
+The Advantage of Lefties in One-on-One Sports,https://www.degruyter.com/view/j/jqas.2019.15.issue-1/jqas-2017-0076/jqas-2017-0076.xml?format=INT,h3,Proof,Proof,,
+The Advantage of Lefties in One-on-One Sports,https://www.degruyter.com/view/j/jqas.2019.15.issue-1/jqas-2017-0076/jqas-2017-0076.xml?format=INT,h3,A.3 Difference in skills at given quantiles with Laplace distributed innate skills,A.3 Difference in skills at given quantiles with Laplace distributed innate skills,,
+The Advantage of Lefties in One-on-One Sports,https://www.degruyter.com/view/j/jqas.2019.15.issue-1/jqas-2017-0076/jqas-2017-0076.xml?format=INT,h3,Proposition 3,Proposition 3,,
+The Advantage of Lefties in One-on-One Sports,https://www.degruyter.com/view/j/jqas.2019.15.issue-1/jqas-2017-0076/jqas-2017-0076.xml?format=INT,h3,Proof,Proof,,
+The Advantage of Lefties in One-on-One Sports,https://www.degruyter.com/view/j/jqas.2019.15.issue-1/jqas-2017-0076/jqas-2017-0076.xml?format=INT,h3,A.4 Estimating the Kalman filtering smoothing parameter,A.4 Estimating the Kalman filtering smoothing parameter,,
+The Advantage of Lefties in One-on-One Sports,https://www.degruyter.com/view/j/jqas.2019.15.issue-1/jqas-2017-0076/jqas-2017-0076.xml?format=INT,h3,References,References,,
+New Metrics for Evaluating Home Plate Umpire Consistency and Accuracy,https://www.degruyter.com/view/j/jqas.2018.14.issue-4/jqas-2018-0061/jqas-2018-0061.xml?format=INT,h2,Introduction,1,1,
+New Metrics for Evaluating Home Plate Umpire Consistency and Accuracy,https://www.degruyter.com/view/j/jqas.2018.14.issue-4/jqas-2018-0061/jqas-2018-0061.xml?format=INT,h2,Inconsistency,2,2,
+New Metrics for Evaluating Home Plate Umpire Consistency and Accuracy,https://www.degruyter.com/view/j/jqas.2018.14.issue-4/jqas-2018-0061/jqas-2018-0061.xml?format=INT,h2,Zone accuracy,3,3,
+New Metrics for Evaluating Home Plate Umpire Consistency and Accuracy,https://www.degruyter.com/view/j/jqas.2018.14.issue-4/jqas-2018-0061/jqas-2018-0061.xml?format=INT,h2,Alternative umpire evaluations,4,4,
+New Metrics for Evaluating Home Plate Umpire Consistency and Accuracy,https://www.degruyter.com/view/j/jqas.2018.14.issue-4/jqas-2018-0061/jqas-2018-0061.xml?format=INT,h2,Conclusions and discussion,5,5,
+New Metrics for Evaluating Home Plate Umpire Consistency and Accuracy,https://www.degruyter.com/view/j/jqas.2018.14.issue-4/jqas-2018-0061/jqas-2018-0061.xml?format=INT,h3,Rectangular metrics,2.1,2,1
+New Metrics for Evaluating Home Plate Umpire Consistency and Accuracy,https://www.degruyter.com/view/j/jqas.2018.14.issue-4/jqas-2018-0061/jqas-2018-0061.xml?format=INT,h3,Convex hull metrics,2.2,2,2
+New Metrics for Evaluating Home Plate Umpire Consistency and Accuracy,https://www.degruyter.com/view/j/jqas.2018.14.issue-4/jqas-2018-0061/jqas-2018-0061.xml?format=INT,h3,Statistical properties of the inconsistency metrics,2.3,2,3
+New Metrics for Evaluating Home Plate Umpire Consistency and Accuracy,https://www.degruyter.com/view/j/jqas.2018.14.issue-4/jqas-2018-0061/jqas-2018-0061.xml?format=INT,h3,Kernel density estimation,3.1,3,1
+New Metrics for Evaluating Home Plate Umpire Consistency and Accuracy,https://www.degruyter.com/view/j/jqas.2018.14.issue-4/jqas-2018-0061/jqas-2018-0061.xml?format=INT,h3,Contour-based zone accuracy and size,3.2,3,2
+New Metrics for Evaluating Home Plate Umpire Consistency and Accuracy,https://www.degruyter.com/view/j/jqas.2018.14.issue-4/jqas-2018-0061/jqas-2018-0061.xml?format=INT,h3,Correlation and outliers,4.1,4,1
+New Metrics for Evaluating Home Plate Umpire Consistency and Accuracy,https://www.degruyter.com/view/j/jqas.2018.14.issue-4/jqas-2018-0061/jqas-2018-0061.xml?format=INT,h3,Principal component analysis,4.2,4,2
+New Metrics for Evaluating Home Plate Umpire Consistency and Accuracy,https://www.degruyter.com/view/j/jqas.2018.14.issue-4/jqas-2018-0061/jqas-2018-0061.xml?format=INT,h3,References,References,,
+"A Network Diffusion Ranking Family that includes the Methods of Markov, Massey and Colley",https://www.degruyter.com/view/j/jqas.2018.14.issue-3/jqas-2017-0098/jqas-2017-0098.xml?format=INT,h2,Introduction,1,1,
+"A Network Diffusion Ranking Family that includes the Methods of Markov, Massey and Colley",https://www.degruyter.com/view/j/jqas.2018.14.issue-3/jqas-2017-0098/jqas-2017-0098.xml?format=INT,h2,Ranking methods,2,2,
+"A Network Diffusion Ranking Family that includes the Methods of Markov, Massey and Colley",https://www.degruyter.com/view/j/jqas.2018.14.issue-3/jqas-2017-0098/jqas-2017-0098.xml?format=INT,h2,Diffusion,3,3,
+"A Network Diffusion Ranking Family that includes the Methods of Markov, Massey and Colley",https://www.degruyter.com/view/j/jqas.2018.14.issue-3/jqas-2017-0098/jqas-2017-0098.xml?format=INT,h2,Connections,4,4,
+"A Network Diffusion Ranking Family that includes the Methods of Markov, Massey and Colley",https://www.degruyter.com/view/j/jqas.2018.14.issue-3/jqas-2017-0098/jqas-2017-0098.xml?format=INT,h2,Examples,5,5,
+"A Network Diffusion Ranking Family that includes the Methods of Markov, Massey and Colley",https://www.degruyter.com/view/j/jqas.2018.14.issue-3/jqas-2017-0098/jqas-2017-0098.xml?format=INT,h2,Effect of virtual games,6,6,
+"A Network Diffusion Ranking Family that includes the Methods of Markov, Massey and Colley",https://www.degruyter.com/view/j/jqas.2018.14.issue-3/jqas-2017-0098/jqas-2017-0098.xml?format=INT,h2,Validation,7,7,
+"A Network Diffusion Ranking Family that includes the Methods of Markov, Massey and Colley",https://www.degruyter.com/view/j/jqas.2018.14.issue-3/jqas-2017-0098/jqas-2017-0098.xml?format=INT,h2,Conclusion,8,8,
+"A Network Diffusion Ranking Family that includes the Methods of Markov, Massey and Colley",https://www.degruyter.com/view/j/jqas.2018.14.issue-3/jqas-2017-0098/jqas-2017-0098.xml?format=INT,h3,Massey,2.1,2,1
+"A Network Diffusion Ranking Family that includes the Methods of Markov, Massey and Colley",https://www.degruyter.com/view/j/jqas.2018.14.issue-3/jqas-2017-0098/jqas-2017-0098.xml?format=INT,h3,Colley,2.2,2,2
+"A Network Diffusion Ranking Family that includes the Methods of Markov, Massey and Colley",https://www.degruyter.com/view/j/jqas.2018.14.issue-3/jqas-2017-0098/jqas-2017-0098.xml?format=INT,h3,Markov,2.3,2,3
+"A Network Diffusion Ranking Family that includes the Methods of Markov, Massey and Colley",https://www.degruyter.com/view/j/jqas.2018.14.issue-3/jqas-2017-0098/jqas-2017-0098.xml?format=INT,h3,Graph diffusion I,3.1,3,1
+"A Network Diffusion Ranking Family that includes the Methods of Markov, Massey and Colley",https://www.degruyter.com/view/j/jqas.2018.14.issue-3/jqas-2017-0098/jqas-2017-0098.xml?format=INT,h3,Graph diffusion II and the Markov ranking,3.2,3,2
+"A Network Diffusion Ranking Family that includes the Methods of Markov, Massey and Colley",https://www.degruyter.com/view/j/jqas.2018.14.issue-3/jqas-2017-0098/jqas-2017-0098.xml?format=INT,h3,A one parameter ranking family,3.3,3,3
+"A Network Diffusion Ranking Family that includes the Methods of Markov, Massey and Colley",https://www.degruyter.com/view/j/jqas.2018.14.issue-3/jqas-2017-0098/jqas-2017-0098.xml?format=INT,h3,References,References,,
+A hierarchical Bayesian model of pitch framing,https://www.degruyter.com/view/j/jqas.2017.13.issue-3/jqas-2017-0027/jqas-2017-0027.xml?format=INT,h2,Introduction,1,1,
+A hierarchical Bayesian model of pitch framing,https://www.degruyter.com/view/j/jqas.2017.13.issue-3/jqas-2017-0027/jqas-2017-0027.xml?format=INT,h2,Data and model,2,2,
+A hierarchical Bayesian model of pitch framing,https://www.degruyter.com/view/j/jqas.2017.13.issue-3/jqas-2017-0027/jqas-2017-0027.xml?format=INT,h2,Model performance and comparison,3,3,
+A hierarchical Bayesian model of pitch framing,https://www.degruyter.com/view/j/jqas.2017.13.issue-3/jqas-2017-0027/jqas-2017-0027.xml?format=INT,h2,Impact of framing,4,4,
+A hierarchical Bayesian model of pitch framing,https://www.degruyter.com/view/j/jqas.2017.13.issue-3/jqas-2017-0027/jqas-2017-0027.xml?format=INT,h2,Discussion,5,5,
+A hierarchical Bayesian model of pitch framing,https://www.degruyter.com/view/j/jqas.2017.13.issue-3/jqas-2017-0027/jqas-2017-0027.xml?format=INT,h2,Appendix,Appendix,,
+A hierarchical Bayesian model of pitch framing,https://www.degruyter.com/view/j/jqas.2017.13.issue-3/jqas-2017-0027/jqas-2017-0027.xml?format=INT,h3,PITCHf/x data,2.1,2,1
+A hierarchical Bayesian model of pitch framing,https://www.degruyter.com/view/j/jqas.2017.13.issue-3/jqas-2017-0027/jqas-2017-0027.xml?format=INT,h3,Adjusting for pitch location,2.2,2,2
+A hierarchical Bayesian model of pitch framing,https://www.degruyter.com/view/j/jqas.2017.13.issue-3/jqas-2017-0027/jqas-2017-0027.xml?format=INT,h3,Bayesian logistic regression models,2.3,2,3
+A hierarchical Bayesian model of pitch framing,https://www.degruyter.com/view/j/jqas.2017.13.issue-3/jqas-2017-0027/jqas-2017-0027.xml?format=INT,h3,Predictive performance,3.1,3,1
+A hierarchical Bayesian model of pitch framing,https://www.degruyter.com/view/j/jqas.2017.13.issue-3/jqas-2017-0027/jqas-2017-0027.xml?format=INT,h3,Full posterior analysis,3.2,3,2
+A hierarchical Bayesian model of pitch framing,https://www.degruyter.com/view/j/jqas.2017.13.issue-3/jqas-2017-0027/jqas-2017-0027.xml?format=INT,h3,Catcher aggregate framing effect,4.1,4,1
+A hierarchical Bayesian model of pitch framing,https://www.degruyter.com/view/j/jqas.2017.13.issue-3/jqas-2017-0027/jqas-2017-0027.xml?format=INT,h3,Year-to-year reliability of CAFE,4.2,4,2
+A hierarchical Bayesian model of pitch framing,https://www.degruyter.com/view/j/jqas.2017.13.issue-3/jqas-2017-0027/jqas-2017-0027.xml?format=INT,h3,Extensions,5.1,5,1
+A hierarchical Bayesian model of pitch framing,https://www.degruyter.com/view/j/jqas.2017.13.issue-3/jqas-2017-0027/jqas-2017-0027.xml?format=INT,h3,B Model comparison with cross-validation,B Model comparison with cross-validation,,
+A hierarchical Bayesian model of pitch framing,https://www.degruyter.com/view/j/jqas.2017.13.issue-3/jqas-2017-0027/jqas-2017-0027.xml?format=INT,h3,C Catcher and count effects,C Catcher and count effects,,
+A hierarchical Bayesian model of pitch framing,https://www.degruyter.com/view/j/jqas.2017.13.issue-3/jqas-2017-0027/jqas-2017-0027.xml?format=INT,h3,References,References,,
+Identifying NCAA tournament upsets using Balance Optimization Subset Selection,https://www.degruyter.com/view/j/jqas.2017.13.issue-2/jqas-2016-0062/jqas-2016-0062.xml?format=INT,h2,Introduction,1,1,
+Identifying NCAA tournament upsets using Balance Optimization Subset Selection,https://www.degruyter.com/view/j/jqas.2017.13.issue-2/jqas-2016-0062/jqas-2016-0062.xml?format=INT,h2,Background,2,2,
+Identifying NCAA tournament upsets using Balance Optimization Subset Selection,https://www.degruyter.com/view/j/jqas.2017.13.issue-2/jqas-2016-0062/jqas-2016-0062.xml?format=INT,h2,Methodology,3,3,
+Identifying NCAA tournament upsets using Balance Optimization Subset Selection,https://www.degruyter.com/view/j/jqas.2017.13.issue-2/jqas-2016-0062/jqas-2016-0062.xml?format=INT,h2,Results,4,4,
+Identifying NCAA tournament upsets using Balance Optimization Subset Selection,https://www.degruyter.com/view/j/jqas.2017.13.issue-2/jqas-2016-0062/jqas-2016-0062.xml?format=INT,h2,Proposition 1,Proposition 1,,
+Identifying NCAA tournament upsets using Balance Optimization Subset Selection,https://www.degruyter.com/view/j/jqas.2017.13.issue-2/jqas-2016-0062/jqas-2016-0062.xml?format=INT,h2,Proof,Proof,,
+Identifying NCAA tournament upsets using Balance Optimization Subset Selection,https://www.degruyter.com/view/j/jqas.2017.13.issue-2/jqas-2016-0062/jqas-2016-0062.xml?format=INT,h2,Conclusions,5,5,
+Identifying NCAA tournament upsets using Balance Optimization Subset Selection,https://www.degruyter.com/view/j/jqas.2017.13.issue-2/jqas-2016-0062/jqas-2016-0062.xml?format=INT,h2,A.1 Definitions of statistics used,A.1 Definitions of statistics used,,
+Identifying NCAA tournament upsets using Balance Optimization Subset Selection,https://www.degruyter.com/view/j/jqas.2017.13.issue-2/jqas-2016-0062/jqas-2016-0062.xml?format=INT,h2,A.2 MIP formulation,A.2 MIP formulation,,
+Identifying NCAA tournament upsets using Balance Optimization Subset Selection,https://www.degruyter.com/view/j/jqas.2017.13.issue-2/jqas-2016-0062/jqas-2016-0062.xml?format=INT,h3,Rating systems,2.1,2,1
+Identifying NCAA tournament upsets using Balance Optimization Subset Selection,https://www.degruyter.com/view/j/jqas.2017.13.issue-2/jqas-2016-0062/jqas-2016-0062.xml?format=INT,h3,Match-up analysis,2.2,2,2
+Identifying NCAA tournament upsets using Balance Optimization Subset Selection,https://www.degruyter.com/view/j/jqas.2017.13.issue-2/jqas-2016-0062/jqas-2016-0062.xml?format=INT,h3,Computing match-up statistics,3.1,3,1
+Identifying NCAA tournament upsets using Balance Optimization Subset Selection,https://www.degruyter.com/view/j/jqas.2017.13.issue-2/jqas-2016-0062/jqas-2016-0062.xml?format=INT,h3,Identifying useful match-up statistics,3.2,3,2
+Identifying NCAA tournament upsets using Balance Optimization Subset Selection,https://www.degruyter.com/view/j/jqas.2017.13.issue-2/jqas-2016-0062/jqas-2016-0062.xml?format=INT,h3,Finding similar games,3.3,3,3
+Identifying NCAA tournament upsets using Balance Optimization Subset Selection,https://www.degruyter.com/view/j/jqas.2017.13.issue-2/jqas-2016-0062/jqas-2016-0062.xml?format=INT,h3,Combining models,3.4,3,4
+Identifying NCAA tournament upsets using Balance Optimization Subset Selection,https://www.degruyter.com/view/j/jqas.2017.13.issue-2/jqas-2016-0062/jqas-2016-0062.xml?format=INT,h3,References,References,,
+An examination of statistical disclosure issues related to publication of aggregate statistics in the presence of a known subset of the dataset using Baseball Hall of Fame ballots,https://www.degruyter.com/view/j/jqas.2017.13.issue-1/jqas-2016-0085/jqas-2016-0085.xml?format=INT&rskey=9vjiAy&result=1,h2,Introduction,1,1,
+An examination of statistical disclosure issues related to publication of aggregate statistics in the presence of a known subset of the dataset using Baseball Hall of Fame ballots,https://www.degruyter.com/view/j/jqas.2017.13.issue-1/jqas-2016-0085/jqas-2016-0085.xml?format=INT&rskey=9vjiAy&result=1,h2,Data and methods,2,2,
+An examination of statistical disclosure issues related to publication of aggregate statistics in the presence of a known subset of the dataset using Baseball Hall of Fame ballots,https://www.degruyter.com/view/j/jqas.2017.13.issue-1/jqas-2016-0085/jqas-2016-0085.xml?format=INT&rskey=9vjiAy&result=1,h2,Univariate disclosure results,3,3,
+An examination of statistical disclosure issues related to publication of aggregate statistics in the presence of a known subset of the dataset using Baseball Hall of Fame ballots,https://www.degruyter.com/view/j/jqas.2017.13.issue-1/jqas-2016-0085/jqas-2016-0085.xml?format=INT&rskey=9vjiAy&result=1,h2,Multivariate results,4,4,
+An examination of statistical disclosure issues related to publication of aggregate statistics in the presence of a known subset of the dataset using Baseball Hall of Fame ballots,https://www.degruyter.com/view/j/jqas.2017.13.issue-1/jqas-2016-0085/jqas-2016-0085.xml?format=INT&rskey=9vjiAy&result=1,h2,Discussion,5,5,
+An examination of statistical disclosure issues related to publication of aggregate statistics in the presence of a known subset of the dataset using Baseball Hall of Fame ballots,https://www.degruyter.com/view/j/jqas.2017.13.issue-1/jqas-2016-0085/jqas-2016-0085.xml?format=INT&rskey=9vjiAy&result=1,h3,Baseball Hall of Fame voting details,1.1,1,1
+An examination of statistical disclosure issues related to publication of aggregate statistics in the presence of a known subset of the dataset using Baseball Hall of Fame ballots,https://www.degruyter.com/view/j/jqas.2017.13.issue-1/jqas-2016-0085/jqas-2016-0085.xml?format=INT&rskey=9vjiAy&result=1,h3,Imputation,4.1,4,1
+An examination of statistical disclosure issues related to publication of aggregate statistics in the presence of a known subset of the dataset using Baseball Hall of Fame ballots,https://www.degruyter.com/view/j/jqas.2017.13.issue-1/jqas-2016-0085/jqas-2016-0085.xml?format=INT&rskey=9vjiAy&result=1,h3,Latent class analysis,4.2,4,2
+An examination of statistical disclosure issues related to publication of aggregate statistics in the presence of a known subset of the dataset using Baseball Hall of Fame ballots,https://www.degruyter.com/view/j/jqas.2017.13.issue-1/jqas-2016-0085/jqas-2016-0085.xml?format=INT&rskey=9vjiAy&result=1,h3,Results,4.3,4,3
+An examination of statistical disclosure issues related to publication of aggregate statistics in the presence of a known subset of the dataset using Baseball Hall of Fame ballots,https://www.degruyter.com/view/j/jqas.2017.13.issue-1/jqas-2016-0085/jqas-2016-0085.xml?format=INT&rskey=9vjiAy&result=1,h3,From a privacy standpoint,5.1,5,1
+An examination of statistical disclosure issues related to publication of aggregate statistics in the presence of a known subset of the dataset using Baseball Hall of Fame ballots,https://www.degruyter.com/view/j/jqas.2017.13.issue-1/jqas-2016-0085/jqas-2016-0085.xml?format=INT&rskey=9vjiAy&result=1,h3,From a baseball standpoint,5.2,5,2
+An examination of statistical disclosure issues related to publication of aggregate statistics in the presence of a known subset of the dataset using Baseball Hall of Fame ballots,https://www.degruyter.com/view/j/jqas.2017.13.issue-1/jqas-2016-0085/jqas-2016-0085.xml?format=INT&rskey=9vjiAy&result=1,h3,References,References,,
+Meta-analytics: tools for understanding the statistical properties of sports metrics,https://www.degruyter.com/view/j/jqas.2016.12.issue-4/jqas-2016-0098/jqas-2016-0098.xml?format=INT,h2,Introduction,1,1,
+Meta-analytics: tools for understanding the statistical properties of sports metrics,https://www.degruyter.com/view/j/jqas.2016.12.issue-4/jqas-2016-0098/jqas-2016-0098.xml?format=INT,h2,Defining meta-metrics,2,2,
+Meta-analytics: tools for understanding the statistical properties of sports metrics,https://www.degruyter.com/view/j/jqas.2016.12.issue-4/jqas-2016-0098/jqas-2016-0098.xml?format=INT,h2,Inference,3,3,
+Meta-analytics: tools for understanding the statistical properties of sports metrics,https://www.degruyter.com/view/j/jqas.2016.12.issue-4/jqas-2016-0098/jqas-2016-0098.xml?format=INT,h2,Results,4,4,
+Meta-analytics: tools for understanding the statistical properties of sports metrics,https://www.degruyter.com/view/j/jqas.2016.12.issue-4/jqas-2016-0098/jqas-2016-0098.xml?format=INT,h2,Constructing novel metrics,5,5,
+Meta-analytics: tools for understanding the statistical properties of sports metrics,https://www.degruyter.com/view/j/jqas.2016.12.issue-4/jqas-2016-0098/jqas-2016-0098.xml?format=INT,h2,Discussion,6,6,
+Meta-analytics: tools for understanding the statistical properties of sports metrics,https://www.degruyter.com/view/j/jqas.2016.12.issue-4/jqas-2016-0098/jqas-2016-0098.xml?format=INT,h2,Appendix,Appendix,,
+Meta-analytics: tools for understanding the statistical properties of sports metrics,https://www.degruyter.com/view/j/jqas.2016.12.issue-4/jqas-2016-0098/jqas-2016-0098.xml?format=INT,h3,Discrimination,2.1,2,1
+Meta-analytics: tools for understanding the statistical properties of sports metrics,https://www.degruyter.com/view/j/jqas.2016.12.issue-4/jqas-2016-0098/jqas-2016-0098.xml?format=INT,h3,Stability,2.2,2,2
+Meta-analytics: tools for understanding the statistical properties of sports metrics,https://www.degruyter.com/view/j/jqas.2016.12.issue-4/jqas-2016-0098/jqas-2016-0098.xml?format=INT,h3,Independence,2.3,2,3
+Meta-analytics: tools for understanding the statistical properties of sports metrics,https://www.degruyter.com/view/j/jqas.2016.12.issue-4/jqas-2016-0098/jqas-2016-0098.xml?format=INT,h3,Analysis of NBA metrics,4.1,4,1
+Meta-analytics: tools for understanding the statistical properties of sports metrics,https://www.degruyter.com/view/j/jqas.2016.12.issue-4/jqas-2016-0098/jqas-2016-0098.xml?format=INT,h3,Analysis of NHL metrics,4.2,4,2
+Meta-analytics: tools for understanding the statistical properties of sports metrics,https://www.degruyter.com/view/j/jqas.2016.12.issue-4/jqas-2016-0098/jqas-2016-0098.xml?format=INT,h3,Shrinkage estimators,5.1,5,1
+Meta-analytics: tools for understanding the statistical properties of sports metrics,https://www.degruyter.com/view/j/jqas.2016.12.issue-4/jqas-2016-0098/jqas-2016-0098.xml?format=INT,h3,Principal component metrics,5.2,5,2
+Meta-analytics: tools for understanding the statistical properties of sports metrics,https://www.degruyter.com/view/j/jqas.2016.12.issue-4/jqas-2016-0098/jqas-2016-0098.xml?format=INT,h3,Proof of 0 ≤ Sm ≤ 1,Proof of 0 ≤ Sm ≤ 1,,
+Meta-analytics: tools for understanding the statistical properties of sports metrics,https://www.degruyter.com/view/j/jqas.2016.12.issue-4/jqas-2016-0098/jqas-2016-0098.xml?format=INT,h3,Glossary of metrics,Glossary of metrics,,
+Meta-analytics: tools for understanding the statistical properties of sports metrics,https://www.degruyter.com/view/j/jqas.2016.12.issue-4/jqas-2016-0098/jqas-2016-0098.xml?format=INT,h3,References,References,,
+Searching for the GOAT of tennis win prediction,http://dx.doi.org/10.1515/jqas-2015-0059,h2,Introduction,1,1,
+Searching for the GOAT of tennis win prediction,http://dx.doi.org/10.1515/jqas-2015-0059,h2,Review of tennis prediction models,2,2,
+Searching for the GOAT of tennis win prediction,http://dx.doi.org/10.1515/jqas-2015-0059,h2,Methods,3,3,
+Searching for the GOAT of tennis win prediction,http://dx.doi.org/10.1515/jqas-2015-0059,h2,Results,4,4,
+Searching for the GOAT of tennis win prediction,http://dx.doi.org/10.1515/jqas-2015-0059,h2,Discussion,5,5,
+Searching for the GOAT of tennis win prediction,http://dx.doi.org/10.1515/jqas-2015-0059,h2,Supplemental Material:,Supplemental Material:,,
+Searching for the GOAT of tennis win prediction,http://dx.doi.org/10.1515/jqas-2015-0059,h3,Notation,2.1,2,1
+Searching for the GOAT of tennis win prediction,http://dx.doi.org/10.1515/jqas-2015-0059,h3,Models,2.2,2,2
+Searching for the GOAT of tennis win prediction,http://dx.doi.org/10.1515/jqas-2015-0059,h3,Parameter estimation,3.1,3,1
+Searching for the GOAT of tennis win prediction,http://dx.doi.org/10.1515/jqas-2015-0059,h3,Validation data,3.2,3,2
+Searching for the GOAT of tennis win prediction,http://dx.doi.org/10.1515/jqas-2015-0059,h3,Performance,3.3,3,3
+Searching for the GOAT of tennis win prediction,http://dx.doi.org/10.1515/jqas-2015-0059,h3,References,References,,
+Estimating an NBA’s player’s impact on his team’s chances of winning,http://dx.doi.org/10.1515/jqas-2015-0027,h2,Introduction,1,1,
+Estimating an NBA’s player’s impact on his team’s chances of winning,http://dx.doi.org/10.1515/jqas-2015-0027,h2,"Data, models, and methods",2,2,
+Estimating an NBA’s player’s impact on his team’s chances of winning,http://dx.doi.org/10.1515/jqas-2015-0027,h2,Full posterior analysis,3,3,
+Estimating an NBA’s player’s impact on his team’s chances of winning,http://dx.doi.org/10.1515/jqas-2015-0027,h2,Impact ranking,4,4,
+Estimating an NBA’s player’s impact on his team’s chances of winning,http://dx.doi.org/10.1515/jqas-2015-0027,h2,Impact Score,5,5,
+Estimating an NBA’s player’s impact on his team’s chances of winning,http://dx.doi.org/10.1515/jqas-2015-0027,h2,Lineup comparison,6,6,
+Estimating an NBA’s player’s impact on his team’s chances of winning,http://dx.doi.org/10.1515/jqas-2015-0027,h2,Discussion,7,7,
+Estimating an NBA’s player’s impact on his team’s chances of winning,http://dx.doi.org/10.1515/jqas-2015-0027,h2,Appendix,Appendix,,
+Estimating an NBA’s player’s impact on his team’s chances of winning,http://dx.doi.org/10.1515/jqas-2015-0027,h3,Estimation of win probability,2.1,2,1
+Estimating an NBA’s player’s impact on his team’s chances of winning,http://dx.doi.org/10.1515/jqas-2015-0027,h3,Bayesian linear regression of player effects,2.2,2,2
+Estimating an NBA’s player’s impact on his team’s chances of winning,http://dx.doi.org/10.1515/jqas-2015-0027,h3,Comparing players,3.1,3,1
+Estimating an NBA’s player’s impact on his team’s chances of winning,http://dx.doi.org/10.1515/jqas-2015-0027,h3,Team effects,3.2,3,2
+Estimating an NBA’s player’s impact on his team’s chances of winning,http://dx.doi.org/10.1515/jqas-2015-0027,h3,Comparison of Impact Score to other metrics,5.1,5,1
+Estimating an NBA’s player’s impact on his team’s chances of winning,http://dx.doi.org/10.1515/jqas-2015-0027,h3,Year-to-year correlation of Impact Score,5.2,5,2
+Estimating an NBA’s player’s impact on his team’s chances of winning,http://dx.doi.org/10.1515/jqas-2015-0027,h3,Multi-season impact score,5.3,5,3
+Estimating an NBA’s player’s impact on his team’s chances of winning,http://dx.doi.org/10.1515/jqas-2015-0027,h3,References,References,,
+An analytical approach for fantasy football draft and lineup management,http://dx.doi.org/10.1515/jqas-2013-0009,h2,Introduction,1,1,
+An analytical approach for fantasy football draft and lineup management,http://dx.doi.org/10.1515/jqas-2013-0009,h2,Literature review,2,2,
+An analytical approach for fantasy football draft and lineup management,http://dx.doi.org/10.1515/jqas-2013-0009,h2,The dynamics of fantasy football,3,3,
+An analytical approach for fantasy football draft and lineup management,http://dx.doi.org/10.1515/jqas-2013-0009,h2,An integer optimization model for draft selection,4,4,
+An analytical approach for fantasy football draft and lineup management,http://dx.doi.org/10.1515/jqas-2013-0009,h2,"Estimating f(i, t) and β(t)",5,5,
+An analytical approach for fantasy football draft and lineup management,http://dx.doi.org/10.1515/jqas-2013-0009,h2,Model calibration and evaluation,6,6,
+An analytical approach for fantasy football draft and lineup management,http://dx.doi.org/10.1515/jqas-2013-0009,h2,Conclusion and possible extensions,7,7,
+An analytical approach for fantasy football draft and lineup management,http://dx.doi.org/10.1515/jqas-2013-0009,h3,Draft phase,3.1,3,1
+An analytical approach for fantasy football draft and lineup management,http://dx.doi.org/10.1515/jqas-2013-0009,h3,Weekly play phase,3.2,3,2
+An analytical approach for fantasy football draft and lineup management,http://dx.doi.org/10.1515/jqas-2013-0009,h3,Playoff phase,3.3,3,3
+An analytical approach for fantasy football draft and lineup management,http://dx.doi.org/10.1515/jqas-2013-0009,h3,Parameters and decision variables,4.1,4,1
+An analytical approach for fantasy football draft and lineup management,http://dx.doi.org/10.1515/jqas-2013-0009,h3,Modeling the drafting strategy of the opponent owners,4.2,4,2
+An analytical approach for fantasy football draft and lineup management,http://dx.doi.org/10.1515/jqas-2013-0009,h3,The draft selection model and algorithm,4.3,4,3
+An analytical approach for fantasy football draft and lineup management,http://dx.doi.org/10.1515/jqas-2013-0009,h3,Weekly play and playoff phases: greedy algorithm,4.4,4,4
+An analytical approach for fantasy football draft and lineup management,http://dx.doi.org/10.1515/jqas-2013-0009,h3,"An algorithm for estimating f̅ (i, t)",5.1,5,1
+An analytical approach for fantasy football draft and lineup management,http://dx.doi.org/10.1515/jqas-2013-0009,h3,Estimating β(t),5.2,5,2
+An analytical approach for fantasy football draft and lineup management,http://dx.doi.org/10.1515/jqas-2013-0009,h3,Data,6.1,6,1
+An analytical approach for fantasy football draft and lineup management,http://dx.doi.org/10.1515/jqas-2013-0009,h3,The simulation engine,6.2,6,2
+An analytical approach for fantasy football draft and lineup management,http://dx.doi.org/10.1515/jqas-2013-0009,h3,Model calibration,6.3,6,3
+An analytical approach for fantasy football draft and lineup management,http://dx.doi.org/10.1515/jqas-2013-0009,h3,Model evaluation,6.4,6,4
+An analytical approach for fantasy football draft and lineup management,http://dx.doi.org/10.1515/jqas-2013-0009,h3,Further discussions,6.5,6,5
+An analytical approach for fantasy football draft and lineup management,http://dx.doi.org/10.1515/jqas-2013-0009,h3,References,References,,
+A finite mixture latent trajectory model for modeling ultrarunners’ behavior in a 24-hour race,http://www.degruyter.com/view/j/jqas.2015.11.issue-4/jqas-2014-0060/jqas-2014-0060.xml,h2,Introduction,1,1,
+A finite mixture latent trajectory model for modeling ultrarunners’ behavior in a 24-hour race,http://www.degruyter.com/view/j/jqas.2015.11.issue-4/jqas-2014-0060/jqas-2014-0060.xml,h2,Preliminaries,2,2,
+A finite mixture latent trajectory model for modeling ultrarunners’ behavior in a 24-hour race,http://www.degruyter.com/view/j/jqas.2015.11.issue-4/jqas-2014-0060/jqas-2014-0060.xml,h2,The statistical model,3,3,
+A finite mixture latent trajectory model for modeling ultrarunners’ behavior in a 24-hour race,http://www.degruyter.com/view/j/jqas.2015.11.issue-4/jqas-2014-0060/jqas-2014-0060.xml,h2,Results,4,4,
+A finite mixture latent trajectory model for modeling ultrarunners’ behavior in a 24-hour race,http://www.degruyter.com/view/j/jqas.2015.11.issue-4/jqas-2014-0060/jqas-2014-0060.xml,h2,Discussion and conclusions,5,5,
+A finite mixture latent trajectory model for modeling ultrarunners’ behavior in a 24-hour race,http://www.degruyter.com/view/j/jqas.2015.11.issue-4/jqas-2014-0060/jqas-2014-0060.xml,h3,Background,2.1,2,1
+A finite mixture latent trajectory model for modeling ultrarunners’ behavior in a 24-hour race,http://www.degruyter.com/view/j/jqas.2015.11.issue-4/jqas-2014-0060/jqas-2014-0060.xml,h3,Data,2.2,2,2
+A finite mixture latent trajectory model for modeling ultrarunners’ behavior in a 24-hour race,http://www.degruyter.com/view/j/jqas.2015.11.issue-4/jqas-2014-0060/jqas-2014-0060.xml,h3,Model assumptions,3.1,3,1
+A finite mixture latent trajectory model for modeling ultrarunners’ behavior in a 24-hour race,http://www.degruyter.com/view/j/jqas.2015.11.issue-4/jqas-2014-0060/jqas-2014-0060.xml,h3,Maximum likelihood estimation,3.2,3,2
+A finite mixture latent trajectory model for modeling ultrarunners’ behavior in a 24-hour race,http://www.degruyter.com/view/j/jqas.2015.11.issue-4/jqas-2014-0060/jqas-2014-0060.xml,h3,Model selection,3.3,3,3
+A finite mixture latent trajectory model for modeling ultrarunners’ behavior in a 24-hour race,http://www.degruyter.com/view/j/jqas.2015.11.issue-4/jqas-2014-0060/jqas-2014-0060.xml,h3,References,References,,
+The implied volatility of a sports game,http://www.degruyter.com/view/j/jqas.2015.11.issue-3/jqas-2014-0095/jqas-2014-0095.xml,h2,Introduction,1,1,
+The implied volatility of a sports game,http://www.degruyter.com/view/j/jqas.2015.11.issue-3/jqas-2014-0095/jqas-2014-0095.xml,h2,The implied volatility of the outcome of a sports game,2,2,
+The implied volatility of a sports game,http://www.degruyter.com/view/j/jqas.2015.11.issue-3/jqas-2014-0095/jqas-2014-0095.xml,h2,Super Bowl XLVII: Baltimore Ravens vs. San Francisco 49ers,3,3,
+The implied volatility of a sports game,http://www.degruyter.com/view/j/jqas.2015.11.issue-3/jqas-2014-0095/jqas-2014-0095.xml,h2,Discussion,4,4,
+The implied volatility of a sports game,http://www.degruyter.com/view/j/jqas.2015.11.issue-3/jqas-2014-0095/jqas-2014-0095.xml,h3,A model for sports scores,2.1,2,1
+The implied volatility of a sports game,http://www.degruyter.com/view/j/jqas.2015.11.issue-3/jqas-2014-0095/jqas-2014-0095.xml,h3,Implied volatility,2.2,2,2
+The implied volatility of a sports game,http://www.degruyter.com/view/j/jqas.2015.11.issue-3/jqas-2014-0095/jqas-2014-0095.xml,h3,Time-varying implied volatility,2.3,2,3
+The implied volatility of a sports game,http://www.degruyter.com/view/j/jqas.2015.11.issue-3/jqas-2014-0095/jqas-2014-0095.xml,h3,Model extensions,2.4,2,4
+The implied volatility of a sports game,http://www.degruyter.com/view/j/jqas.2015.11.issue-3/jqas-2014-0095/jqas-2014-0095.xml,h3,References,References,,
+openWAR: An open source system for evaluating overall player performance in major league baseball,http://www.degruyter.com/view/j/jqas.2015.11.issue-2/jqas-2014-0098/jqas-2014-0098.xml?format=INT,h2,Introduction,1,1,
+openWAR: An open source system for evaluating overall player performance in major league baseball,http://www.degruyter.com/view/j/jqas.2015.11.issue-2/jqas-2014-0098/jqas-2014-0098.xml?format=INT,h2,Preliminaries: Expected runs,2,2,
+openWAR: An open source system for evaluating overall player performance in major league baseball,http://www.degruyter.com/view/j/jqas.2015.11.issue-2/jqas-2014-0098/jqas-2014-0098.xml?format=INT,h2,openWAR model,3,3,
+openWAR: An open source system for evaluating overall player performance in major league baseball,http://www.degruyter.com/view/j/jqas.2015.11.issue-2/jqas-2014-0098/jqas-2014-0098.xml?format=INT,h2,Sources of variability,4,4,
+openWAR: An open source system for evaluating overall player performance in major league baseball,http://www.degruyter.com/view/j/jqas.2015.11.issue-2/jqas-2014-0098/jqas-2014-0098.xml?format=INT,h2,Results,5,5,
+openWAR: An open source system for evaluating overall player performance in major league baseball,http://www.degruyter.com/view/j/jqas.2015.11.issue-2/jqas-2014-0098/jqas-2014-0098.xml?format=INT,h2,Comparison to previous WAR implementations,6,6,
+openWAR: An open source system for evaluating overall player performance in major league baseball,http://www.degruyter.com/view/j/jqas.2015.11.issue-2/jqas-2014-0098/jqas-2014-0098.xml?format=INT,h2,Summary and further discussion,7,7,
+openWAR: An open source system for evaluating overall player performance in major league baseball,http://www.degruyter.com/view/j/jqas.2015.11.issue-2/jqas-2014-0098/jqas-2014-0098.xml?format=INT,h2,Supplemental Material,Supplemental Material,,
+openWAR: An open source system for evaluating overall player performance in major league baseball,http://www.degruyter.com/view/j/jqas.2015.11.issue-2/jqas-2014-0098/jqas-2014-0098.xml?format=INT,h3,Problems with WAR,1.1,1,1
+openWAR: An open source system for evaluating overall player performance in major league baseball,http://www.degruyter.com/view/j/jqas.2015.11.issue-2/jqas-2014-0098/jqas-2014-0098.xml?format=INT,h3,Contributions of openWAR,1.2,1,2
+openWAR: An open source system for evaluating overall player performance in major league baseball,http://www.degruyter.com/view/j/jqas.2015.11.issue-2/jqas-2014-0098/jqas-2014-0098.xml?format=INT,h3,OpenWAR vs. previous WAR implementations,1.3,1,3
+openWAR: An open source system for evaluating overall player performance in major league baseball,http://www.degruyter.com/view/j/jqas.2015.11.issue-2/jqas-2014-0098/jqas-2014-0098.xml?format=INT,h3,Adjusting offensive run values,3.1,3,1
+openWAR: An open source system for evaluating overall player performance in major league baseball,http://www.degruyter.com/view/j/jqas.2015.11.issue-2/jqas-2014-0098/jqas-2014-0098.xml?format=INT,h3,Baserunner run values,3.2,3,2
+openWAR: An open source system for evaluating overall player performance in major league baseball,http://www.degruyter.com/view/j/jqas.2015.11.issue-2/jqas-2014-0098/jqas-2014-0098.xml?format=INT,h3,Hitter run values,3.3,3,3
+openWAR: An open source system for evaluating overall player performance in major league baseball,http://www.degruyter.com/view/j/jqas.2015.11.issue-2/jqas-2014-0098/jqas-2014-0098.xml?format=INT,h3,Apportioning defensive run values,3.4,3,4
+openWAR: An open source system for evaluating overall player performance in major league baseball,http://www.degruyter.com/view/j/jqas.2015.11.issue-2/jqas-2014-0098/jqas-2014-0098.xml?format=INT,h3,Fielding run values,3.5,3,5
+openWAR: An open source system for evaluating overall player performance in major league baseball,http://www.degruyter.com/view/j/jqas.2015.11.issue-2/jqas-2014-0098/jqas-2014-0098.xml?format=INT,h3,Pitching run values,3.6,3,6
+openWAR: An open source system for evaluating overall player performance in major league baseball,http://www.degruyter.com/view/j/jqas.2015.11.issue-2/jqas-2014-0098/jqas-2014-0098.xml?format=INT,h3,Tabulating runs above average,3.7,3,7
+openWAR: An open source system for evaluating overall player performance in major league baseball,http://www.degruyter.com/view/j/jqas.2015.11.issue-2/jqas-2014-0098/jqas-2014-0098.xml?format=INT,h3,Replacement level,3.8,3,8
+openWAR: An open source system for evaluating overall player performance in major league baseball,http://www.degruyter.com/view/j/jqas.2015.11.issue-2/jqas-2014-0098/jqas-2014-0098.xml?format=INT,h3,References,References,,
+A generative model for predicting outcomes in college basketball,http://www.degruyter.com/view/j/jqas.2015.11.issue-1/jqas-2014-0055/jqas-2014-0055.xml?format=INT,h2,Introduction,1,1,
+A generative model for predicting outcomes in college basketball,http://www.degruyter.com/view/j/jqas.2015.11.issue-1/jqas-2014-0055/jqas-2014-0055.xml?format=INT,h2,Model description,2,2,
+A generative model for predicting outcomes in college basketball,http://www.degruyter.com/view/j/jqas.2015.11.issue-1/jqas-2014-0055/jqas-2014-0055.xml?format=INT,h2,Inference,3,3,
+A generative model for predicting outcomes in college basketball,http://www.degruyter.com/view/j/jqas.2015.11.issue-1/jqas-2014-0055/jqas-2014-0055.xml?format=INT,h2,Experiments,4,4,
+A generative model for predicting outcomes in college basketball,http://www.degruyter.com/view/j/jqas.2015.11.issue-1/jqas-2014-0055/jqas-2014-0055.xml?format=INT,h2,Conclusions,5,5,
+A generative model for predicting outcomes in college basketball,http://www.degruyter.com/view/j/jqas.2015.11.issue-1/jqas-2014-0055/jqas-2014-0055.xml?format=INT,h2,Appendix A,Appendix A,,
+A generative model for predicting outcomes in college basketball,http://www.degruyter.com/view/j/jqas.2015.11.issue-1/jqas-2014-0055/jqas-2014-0055.xml?format=INT,h3,Experimental setup,4.1,4,1
+A generative model for predicting outcomes in college basketball,http://www.degruyter.com/view/j/jqas.2015.11.issue-1/jqas-2014-0055/jqas-2014-0055.xml?format=INT,h3,Results for 2014 tournament,4.2,4,2
+A generative model for predicting outcomes in college basketball,http://www.degruyter.com/view/j/jqas.2015.11.issue-1/jqas-2014-0055/jqas-2014-0055.xml?format=INT,h3,A Variational Update Equations,A Variational Update Equations,,
+A generative model for predicting outcomes in college basketball,http://www.degruyter.com/view/j/jqas.2015.11.issue-1/jqas-2014-0055/jqas-2014-0055.xml?format=INT,h3,B Results for 2011–2014 Tournaments,B Results for 2011–2014 Tournaments,,
+A generative model for predicting outcomes in college basketball,http://www.degruyter.com/view/j/jqas.2015.11.issue-1/jqas-2014-0055/jqas-2014-0055.xml?format=INT,h3,C List of 2014 Tournament Games,C List of 2014 Tournament Games,,
+A generative model for predicting outcomes in college basketball,http://www.degruyter.com/view/j/jqas.2015.11.issue-1/jqas-2014-0055/jqas-2014-0055.xml?format=INT,h3,References,References,,
