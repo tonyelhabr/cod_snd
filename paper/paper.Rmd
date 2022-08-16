@@ -218,11 +218,13 @@ Momentum, one of most discussed topics in sports analytics, goes hand-in-hand wi
 
 [^8]: We often use use "streaks" and momentum interchangeably, but as [@steeger2021] note, momentum implies dependence between events, whereas streaking does not.
 
-Studying both player streaks and team streaks in basketball, in both observational and controlled settings. Gilovich et al. [-@gilovich1985] do not find evidence for the hot hand phenomenon. However, Miller and Sanjurjo [-@miller2018] refuted the conclusions of Gilovich et al., proving a framework for quantifying streak selection bias, which effectively works in the manner posited by the gambler's fallacy. Specifically, Miller and Sanjurjo say that a "bias exists in a common measure of the conditional dependence of present outcomes on streaks of past outcomes in sequential data" implying that, under i.i.d. conditions, "the proportion of successes among the outcomes that immediately follow a streak of consecutive successes is expected to be strictly less than the underlying (conditional) probability of success". When applying streak selection bias to Giloveih et al.'s data, Miller and Sanjurjo come to the opposite conclusions as Giloveih et al.
+Studying both player streaks and team streaks in basketball, in both observational and controlled settings. Gilovich et al. [-@gilovich1985] do not find evidence for the hot hand phenomenon. However, Miller and Sanjurjo [-@miller2018] refuted the conclusions of Gilovich et al., proving a framework for quantifying streak selection bias, which effectively works in the manner posited by the gambler's fallacy[^9]. Specifically, Miller and Sanjurjo say that a "bias exists in a common measure of the conditional dependence of present outcomes on streaks of past outcomes in sequential data" implying that, under i.i.d. conditions, "the proportion of successes among the outcomes that immediately follow a streak of consecutive successes is expected to be strictly less than the underlying (conditional) probability of success". When applying streak selection bias to Giloveih et al.'s data, Miller and Sanjurjo come to the opposite conclusions as Giloveih et al.
 
-Despite the plethora of existing research on games played in a series and momentum in sports, these topics have yet to be investigated heavily in esports. Work has been done to examine in-round win probability in other FPS titles such as Counter-Strike [@xenopoulos2022] and Valorant [@derover2021], both of which are round-based like CoD SnD. However, research on round-level trends is sparse, perhaps because games like Counter-Strike and Valorant both have economic aspects that can create clear advantages on side in a given round, given how prior rounds played out.[^9]
+[^9]: Streak selection bias, "in conjunction with a quasi-Bayesian model of decision making under sample size neglect... provides a novel structural candidate explanationfor the persistence of gambler's fallacy beliefs", per Miller and Sanjurjo [-@miller2018].
 
-[^9]: Additionally, both Counter-Strike and Valorant have overtime rules and blocked offensive/defensive roles (i.e. playing either offense or defense for many consecutive rounds).
+Despite the plethora of existing research on games played in a series and momentum in sports, these topics have yet to be investigated heavily in esports. Work has been done to examine in-round win probability in other FPS titles such as Counter-Strike [@xenopoulos2022] and Valorant [@derover2021], both of which are round-based like CoD SnD. However, research on round-level trends is sparse, perhaps because games like Counter-Strike and Valorant both have economic aspects that can create clear advantages on side in a given round, given how prior rounds played out.[^10]
+
+[^10]: Additionally, both Counter-Strike and Valorant have overtime rules and blocked offensive/defensive roles (i.e. playing either offense or defense for many consecutive rounds).
 
 # Methodology and results
 
@@ -232,9 +234,9 @@ Afterwards, I investigate post-streak win rates, building on my learnings from t
 
 ## Distribution of rounds played {#sec:analysis-1}
 
-The general formula for the probability $P_E(r)$ that a best-of-$s$ series lasts $r$ rounds given constant probability $p$ of one team[^10] winning each round is
+The general formula for the probability $P_E(r)$ that a best-of-$s$ series lasts $r$ rounds given constant probability $p$ of one team[^11] winning each round is
 
-[^10]: If $p > 0.5$, then I might say that this team is the better team (known omnisciently).
+[^11]: If $p > 0.5$, then one might say that this team is the better team (known in hindsight).
 
 $$
 q = 1 - p, s_1 = \frac{s_1 - 1}{2}, s_2 = \frac{s_1 + 1}{2}, s_2^{'} = 1 - s_2
@@ -424,7 +426,7 @@ cod_streaks_naive_res$series |>
   arrange(n_rounds) |>
   gt::gt() |>
   gt::cols_label(
-    n_rounds = 'Series lasts\nr rounds',
+    n_rounds = 'r',
     prop_expected = 'P_{E}(r)',
     prop_actual = 'P_{O}(r)',
     n_actual = 'N_O'
@@ -448,7 +450,7 @@ Table \ref{tbl:cod-prob-series-lasting-r-rounds} shows the expected probabilitie
 \toprule
 &  & \multicolumn{2}{c}{Observed} \\ 
 \cmidrule(lr){3-4}
-Series lasts $r$ rounds & $P_E(r)$ & $P_O(r)$ & $N_O(r)$ \\ 
+$r$ & $P_E(r)$ & $P_O(r)$ & $N_O(r)$ \\ 
 \midrule
 6 & $3.1\%$ & $4.7\%$ & 40 \\ 
 7 & $9.4\%$ & $11.9\%$ & 101 \\ 
@@ -644,7 +646,7 @@ cod_streaks_other_res |>
     by = 'n_rounds'
   ) |>
   arrange(n_rounds) |>
-  rename(`Series lasts $r$ rounds` = n_rounds) |>
+  rename(`$r$` = n_rounds) |>
   knitr::kable()
 ```
 
@@ -668,15 +670,15 @@ Method & \(p(r)\) & \(\chi^2\) (p-value) \\
 \bottomrule()
 \end{longtable}
 ```
-Table \ref{tbl:expected-series-lengths-alternative-ps} shows the new $P_E(r)$ when re-applying Equation \ref{eq:series-length} for the maximum likelihood estimate $p_2 = 0.575$.[^11] I observe that $P_E(r)$ is notably larger for $p_{2}$ when $r \in [6, 7]$, more closely matching $P_O(r)$. $p_{2}$ is also closer to $P_O(r)$ for $r \in [9, 10]$, although not for $r \in [8, 11]$.
+Table \ref{tbl:expected-series-lengths-alternative-ps} shows the new $P_E(r)$ when re-applying Equation \ref{eq:series-length} for the maximum likelihood estimate $p_2 = 0.575$.[^12] I observe that $P_E(r)$ is notably larger for $p_{2}$ when $r \in [6, 7]$, more closely matching $P_O(r)$. $p_{2}$ is also closer to $P_O(r)$ for $r \in [9, 10]$, although not for $r \in [8, 11]$.
 
-[^11]: The method of moments and minimum $\chi^2$ estimates for $p$ are omitted simply because the results would be nearly identical to those for the maximum likelihood estimate of $p$ (since they are all $\approx 0.575$.
+[^12]: The method of moments and minimum $\chi^2$ estimates for $p$ are omitted simply because the results would be nearly identical to those for the maximum likelihood estimate of $p$ (since they are all $\approx 0.575$).
 
 ```{=tex}
 \begin{longtable}[]{@{}rrrr@{}}
 \caption{The probabilities that a best-of-11 series lasts $r$ rounds under the naive assumption $p_0 = 0.5$ and the maximum likelihood estimation $p_2 = 0.575$.}\label{tbl:expected-series-lengths-alternative-ps} \\
 \toprule()
-Series lasts \(r\) rounds & \(p_0(r)\) = 0.5 & \(p_2(r)\) = 0.575 & \(P_O(r)\) \\
+$r$ & $p_0(r)$ = 0.5 & $p_2(r)$ = 0.575 & $P_O(r)$ \\
 \midrule()
 \endhead
 6 & 3.1\% & 4.2\% & 4.7\% \\
@@ -850,12 +852,12 @@ cod_round_win_prop_after_k_wins |>
       )
     )
   ) |>
-  filter(win_streak == 3) |> 
+  filter(win_streak == 3, !win_series) |> 
   arrange(win_streak, n_rounds, win_series) |> 
   transmute(
     # win_streak,
     n_rounds,
-    across(win_series, ~ifelse(.x, 'win', 'lose')),
+    # across(win_series, ~ifelse(.x, 'win', 'lose')),
     total,
     prop,
     prior_p,
@@ -870,26 +872,21 @@ cod_round_win_prop_after_k_wins |>
   ) |> 
   gt::cols_label(
     # win_streak = 'Streak',
-    win_series = 'Win Series?',
-    n_rounds = 'Series lasts r rounds',
+    n_rounds = 'r',
     total = 'N',
     prop = 'O',
     prior_p = 'a',
     expected_poststreak_p = 'b',
-    gt_p_value = 'a',
-    gt_p_value_adj = 'b'
+    gt_p_value = 'c',
+    gt_p_value_adj = 'd'
   ) |> 
   gt::tab_spanner(
     label = 'x',
-    columns = c(prop, prior_p, expected_poststreak_p)
+    columns = c(prior_p, gt_p_value)
   ) |> 
   gt::tab_spanner(
     label = 'y',
-    columns = c(gt_p_value, gt_p_value_adj)
-  ) |> 
-  gt::tab_footnote(
-    footnote = 'Binom',
-    locations = gt::cells_column_labels(columns = c(gt_p_value))
+    columns = c(expected_poststreak_p, gt_p_value_adj)
   ) |> 
   gt::as_latex()
 ```
@@ -898,7 +895,7 @@ Despite the implication that one can model team round win probability in CoD SnD
 
 ```{=tex}
 \begin{equation}\protect\hypertarget{eq:pwkr}{}{
-  \hat{p}^{kr,\text{win}}_E = \hat{p}(\text{win round | k-round winning streak, series lasting r rounds})=\{
+  \hat{P}^{kr,\text{win}}_{E,\text{unadj.}} = \hat{P}(\text{win round | k-round winning streak, series lasting r rounds})=\{
     \begin{array}{cl}
     \frac{6 - k}{i - k}, & \text{team wins series} \\
     \frac{11 - 6 - k}{i - k}, & \text{team loses series}
@@ -906,34 +903,48 @@ Despite the implication that one can model team round win probability in CoD SnD
   }\label{eq:pwkr}
 \end{equation}
 ```
-$\hat{p}^{kr,loss}_E = \hat{p}(\text{lose round | k-round losing streak, series lasting r rounds})$ can be formulated symmetrically.
+$\hat{P}^{kr,loss}_{E,\text{unadj.}} = \hat{P}(\text{lose round | k-round losing streak, series lasting r rounds})$ can be formulated symmetrically.
 
-While one might think that $E[\hat{p}^{kr,\text{win}} - \hat{p}^{kr,\text{loss}}] = 0$, Miller and Sanjurjo [-@miller2018] suggest that, given a deterministic i.i.d. Bernoulli probability (Equation \ref{pwkr}, this is not true due to streak-selection bias.[^12][^13]
+While one might think that $E[\hat{P}^{kr,\text{win}} - \hat{P}^{kr,\text{loss}}] = 0$, Miller and Sanjurjo [-@miller2018] suggest that, given a deterministic i.i.d. Bernoulli probability (Equation \ref{eq:pwkr}, this is not true due to streak-selection bias.[^13] As proved by Miller and Sanjurjo, TODO: Combine these two sentences
 
-[^12]: Note that these probabilities are separate from those in Section \ref{sec:analysis-1}.
+[^13]: Note that these probabilities are separate from those in Section \ref{sec:analysis-1}.
 
-[^13]: Three happens to also be a reasonable number for series that lasts at maximum 11 rounds.
+> Theorem 1: *Let* $\mathbf{X} = \{X_i\}^{n}_{i=1}, n \geq 3$*, be a sequence of independent Bernoulli trials, each with probability of success* $0 < p < 1$*. Let* $\hat{P}_k(\mathbf{X})$ *be the proportion of successes on the subset of trials* $I_k(\mathbf{X})$ *that immediately follow* $k$ consecutive successes, that is, $\hat{P}_k(\mathbf{X}) := \sum_{i \in I_k(\mathbf{X})} X_i | I_k(\mathbf{X}) |. \hat{P}_k$ *is a biased estimate of* $\mathbb{P}(X_t = 1 | \prod_{j=t-k}^{t-1} X_j = 1) \equiv p$ *for all* $k$ *such that* $1 \leq k \leq n - 2$*. In particular,* $E[\hat{P}_k(\mathbf{X}) | I_k(\mathbf{X}) \neq \emptyset] < p.$
 
-I apply their formulation for "downward bias" to post-streak success to come up with estimates $\hat{P}_{kr,\text{win}}^{\text{adj.}}$, specifying $r$ as the number of trials.
+TODO: Descripe the Appendix E.1. I apply their formulation for "downward bias" to post-streak success to come up with estimates $\hat{P}^{kr,\text{win}}_{E,\text{adj.}}$, specifying $r$ as the number of trials.
 
-Given that people typically perceive streaks as beginning after the third success (or failure) at minimum [@carlson2007], I focus on round win percentages in rounds immediately following streaks of three wins.[^14] Table \ref{tbl:cod-round-win-prop-after-k-wins} shows $\hat{P}_{kr,\text{win}}$ for $k = 3$ winning streaks, for both teams that empirically won and lost the series. (Some combinations of $r$ and $\text{team loses series}$ are irrelevant, such as the case when $r \in [7, 8, 9]$, so these combinations are excluded.)
+Given that people typically perceive streaks as beginning after the third success (or failure) at minimum [@carlson2007], I focus on round win percentages in rounds immediately following streaks of three wins.[^14] Table \ref{tbl:cod-round-win-prop-after-k-wins} and table \ref{tbl:cod-round-loss-prop-after-k-losses} shows $\hat{P}^{kr,\text{win}}_O$ and $\hat{P}^{kr,\text{loss}}_O$ for $k = 3$ streaks respectively.
 
 [^14]: Three happens to also be a reasonable number for series that lasts at maximum 11 rounds.
 
+TODO: Put p-value in parentheses
+
 ```{=tex}
-\begin{longtable}{rrrrrrrr}
+\begin{longtable}{rrrrrrr}
+\caption{Observed proportion of wins ($\hat{P}^{kr,\text{win}}_O$) and expected proportion of wins, both un-adjusted ($\hat{P}^{kr,\text{win}}_{E,\text{unadj.}}$) and adjusted ($\hat{P}^{kr,\text{win}}_{E,\text{adj.}}$), after 3-round-win streak, for a series lasting $r$ rounds.}\label{tbl:cod-round-win-prop-after-k-wins} \\
 \toprule
-&  &  & \multicolumn{3}{c}{$\hat{p}^{kr,\text{win}}$} & \multicolumn{2}{c}{$p$-value} \\
-\cmidrule(lr){4-6} \cmidrule(lr){7-8}
-Series lasts $r$ rounds & Win Series? & $N^{kr,\text{win}}_O$ & $O$ & $E$ & $\text{adj.}$ & $E$ & $\text{adj.}$ \\ 
+ &  &  & \multicolumn{2}{c}{\text{Unadjusted}} & \multicolumn{2}{c}{\text{Adjusted}} \\ 
+\cmidrule(lr){4-5} \cmidrule(lr){6-7}
+$r$ & $N^{kr,\text{win}}_O$ & $\hat{P}^{kr,\text{win}}_O$ & $\hat{P}^{kr,\text{win}}_{E,\text{unadj.}}$ &  $p$-value & $\hat{P}^{kr,\text{win}}_{E,\text{adj.}}$ & $p$-value \\ 
 \midrule
-7 & win & 209 & $75\%$ & $75\%$ & $61\%$ & 0.58 & <=0.01 \\ 
-8 & win & 209 & $62\%$ & $60\%$ & $45\%$ & 0.28 & <=0.01 \\ 
-9 & win & 193 & $52\%$ & $50\%$ & $35\%$ & 0.33 & <=0.01 \\ 
-10 & lose & 60 & $13\%$ & $14\%$ & $10\%$ & 0.64 & 0.26 \\ 
-10 & win & 151 & $44\%$ & $43\%$ & $29\%$ & 0.45 & <=0.01 \\ 
-11 & lose & 129 & $24\%$ & $25\%$ & $16\%$ & 0.63 & <=0.01 \\ 
-11 & win & 150 & $40\%$ & $38\%$ & $25\%$ & 0.29 & <=0.01 \\ 
+7 & 209 & $75\%$ & $75\%$ & 0.58 & $61\%$ & <=0.01 \\ 
+8 & 209 & $62\%$ & $60\%$ & 0.28 & $45\%$ & <=0.01 \\ 
+9 & 193 & $52\%$ & $50\%$ & 0.33 & $35\%$ & <=0.01 \\ 
+10 & 151 & $44\%$ & $43\%$ & 0.45 & $29\%$ & <=0.01 \\ 
+11 & 150 & $40\%$ & $38\%$ & 0.29 & $25\%$ & <=0.01 \\ 
+\bottomrule
+\end{longtable}
+```
+```{=tex}
+\begin{longtable}{rrrrrrr}
+\caption{Observed proportion of losses ($\hat{P}^{kr,\text{loss}}_O$) and expected proportion of losses, both un-adjusted ($\hat{P}^{kr,\text{loss}}_{E,\text{unadj.}}$) and adjusted ($\hat{P}^{kr,\text{loss}}_{E,\text{adj.}}$), after 3-round-loss streak, for a series lasting $r$ rounds. $r \in [7, 8, 9]$ are invalid.}\label{tbl:cod-round-loss-prop-after-k-losses} \\
+\toprule
+ &  &  & \multicolumn{2}{c}{\text{Unadjusted}} & \multicolumn{2}{c}{\text{Adjusted}} \\ 
+\cmidrule(lr){4-5} \cmidrule(lr){6-7}
+$r$ & $N^{kr,\text{loss}}_O$ & $\hat{P}^{kr,\text{loss}}_O$ & $\hat{P}^{kr,\text{loss}}_{E,\text{unadj.}}$ &  $p$-value & $\hat{P}^{kr,\text{loss}}_{E,\text{adj.}}$ & $p$-value \\ 
+\midrule
+10 & 60 & $13\%$ & $14\%$ & 0.64 & $10\%$ & 0.26 \\ 
+11 & 129 & $24\%$ & $25\%$ & 0.63 & $16\%$ & <=0.01 \\ 
 \bottomrule
 \end{longtable}
 ```
