@@ -471,16 +471,16 @@ third success (or failure) at minimum (Carlson and Shu 2007), I focus on
 round win percentages in rounds immediately following streaks of three
 wins.\footnote{Three happens to also be a reasonable number for series
   that lasts at maximum 11 rounds.} Table
-\ref{tbl:cod-round-win-prop-after-k-wins} and table
-\ref{tbl:cod-round-loss-prop-after-k-losses} shows
+\ref{tbl:cod-round-win-prop-after-k-wins} shows
 \(\hat{P}^{kr,\text{win}}_O\) and \(\hat{P}^{kr,\text{loss}}_O\) for
 \(k = 3\) streaks respectively.
 
 TODO: Put p-value in parentheses
 
 \begin{longtable}{rrrrrrr}
-\caption{Observed proportion of wins ($\hat{P}^{kr,\text{win}}_O$) and expected proportion of wins, both un-adjusted ($\hat{P}^{kr,\text{win}}_{E,\text{unadj.}}$) and adjusted ($\hat{P}^{kr,\text{win}}_{E,\text{adj.}}$), after 3-round-win streak, for a series lasting $r$ rounds.}\label{tbl:cod-round-win-prop-after-k-wins} \\
+\caption{First, observed proportion of wins ($\hat{P}^{kr,\text{win}}_O$) and expected proportion of wins, both un-adjusted ($\hat{P}^{kr,\text{win}}_{E,\text{unadj.}}$) and adjusted ($\hat{P}^{kr,\text{win}}_{E,\text{adj.}}$), after 3-round win streak, for a series lasting $r$ rounds. Second, observed proportion of losses ($\hat{P}^{kr,\text{loss}}_O$) and expected proportion of losses, both un-adjusted ($\hat{P}^{kr,\text{loss}}_{E,\text{unadj.}}$) and adjusted ($\hat{P}^{kr,\text{loss}}_{E,\text{adj.}}$), after 3-round loss streak}\label{tbl:cod-round-win-prop-after-k-wins} \\
 \toprule
+\multicolumn{7}{c}{\text{3 round win streak}} \\
  &  &  & \multicolumn{2}{c}{\text{Unadjusted}} & \multicolumn{2}{c}{\text{Adjusted}} \\ 
 \cmidrule(lr){4-5} \cmidrule(lr){6-7}
 $r$ & $N^{kr,\text{win}}_O$ & $\hat{P}^{kr,\text{win}}_O$ & $\hat{P}^{kr,\text{win}}_{E,\text{unadj.}}$ &  $p$-value & $\hat{P}^{kr,\text{win}}_{E,\text{adj.}}$ & $p$-value \\ 
@@ -490,12 +490,8 @@ $r$ & $N^{kr,\text{win}}_O$ & $\hat{P}^{kr,\text{win}}_O$ & $\hat{P}^{kr,\text{w
 9 & 193 & $52\%$ & $50\%$ & 0.33 & $35\%$ & <=0.01 \\ 
 10 & 151 & $44\%$ & $43\%$ & 0.45 & $29\%$ & <=0.01 \\ 
 11 & 150 & $40\%$ & $38\%$ & 0.29 & $25\%$ & <=0.01 \\ 
-\bottomrule
-\end{longtable}
-
-\begin{longtable}{rrrrrrr}
-\caption{Observed proportion of losses ($\hat{P}^{kr,\text{loss}}_O$) and expected proportion of losses, both un-adjusted ($\hat{P}^{kr,\text{loss}}_{E,\text{unadj.}}$) and adjusted ($\hat{P}^{kr,\text{loss}}_{E,\text{adj.}}$), after 3-round-loss streak, for a series lasting $r$ rounds. $r \in [7, 8, 9]$ are invalid.}\label{tbl:cod-round-loss-prop-after-k-losses} \\
 \toprule
+\multicolumn{7}{c}{\text{3 round loss streak}} \\
  &  &  & \multicolumn{2}{c}{\text{Unadjusted}} & \multicolumn{2}{c}{\text{Adjusted}} \\ 
 \cmidrule(lr){4-5} \cmidrule(lr){6-7}
 $r$ & $N^{kr,\text{loss}}_O$ & $\hat{P}^{kr,\text{loss}}_O$ & $\hat{P}^{kr,\text{loss}}_{E,\text{unadj.}}$ &  $p$-value & $\hat{P}^{kr,\text{loss}}_{E,\text{adj.}}$ & $p$-value \\ 
