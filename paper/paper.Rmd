@@ -889,7 +889,7 @@ Despite the implication that one can model team round win probability in CoD SnD
 
 ```{=tex}
 \begin{equation}\protect\hypertarget{eq:pwkr}{}{
-  \hat{P}^{kr,\text{win}}_{E,\text{unadj.}} = \hat{P}(\text{win round | k-round winning streak, series lasting r rounds})=\{
+  \hat{P}^{kr,\text{win}}_{E,\text{unadj.}} = \hat{P}_{E,\text{unadj.}}(\text{win | k, r})=\{
     \begin{array}{cl}
     \frac{6 - k}{i - k}, & \text{team wins series} \\
     \frac{11 - 6 - k}{i - k}, & \text{team loses series}
@@ -897,7 +897,7 @@ Despite the implication that one can model team round win probability in CoD SnD
   }\label{eq:pwkr}
 \end{equation}
 ```
-$\hat{P}^{kr,loss}_{E,\text{unadj.}} = \hat{P}(\text{lose round | k-round losing streak, series lasting r rounds})$ can be formulated symmetrically.
+$\hat{P}^{kr,loss}_{E,\text{unadj.}}$ can be formulated symmetrically.
 
 While one might think that $E[\hat{P}^{kr,\text{win}} - \hat{P}^{kr,\text{loss}}] = 0$, Miller and Sanjurjo [-@miller2018] suggest that, given a deterministic i.i.d. Bernoulli probability (Equation \ref{eq:pwkr}, this is not true due to streak-selection bias.[^13] As proved by Miller and Sanjurjo, TODO: Combine these two sentences
 

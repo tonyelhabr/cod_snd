@@ -427,7 +427,7 @@ series (\(r\) rounds), modeling the expected round win probability after
 a streak of length \(k\) as
 
 \begin{equation}\protect\hypertarget{eq:pwkr}{}{
-  \hat{P}^{kr,\text{win}}_{E,\text{unadj.}} = \hat{P}(\text{win round | k-round winning streak, series lasting r rounds})=\{
+  \hat{P}^{kr,\text{win}}_{E,\text{unadj.}} = \hat{P}_{E,\text{unadj.}}(\text{win | k, r})=\{
     \begin{array}{cl}
     \frac{6 - k}{i - k}, & \text{team wins series} \\
     \frac{11 - 6 - k}{i - k}, & \text{team loses series}
@@ -435,8 +435,7 @@ a streak of length \(k\) as
   }\label{eq:pwkr}
 \end{equation}
 
-\(\hat{P}^{kr,loss}_{E,\text{unadj.}} = \hat{P}(\text{lose round | k-round losing streak, series lasting r rounds})\)
-can be formulated symmetrically.
+\(\hat{P}^{kr,loss}_{E,\text{unadj.}}\) can be formulated symmetrically.
 
 While one might think that
 \(E[\hat{P}^{kr,\text{win}} - \hat{P}^{kr,\text{loss}}] = 0\), Miller
@@ -477,6 +476,7 @@ wins.\footnote{Three happens to also be a reasonable number for series
 
 TODO: Put p-value in parentheses
 
+\begin{tabbing}
 \begin{longtable}{rrrrrrr}
 \caption{First, observed proportion of wins ($\hat{P}^{kr,\text{win}}_O$) and expected proportion of wins, both un-adjusted ($\hat{P}^{kr,\text{win}}_{E,\text{unadj.}}$) and adjusted ($\hat{P}^{kr,\text{win}}_{E,\text{adj.}}$), after 3-round win streak, for a series lasting $r$ rounds. Second, observed proportion of losses ($\hat{P}^{kr,\text{loss}}_O$) and expected proportion of losses, both un-adjusted ($\hat{P}^{kr,\text{loss}}_{E,\text{unadj.}}$) and adjusted ($\hat{P}^{kr,\text{loss}}_{E,\text{adj.}}$), after 3-round loss streak}\label{tbl:cod-round-win-prop-after-k-wins} \\
 \toprule
@@ -500,6 +500,7 @@ $r$ & $N^{kr,\text{loss}}_O$ & $\hat{P}^{kr,\text{loss}}_O$ & $\hat{P}^{kr,\text
 11 & 129 & $24\%$ & $25\%$ & 0.63 & $16\%$ & <=0.01 \\ 
 \bottomrule
 \end{longtable}
+\end{tabbing}
 
 \hypertarget{references}{%
 \section*{References}\label{references}}
