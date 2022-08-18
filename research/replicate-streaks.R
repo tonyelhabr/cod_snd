@@ -30,15 +30,16 @@ set.seed(42)
 runs <- rerun(
   1000,
   crossing(
-    n = 1:100,
+    n = 1:50,
     k = 1:4,
     p = c(0.25, 0.5, 0.75)
   ) |> 
     mutate(
-      next_p = pmap_dbl(list(n, k, p), ~simulate_post_streak_prob(sims = 100, n = ..1, k = ..2, p = ..3))
+      next_p = pmap_dbl(list(n, k, p), ~simulate_post_streak_prob(sims = 1000, n = ..1, k = ..2, p = ..3))
     )
 ) |> 
   reduce(bind_rows)
+qs::qsave(runs, 'data/runs_1000x1000.qs')
 
 agg_runs <- runs |> 
   filter(!is.nan(next_p)) |> 
@@ -49,20 +50,37 @@ agg_runs <- runs |>
   ungroup() |>
   arrange(p, k)
 
-p_streaks <- agg_runs |>
-  group_by(p, k) |> 
-  mutate(
-    avg_next_p = slider::slide_dbl(next_p, .f = mean, .before = 5, .after = 0)
+agg_runs <- runs |> 
+  filter(!is.nan(next_p)) |> 
+  slice_sample(prop = 10, replace = TRUE) |> 
+  group_by(p, k, n) |> 
+  summarize(
+    across(next_p, mean)
   ) |> 
-  ungroup() |> 
+  ungroup() |>
+  arrange(p, k)
+
+p_streaks <- bind_rows(
+  agg_runs |> 
+    distinct(p, k) |> 
+    mutate(n = 1, next_p = p),
+  agg_runs,
+) |> 
+  arrange(p, k, n) |> 
+  # group_by(p, k) |> 
+  # mutate(
+  #   avg_next_p = slider::slide_dbl(next_p, .f = mean, .before = 5, .after = 0)
+  # ) |> 
+  # ungroup() |> 
   mutate(
     across(k, factor),
     group = sprintf('%s-%s', p, k)
   ) |> 
   ggplot() +
   theme_minimal() +
-  aes(x = n, y = avg_next_p, color = k, group = group) +
+  aes(x = n, y = next_p, color = k, group = group) +
   geom_line() +
+  geom_smooth() +
   geom_hline(aes(yintercept = p)) +
   labs(x = NULL, y = NULL)
 p_streaks
