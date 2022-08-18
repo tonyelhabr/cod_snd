@@ -302,34 +302,109 @@ how prior rounds played out.\footnote{Additionally, both Counter-Strike
   and Valorant have overtime rules and blocked offensive/defensive roles
   (i.e.~playing either offense or defense for many consecutive rounds).}
 
-\hypertarget{methodology-and-results}{%
-\section{Methodology and results}\label{methodology-and-results}}
+\hypertarget{methodology}{%
+\section{Methodology}\label{methodology}}
+
+\hypertarget{sec:method-rounds-played}{%
+\subsection{Distribution of rounds
+played}\label{sec:method-rounds-played}}
+
+The general formula for the probability \(P_E(r)\) that a best-of-\(s\)
+series (\(s = 11\) for CoD SnD) lasts \(r\) rounds given constant
+probability \(p\) of one team\footnote{If \(p > 0.5\), then one might
+  say that this team is the better team (known in hindsight).} winning
+each round is
+
+\[
+m = \frac{s + 1}{2}
+\]
+
+\begin{equation}\protect\hypertarget{eq:series-length}{}{
+P_E(r) = \frac{(r - 1)!}{(m - 1)!(r - s)!}(p^{m}(1 - p)^{r - m} + p^{r - m}(1 - p)^m).
+}\label{eq:series-length}\end{equation}
+
+The chi-square goodness of fit statistic can be used to test the
+constant found probability hypothesis for \(0 \leq p \leq 1\).
+
+\begin{equation}\protect\hypertarget{eq:chi-squ}{}{
+\chi^2 = \sum^R \frac{(P_O(r) - P_E(r))^2}{P_E(r)}
+}\label{eq:chi-squ}\end{equation}
+
+For CoD SnD, \(r \in R [6, 7, 8, 9, 10, 11]\).
+
+\hypertarget{sec:method-momentum}{%
+\subsection{Momentum}\label{sec:method-momentum}}
+
+Without accounting for the streak selection bias described by Miller and
+Sanjurjo (2018), the round win probability after a streak of \(k\) round
+wins for a best-of-\(s\) series (\(s = 11\) for CoD SnD), accounting for
+the series lasting \(r\) rounds known in hindsight, is
+
+\[
+m = \frac{s + 1}{2}
+\]
+
+\begin{equation}\protect\hypertarget{eq:pwkr}{}{
+  p^{w|kr} = p(\text{win | k, r})=\{
+    \begin{array}{cl}
+    \frac{m - k}{i - k}, & \text{team wins series} \\
+    \frac{s - m - k}{i - k}, & \text{team loses series}
+    \end{array}.
+  }
+\label{eq:pwkr}
+\end{equation}
+
+The ``hindsight'' round loss probability after a streak of \(k\) round
+losses for a series lasting \(r\) rounds, \(p^{l|kr}\), can be
+formulated symmetrically.\footnote{Note that these probabilities are
+  separate from the constant round probabilities in Sections
+  \ref{sec:method-rounds-played} and \ref{sec:results-rounds-played}.}
+
+However, as shown by Miller and Sanjurjo, we should expect the observed
+proportion of rounds wins after a streak \(k\) rounds wins for a series
+lasting \(r\) rounds, \(\hat{P}_{w|kr}\), to be strictly less than
+\(p^{w|kr}\).
+
+\begin{quote}
+Theorem 1: \emph{Let}
+\(\mathbf{X} = \{X_i\}^{n}_{i=1}, n \geq 3\)\emph{, be a sequence of
+independent Bernoulli trials, each with probability of success}
+\(0 < p < 1\)\emph{. Let} \(\hat{P}_k(\mathbf{X})\) \emph{be the
+proportion of successes on the subset of trials} \(I_k(\mathbf{X})\)
+\emph{that immediately follow} \(k\) consecutive successes, that is,
+\(\hat{P}_k(\mathbf{X}) := \sum_{i \in I_k(\mathbf{X})} X_i | I_k(\mathbf{X}) |. \hat{P}_k\)
+\emph{is a biased estimate of}
+\(\mathbb{P}(X_t = 1 | \prod_{j=t-k}^{t-1} X_j = 1) \equiv p\) \emph{for
+all} \(k\) \emph{such that} \(1 \leq k \leq n - 2\)\emph{. In
+particular,}
+\(E[\hat{P}_k(\mathbf{X}) | I_k(\mathbf{X}) \neq \emptyset] < p.\)
+\end{quote}
+
+Miller and Sanjurjo (2018) note that there does not exists a closed form
+representation for
+\(E[\hat{P}_k(\mathbf{X}) | I_k(\mathbf{X}) \neq \emptyset]\) for
+\(k > 1\).
+
+\hypertarget{results}{%
+\section{Results}\label{results}}
 
 First, I investigate the constant probability assumption and the
 distribution of rounds played in a series. Chance's (2020) work is
 closely related to mine, and, in fact, provides a guide for this
 investigation.
 
+\hypertarget{sec:results-rounds-played}{%
+\subsection{Distribution of rounds
+played}\label{sec:results-rounds-played}}
+
+Using Equation \ref{eq:chi-squ}, \(\chi^2 = 16.0\) (p-value of 0.0068)
+for a naive constant round win probability \(p_0 = 0.5\). Thus, I can
+comfortably reject the constant probability null hypothesis for
+\(p_0 = 0.5\), even at a confidence level of \(\alpha = 0.01\).
 Afterwards, I investigate post-streak win rates, building on my
 learnings from the constant probability assumption analysis. I agree
 with Miller and Sanjurjo's (2018) framework for streak selection bias,
 accounting for it in when analyzing momentum.
-
-\hypertarget{sec:analysis-1}{%
-\subsection{Distribution of rounds played}\label{sec:analysis-1}}
-
-The general formula for the probability \(P_E(r)\) that a best-of-\(s\)
-series lasts \(r\) rounds given constant probability \(p\) of one
-team\footnote{If \(p > 0.5\), then one might say that this team is the
-  better team (known in hindsight).} winning each round is
-
-\[
-q = 1 - p, s_1 = \frac{s_1 - 1}{2}, s_2 = \frac{s_1 + 1}{2}, s_2^{'} = 1 - s_2
-\]
-
-\begin{equation}\protect\hypertarget{eq-series-length}{}{
-P_E(r) = \frac{(r - 1)!}{s_1!(r - s_2)!}(p^{s_2}q^{s_2^{'}} + p^{s_2^{'}}q^{s_2}).
-}\label{eq:series-length}\end{equation}
 
 Table \ref{tbl:cod-prob-series-lasting-r-rounds} shows the expected
 probabilities for \(s = 11\) under the naive assumption that
@@ -352,20 +427,10 @@ $r$ & $P_E(r)$ & $P_O(r)$ & $N_O(r)$ \\
 \bottomrule
 \end{longtable}
 
-Calculating the chi-square goodness of fit statistic
-
-\begin{equation}\protect\hypertarget{eq:series-length}{}{
-\chi^2 = \sum^{11}_{i=6} \frac{(P_O(r) - P_E(r))^2}{P_E(r)}, r \in R = [6, 7, 8, 9, 10, 11].
-}\label{eq:chi-squ-test}\end{equation}
-
-as 16.0 (p-value of 0.0068), I can comfortably reject the constant
-probability null hypothesis for \(p_0 = 0.5\), event at a confidence
-level of \(\alpha = 0.01\).
-
 Table \ref{tbl:mosteller-methods-results} shows the alternate values for
 the constant round win probability \(p\) that I find when applying the
 three methods suggested by Mosteller (1952). Each is approximately or
-equal to 0.575, and, when applying Equation \ref{eq:chi-squ-test}, each
+equal to 0.575, and, when applying Equation \ref{eq:chi-squ}, each
 results in a \(\chi^2\) value for which I cannot reject the constant
 probability null hypothesis.
 
@@ -416,54 +481,8 @@ It is fair to conclude that the constant round win probability
 assumption can be valid in CoD SnD series with the appropriate choice of
 \(p\) (\(\approx 0.575\)).
 
-\hypertarget{sec:analysis-2}{%
-\subsection{Momentum}\label{sec:analysis-2}}
-
-Despite the implication that one can model team round win probability in
-CoD SnD as a constant, anecdotally many believe in momentum i.e.~streaks
-not due to random chance. I now evaluate win frequency in rounds
-following a streak of length \(k\). I account for the length of the
-series (\(r\) rounds), modeling the expected round win probability after
-a streak of length \(k\) as
-
-\begin{equation}\protect\hypertarget{eq:pwkr}{}{
-  \hat{P}^{kr,\text{win}}_{E,\text{unadj.}} = \hat{P}_{E,\text{unadj.}}(\text{win | k, r})=\{
-    \begin{array}{cl}
-    \frac{6 - k}{i - k}, & \text{team wins series} \\
-    \frac{11 - 6 - k}{i - k}, & \text{team loses series}
-    \end{array}.
-  }\label{eq:pwkr}
-\end{equation}
-
-\(\hat{P}^{kr,loss}_{E,\text{unadj.}}\) can be formulated symmetrically.
-
-While one might think that
-\(E[\hat{P}^{kr,\text{win}} - \hat{P}^{kr,\text{loss}}] = 0\), Miller
-and Sanjurjo (2018) suggest that, given a deterministic i.i.d. Bernoulli
-probability (Equation \ref{eq:pwkr}, this is not true due to
-streak-selection bias.\footnote{Note that these probabilities are
-  separate from those in Section \ref{sec:analysis-1}.} As proved by
-Miller and Sanjurjo, TODO: Combine these two sentences
-
-\begin{quote}
-Theorem 1: \emph{Let}
-\(\mathbf{X} = \{X_i\}^{n}_{i=1}, n \geq 3\)\emph{, be a sequence of
-independent Bernoulli trials, each with probability of success}
-\(0 < p < 1\)\emph{. Let} \(\hat{P}_k(\mathbf{X})\) \emph{be the
-proportion of successes on the subset of trials} \(I_k(\mathbf{X})\)
-\emph{that immediately follow} \(k\) consecutive successes, that is,
-\(\hat{P}_k(\mathbf{X}) := \sum_{i \in I_k(\mathbf{X})} X_i | I_k(\mathbf{X}) |. \hat{P}_k\)
-\emph{is a biased estimate of}
-\(\mathbb{P}(X_t = 1 | \prod_{j=t-k}^{t-1} X_j = 1) \equiv p\) \emph{for
-all} \(k\) \emph{such that} \(1 \leq k \leq n - 2\)\emph{. In
-particular,}
-\(E[\hat{P}_k(\mathbf{X}) | I_k(\mathbf{X}) \neq \emptyset] < p.\)
-\end{quote}
-
-TODO: Descripe the Appendix E.1. I apply their formulation for
-``downward bias'' to post-streak success to come up with estimates
-\(\hat{P}^{kr,\text{win}}_{E,\text{adj.}}\), specifying \(r\) as the
-number of trials.
+\hypertarget{sec:results-momentum}{%
+\subsection{Momentum}\label{sec:results-momentum}}
 
 Given that people typically perceive streaks as beginning after the
 third success (or failure) at minimum (Carlson and Shu 2007), I focus on
@@ -476,7 +495,6 @@ wins.\footnote{Three happens to also be a reasonable number for series
 
 TODO: Put p-value in parentheses
 
-\begin{tabbing}
 \begin{longtable}{rrrrrrr}
 \caption{First, observed proportion of wins ($\hat{P}^{kr,\text{win}}_O$) and expected proportion of wins, both un-adjusted ($\hat{P}^{kr,\text{win}}_{E,\text{unadj.}}$) and adjusted ($\hat{P}^{kr,\text{win}}_{E,\text{adj.}}$), after 3-round win streak, for a series lasting $r$ rounds. Second, observed proportion of losses ($\hat{P}^{kr,\text{loss}}_O$) and expected proportion of losses, both un-adjusted ($\hat{P}^{kr,\text{loss}}_{E,\text{unadj.}}$) and adjusted ($\hat{P}^{kr,\text{loss}}_{E,\text{adj.}}$), after 3-round loss streak}\label{tbl:cod-round-win-prop-after-k-wins} \\
 \toprule
@@ -500,7 +518,6 @@ $r$ & $N^{kr,\text{loss}}_O$ & $\hat{P}^{kr,\text{loss}}_O$ & $\hat{P}^{kr,\text
 11 & 129 & $24\%$ & $25\%$ & 0.63 & $16\%$ & <=0.01 \\ 
 \bottomrule
 \end{longtable}
-\end{tabbing}
 
 \hypertarget{references}{%
 \section*{References}\label{references}}

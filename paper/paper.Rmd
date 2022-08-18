@@ -226,34 +226,84 @@ Despite the plethora of existing research on games played in a series and moment
 
 [^10]: Additionally, both Counter-Strike and Valorant have overtime rules and blocked offensive/defensive roles (i.e. playing either offense or defense for many consecutive rounds).
 
-# Methodology and results
+# Methodology
 
-First, I investigate the constant probability assumption and the distribution of rounds played in a series. Chance's [-@chance2020] work is closely related to mine, and, in fact, provides a guide for this investigation.
+## Distribution of rounds played {#sec:method-rounds-played}
 
-Afterwards, I investigate post-streak win rates, building on my learnings from the constant probability assumption analysis. I agree with Miller and Sanjurjo's [-@miller2018] framework for streak selection bias, accounting for it in when analyzing momentum.
-
-## Distribution of rounds played {#sec:analysis-1}
-
-The general formula for the probability $P_E(r)$ that a best-of-$s$ series lasts $r$ rounds given constant probability $p$ of one team[^11] winning each round is
+The general formula for the probability $P_E(r)$ that a best-of-$s$ series ($s = 11$ for CoD SnD) lasts $r$ rounds given constant probability $p$ of one team[^11] winning each round is
 
 [^11]: If $p > 0.5$, then one might say that this team is the better team (known in hindsight).
 
 $$
-q = 1 - p, s_1 = \frac{s_1 - 1}{2}, s_2 = \frac{s_1 + 1}{2}, s_2^{'} = 1 - s_2
+m = \frac{s + 1}{2}
 $$
 
 ```{=tex}
-\begin{equation}\protect\hypertarget{eq-series-length}{}{
-P_E(r) = \frac{(r - 1)!}{s_1!(r - s_2)!}(p^{s_2}q^{s_2^{'}} + p^{s_2^{'}}q^{s_2}).
+\begin{equation}\protect\hypertarget{eq:series-length}{}{
+P_E(r) = \frac{(r - 1)!}{(m - 1)!(r - s)!}(p^{m}(1 - p)^{r - m} + p^{r - m}(1 - p)^m).
 }\label{eq:series-length}\end{equation}
 ```
+The chi-square goodness of fit statistic can be used to test the constant found probability hypothesis for $0 \leq p \leq 1$.
+
+```{=tex}
+\begin{equation}\protect\hypertarget{eq:chi-squ}{}{
+\chi^2 = \sum^R \frac{(P_O(r) - P_E(r))^2}{P_E(r)}
+}\label{eq:chi-squ}\end{equation}
+```
+For CoD SnD, $r \in R [6, 7, 8, 9, 10, 11]$.
+
+## Momentum {#sec:method-momentum}
+
+Without accounting for the streak selection bias described by Miller and Sanjurjo [-@miller2018], the round win probability after a streak of $k$ round wins for a best-of-$s$ series ($s = 11$ for CoD SnD), accounting for the series lasting $r$ rounds known in hindsight, is
+
+$$
+m = \frac{s + 1}{2}
+$$
+
+```{=tex}
+\begin{equation}\protect\hypertarget{eq:pwkr}{}{
+  p^{w|kr} = p(\text{win | k, r})=\{
+    \begin{array}{cl}
+    \frac{m - k}{i - k}, & \text{team wins series} \\
+    \frac{s - m - k}{i - k}, & \text{team loses series}
+    \end{array}.
+  }
+\label{eq:pwkr}
+\end{equation}
+```
+The "hindsight" round loss probability after a streak of $k$ round losses for a series lasting $r$ rounds, $p^{l|kr}$, can be formulated symmetrically.[^12]
+
+[^12]: Note that these probabilities are separate from the constant round probabilities in Sections \ref{sec:method-rounds-played} and \ref{sec:results-rounds-played}.
+
+However, as shown by Miller and Sanjurjo, we should expect the observed proportion of rounds wins after a streak $k$ rounds wins for a series lasting $r$ rounds, $\hat{P}^{w|kr}$, to be strictly less than $p^{w|kr}$.[^13]
+
+[^13]: See Appendix A of Miller and Sanjurjo [-@miller2018] for the proof.
+
+> Theorem 1: *Let* $\mathbf{X} = \{X_i\}^{n}_{i=1}, n \geq 3$*, be a sequence of independent Bernoulli trials, each with probability of success* $0 < p < 1$*. Let* $\hat{P}_k(\mathbf{X})$ *be the proportion of successes on the subset of trials* $I_k(\mathbf{X})$ *that immediately follow* $k$ consecutive successes, that is, $\hat{P}_k(\mathbf{X}) := \sum_{i \in I_k(\mathbf{X})} X_i | I_k(\mathbf{X}) |. \hat{P}_k$ *is a biased estimate of* $\mathbb{P}(X_t = 1 | \prod_{j=t-k}^{t-1} X_j = 1) \equiv p$ *for all* $k$ *such that* $1 \leq k \leq n - 2$*. In particular,* $E[\hat{P}_k(\mathbf{X}) | I_k(\mathbf{X}) \neq \emptyset] < p.$
+
+Miller and Sanjurjo [-@miller2018] note that there does not exists a closed form representation for $E[\hat{P}_k(\mathbf{X}) | I_k(\mathbf{X}) \neq \emptyset]$ ($\hat{P}^{w|kr}$ for CoD SnD) for $k > 1$. Figure \ref{fig:npk} shows this.[^14]
+
+[^14]: I've adapted the code from Vafa [-@vafa2017].
+
+![The expected value](images/npk_replicated.png)
+
+The expected value of the proportion of successes on trials that immediately follow k consecutive successes, Pˆk(X), as a function of the total number of trials n,for different values of k and probabilities of success p,
+
+# Results
+
+First, I investigate the constant probability assumption and the distribution of rounds played in a series. Chance's [-@chance2020] work is closely related to mine, and, in fact, provides a guide for this investigation.
+
+## Distribution of rounds played {#sec:results-rounds-played}
+
+Using Equation \ref{eq:chi-squ}, $\chi^2 = 16.0$ (p-value of 0.0068) for a naive constant round win probability $p_0 = 0.5$. Thus, I can comfortably reject the constant probability null hypothesis for $p_0 = 0.5$, even at a confidence level of $\alpha = 0.01$. Afterwards, I investigate post-streak win rates, building on my learnings from the constant probability assumption analysis. I agree with Miller and Sanjurjo's [-@miller2018] framework for streak selection bias, accounting for it in when analyzing momentum.
+
 ```{r}
 #| label: cod_series_outcome_prop
 .max_round <- 11
 .cutoff <- 6
-prob_of_series_lasting_n_games <- function(n, p = 0.5, max_round = .max_round) {
-  s <- ceiling(max_round / 2)
-  (factorial(n - 1) / (factorial(s - 1) * factorial(n - s))) * (p^s * (1 - p)^(n - s) + p^(n - s) * (1 - p)^s)
+prob_of_series_lasting_r_rounds <- function(r, p = 0.5, s = .max_round) {
+  m <- as.integer((s + 1) / 2)
+  (factorial(r - 1) / (factorial(m - 1) * factorial(r - s))) * (p^m * (1 - p)^(r - m) + p^(r - m) * (1 - p)^m)
 }
 
 expected_series_streaks_of_outcomes <- function(m, n) {
@@ -350,7 +400,7 @@ summarize_cod_streaks <- function(p = 0.5) {
     n_rounds = .cutoff:.max_round
   ) |> 
     mutate(
-      series_prop = map_dbl(n_rounds, ~prob_of_series_lasting_n_games(.x, max_round = .max_round, p = !!p)),
+      series_prop = map_dbl(n_rounds, ~prob_of_series_lasting_r_rounds(.x, max_round = .max_round, p = !!p)),
       n_expected_series_streaks = map_dbl(n_rounds, ~expected_series_streaks_of_outcomes(.cutoff, .x - .cutoff))
     ) |> 
     transmute(
@@ -479,15 +529,6 @@ cod_series_outcomes_naive_chi <- cod_streaks_naive_res$series |>
   perform_series_chi_test()
 ```
 
-Calculating the chi-square goodness of fit statistic
-
-```{=tex}
-\begin{equation}\protect\hypertarget{eq:series-length}{}{
-\chi^2 = \sum^{11}_{i=6} \frac{(P_O(r) - P_E(r))^2}{P_E(r)}, r \in R = [6, 7, 8, 9, 10, 11].
-}\label{eq:chi-squ-test}\end{equation}
-```
-as 16.0 (p-value of 0.0068), I can comfortably reject the constant probability null hypothesis for $p_0 = 0.5$, event at a confidence level of $\alpha = 0.01$.
-
 ```{r}
 #| label: cod-alternative-to-p=0.5-method-prep
 min_p1 <- 0.5
@@ -500,12 +541,12 @@ cod_ps <- tibble(p = seq(min_p1, max_p1, by = 0.0025))
 #| label: cod-alternative-to-p=0.5-method-1
 ## p. 365 on https://math.mit.edu/classes/18.095/2016IAP/lec9/Sports_Mosteller1952_WorldSeries.pdf
 theoretical_cod_series_length <- function(p) {
-  6 * prob_of_series_lasting_n_games(n = 6, p = p, max_round = 11) +
-    7 * prob_of_series_lasting_n_games(n = 7, p = p, max_round = 11) +
-    8 * prob_of_series_lasting_n_games(n = 8, p = p, max_round = 11) +
-    9 * prob_of_series_lasting_n_games(n = 9, p = p, max_round = 11) +
-    10 * prob_of_series_lasting_n_games(n = 10, p = p, max_round = 11) +
-    11 * prob_of_series_lasting_n_games(n = 11, p = p, max_round = 11)
+  6 * prob_of_series_lasting_r_rounds(n = 6, p = p, max_round = 11) +
+    7 * prob_of_series_lasting_r_rounds(n = 7, p = p, max_round = 11) +
+    8 * prob_of_series_lasting_r_rounds(n = 8, p = p, max_round = 11) +
+    9 * prob_of_series_lasting_r_rounds(n = 9, p = p, max_round = 11) +
+    10 * prob_of_series_lasting_r_rounds(n = 10, p = p, max_round = 11) +
+    11 * prob_of_series_lasting_r_rounds(n = 11, p = p, max_round = 11)
 }
 cod_rounds_per_series <- cod_streaks_naive_res$series |>
   summarize(
@@ -550,12 +591,12 @@ cod_n10adj <- round(10 * cod_n10 / cod_pm)
 cod_n11adj <- round(10 * cod_n11 / cod_pm)
 
 maximize_cod_series_p <- function(p) {
-  prob_of_series_lasting_n_games(n = 6, p = p, max_round = 11)^cod_n6adj *
-    prob_of_series_lasting_n_games(n = 7, p = p, max_round = 11)^cod_n7adj *
-    prob_of_series_lasting_n_games(n = 8, p = p, max_round = 11)^cod_n8adj *
-    prob_of_series_lasting_n_games(n = 9, p = p, max_round = 11)^cod_n9adj *
-    prob_of_series_lasting_n_games(n = 10, p = p, max_round = 11)^cod_n10adj *
-    prob_of_series_lasting_n_games(n = 11, p = p, max_round = 11)^cod_n11adj
+  prob_of_series_lasting_r_rounds(n = 6, p = p, max_round = 11)^cod_n6adj *
+    prob_of_series_lasting_r_rounds(n = 7, p = p, max_round = 11)^cod_n7adj *
+    prob_of_series_lasting_r_rounds(n = 8, p = p, max_round = 11)^cod_n8adj *
+    prob_of_series_lasting_r_rounds(n = 9, p = p, max_round = 11)^cod_n9adj *
+    prob_of_series_lasting_r_rounds(n = 10, p = p, max_round = 11)^cod_n10adj *
+    prob_of_series_lasting_r_rounds(n = 11, p = p, max_round = 11)^cod_n11adj
 }
 
 cod_theoretical_series_lengths2 <- cod_ps |>
@@ -650,7 +691,7 @@ cod_streaks_other_res |>
   knitr::kable()
 ```
 
-Table \ref{tbl:mosteller-methods-results} shows the alternate values for the constant round win probability $p$ that I find when applying the three methods suggested by Mosteller [-@mosteller1952]. Each is approximately or equal to 0.575, and, when applying Equation \ref{eq:chi-squ-test}, each results in a $\chi^2$ value for which I cannot reject the constant probability null hypothesis.
+Table \ref{tbl:mosteller-methods-results} shows the alternate values for the constant round win probability $p$ that I find when applying the three methods suggested by Mosteller [-@mosteller1952]. Each is approximately or equal to 0.575, and, when applying Equation \ref{eq:chi-squ}, each results in a $\chi^2$ value for which I cannot reject the constant probability null hypothesis.
 
 ```{=tex}
 \begin{longtable}[]{@{}lrr@{}}
@@ -670,9 +711,9 @@ Method & \(p(r)\) & \(\chi^2\) (p-value) \\
 \bottomrule()
 \end{longtable}
 ```
-Table \ref{tbl:expected-series-lengths-alternative-ps} shows the new $P_E(r)$ when re-applying Equation \ref{eq:series-length} for the maximum likelihood estimate $p_2 = 0.575$.[^12] I observe that $P_E(r)$ is notably larger for $p_{2}$ when $r \in [6, 7]$, more closely matching $P_O(r)$. $p_{2}$ is also closer to $P_O(r)$ for $r \in [9, 10]$, although not for $r \in [8, 11]$.
+Table \ref{tbl:expected-series-lengths-alternative-ps} shows the new $P_E(r)$ when re-applying Equation \ref{eq:series-length} for the maximum likelihood estimate $p_2 = 0.575$.[^15] I observe that $P_E(r)$ is notably larger for $p_{2}$ when $r \in [6, 7]$, more closely matching $P_O(r)$. $p_{2}$ is also closer to $P_O(r)$ for $r \in [9, 10]$, although not for $r \in [8, 11]$.
 
-[^12]: The method of moments and minimum $\chi^2$ estimates for $p$ are omitted simply because the results would be nearly identical to those for the maximum likelihood estimate of $p$ (since they are all $\approx 0.575$).
+[^15]: The method of moments and minimum $\chi^2$ estimates for $p$ are omitted simply because the results would be nearly identical to those for the maximum likelihood estimate of $p$ (since they are all $\approx 0.575$).
 
 ```{=tex}
 \begin{longtable}[]{@{}rrrr@{}}
@@ -692,7 +733,7 @@ $r$ & $p_0(r)$ = 0.5 & $p_2(r)$ = 0.575 & $P_O(r)$ \\
 ```
 It is fair to conclude that the constant round win probability assumption can be valid in CoD SnD series with the appropriate choice of $p$ ($\approx 0.575$).
 
-## Momentum {#sec:analysis-2}
+## Momentum {#sec:results-momentum}
 
 ```{r}
 #| label: cod_round_win_prop_after_k_wins
@@ -885,31 +926,9 @@ cod_round_win_prop_after_k_wins |>
   gt::as_latex()
 ```
 
-Despite the implication that one can model team round win probability in CoD SnD as a constant, anecdotally many believe in momentum i.e. streaks not due to random chance. I now evaluate win frequency in rounds following a streak of length $k$. I account for the length of the series ($r$ rounds), modeling the expected round win probability after a streak of length $k$ as
+Given that people typically perceive streaks as beginning after the third success (or failure) at minimum [@carlson2007], I focus on round win percentages in rounds immediately following streaks of three wins.[^16] Table \ref{tbl:cod-round-win-prop-after-k-wins} shows $\hat{P}^{kr,\text{win}}_O$ and $\hat{P}^{kr,\text{loss}}_O$ for $k = 3$ streaks respectively.
 
-```{=tex}
-\begin{equation}\protect\hypertarget{eq:pwkr}{}{
-  \hat{P}^{kr,\text{win}}_{E,\text{unadj.}} = \hat{P}_{E,\text{unadj.}}(\text{win | k, r})=\{
-    \begin{array}{cl}
-    \frac{6 - k}{i - k}, & \text{team wins series} \\
-    \frac{11 - 6 - k}{i - k}, & \text{team loses series}
-    \end{array}.
-  }\label{eq:pwkr}
-\end{equation}
-```
-$\hat{P}^{kr,loss}_{E,\text{unadj.}}$ can be formulated symmetrically.
-
-While one might think that $E[\hat{P}^{kr,\text{win}} - \hat{P}^{kr,\text{loss}}] = 0$, Miller and Sanjurjo [-@miller2018] suggest that, given a deterministic i.i.d. Bernoulli probability (Equation \ref{eq:pwkr}, this is not true due to streak-selection bias.[^13] As proved by Miller and Sanjurjo, TODO: Combine these two sentences
-
-[^13]: Note that these probabilities are separate from those in Section \ref{sec:analysis-1}.
-
-> Theorem 1: *Let* $\mathbf{X} = \{X_i\}^{n}_{i=1}, n \geq 3$*, be a sequence of independent Bernoulli trials, each with probability of success* $0 < p < 1$*. Let* $\hat{P}_k(\mathbf{X})$ *be the proportion of successes on the subset of trials* $I_k(\mathbf{X})$ *that immediately follow* $k$ consecutive successes, that is, $\hat{P}_k(\mathbf{X}) := \sum_{i \in I_k(\mathbf{X})} X_i | I_k(\mathbf{X}) |. \hat{P}_k$ *is a biased estimate of* $\mathbb{P}(X_t = 1 | \prod_{j=t-k}^{t-1} X_j = 1) \equiv p$ *for all* $k$ *such that* $1 \leq k \leq n - 2$*. In particular,* $E[\hat{P}_k(\mathbf{X}) | I_k(\mathbf{X}) \neq \emptyset] < p.$
-
-TODO: Descripe the Appendix E.1. I apply their formulation for "downward bias" to post-streak success to come up with estimates $\hat{P}^{kr,\text{win}}_{E,\text{adj.}}$, specifying $r$ as the number of trials.
-
-Given that people typically perceive streaks as beginning after the third success (or failure) at minimum [@carlson2007], I focus on round win percentages in rounds immediately following streaks of three wins.[^14] Table \ref{tbl:cod-round-win-prop-after-k-wins} shows $\hat{P}^{kr,\text{win}}_O$ and $\hat{P}^{kr,\text{loss}}_O$ for $k = 3$ streaks respectively.
-
-[^14]: Three happens to also be a reasonable number for series that lasts at maximum 11 rounds.
+[^16]: Three happens to also be a reasonable number for series that lasts at maximum 11 rounds.
 
 TODO: Put p-value in parentheses
 
