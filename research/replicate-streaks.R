@@ -26,7 +26,6 @@ simulate_post_streak_prob <- function(sims = 1000, ...) {
 }
 
 set.seed(42)
-## 1.6 hours for 1k reruns and 100 sims
 runs <- rerun(
   1000,
   crossing(
@@ -50,28 +49,8 @@ agg_runs <- runs |>
   ungroup() |>
   arrange(p, k)
 
-agg_runs <- runs |> 
-  filter(!is.nan(next_p)) |> 
-  slice_sample(prop = 10, replace = TRUE) |> 
-  group_by(p, k, n) |> 
-  summarize(
-    across(next_p, mean)
-  ) |> 
-  ungroup() |>
-  arrange(p, k)
-
-p_streaks <- bind_rows(
-  agg_runs |> 
-    distinct(p, k) |> 
-    mutate(n = 1, next_p = p),
-  agg_runs,
-) |> 
+p_streaks <- agg_runs |> 
   arrange(p, k, n) |> 
-  # group_by(p, k) |> 
-  # mutate(
-  #   avg_next_p = slider::slide_dbl(next_p, .f = mean, .before = 5, .after = 0)
-  # ) |> 
-  # ungroup() |> 
   mutate(
     across(k, factor),
     group = sprintf('%s-%s', p, k)
@@ -80,8 +59,44 @@ p_streaks <- bind_rows(
   theme_minimal() +
   aes(x = n, y = next_p, color = k, group = group) +
   geom_line() +
-  geom_smooth() +
+  # geom_smooth() +
   geom_hline(aes(yintercept = p)) +
   labs(x = NULL, y = NULL)
 p_streaks
 ggsave(p_streaks, filename = 'research/npk_replicated.png', width = 12, height = 9)
+
+font <- 'Latin Modern Roman 10'
+extrafont::loadfonts(quiet = TRUE)
+theme_set(theme_classic())
+theme_update(
+  text = element_text(family = font)
+)
+  
+p <- agg_runs |> 
+  filter(p == 0.5, k >= 2, k <= 4, n <= 50) |> 
+  arrange(p, k, n) |> 
+  mutate(
+    across(k, factor)
+  ) |> 
+  ggplot() +
+  aes(x = n, y = next_p, color = k, group = k) +
+  guides(
+    color = guide_legend(
+      title.hjust = 0.5,
+      nrow = 1, override.aes = list(size = 3)
+    )
+  ) +
+  geom_line() +
+  geom_hline(aes(yintercept = p)) +
+  labs(x = 'n', y = 'p') +
+  theme(
+    legend.position = c(0.5, 0.8)
+  )
+p
+
+ggsave(
+  p, 
+  filename = 'paper/images/npkd.png', 
+  width = 5.5, 
+  height = 3
+)
