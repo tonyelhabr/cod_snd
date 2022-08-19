@@ -25,53 +25,55 @@ simulate_post_streak_prob <- function(sims = 1000, ...) {
     mean(na.rm = TRUE)
 }
 
-set.seed(42)
-runs <- rerun(
-  1000,
-  crossing(
-    n = 1:50,
-    k = 1:4,
-    p = c(0.25, 0.5, 0.75)
-  ) |> 
-    mutate(
-      next_p = pmap_dbl(list(n, k, p), ~simulate_post_streak_prob(sims = 1000, n = ..1, k = ..2, p = ..3))
-    )
-) |> 
-  reduce(bind_rows)
-qs::qsave(runs, 'data/runs_1000x1000.qs')
+# set.seed(42)
+# runs <- rerun(
+#   1000,
+#   crossing(
+#     n = 1:50,
+#     k = 1:4,
+#     p = c(0.25, 0.5, 0.75)
+#   ) |> 
+#     mutate(
+#       next_p = pmap_dbl(list(n, k, p), ~simulate_post_streak_prob(sims = 1000, n = ..1, k = ..2, p = ..3))
+#     )
+# ) |> 
+#   reduce(bind_rows)
+# qs::qsave(runs, 'data/runs_1000x1000.qs')
+runs <- qs::qread('data/runs_1000x1000.qs')
 
-agg_runs <- runs |> 
-  filter(!is.nan(next_p)) |> 
-  group_by(p, k, n) |> 
+agg_runs <- runs |>
+  filter(!is.nan(next_p)) |>
+  group_by(p, k, n) |>
   summarize(
     across(next_p, mean)
-  ) |> 
+  ) |>
   ungroup() |>
   arrange(p, k)
 
-p_streaks <- agg_runs |> 
-  arrange(p, k, n) |> 
-  mutate(
-    across(k, factor),
-    group = sprintf('%s-%s', p, k)
-  ) |> 
-  ggplot() +
-  theme_minimal() +
-  aes(x = n, y = next_p, color = k, group = group) +
-  geom_line() +
-  # geom_smooth() +
-  geom_hline(aes(yintercept = p)) +
-  labs(x = NULL, y = NULL)
-p_streaks
-ggsave(p_streaks, filename = 'research/npk_replicated.png', width = 12, height = 9)
+# p_streaks <- agg_runs |> 
+#   arrange(p, k, n) |> 
+#   mutate(
+#     across(k, factor),
+#     group = sprintf('%s-%s', p, k)
+#   ) |> 
+#   ggplot() +
+#   theme_minimal() +
+#   aes(x = n, y = next_p, color = k, group = group) +
+#   geom_line() +
+#   # geom_smooth() +
+#   geom_hline(aes(yintercept = p)) +
+#   labs(x = NULL, y = NULL)
+# p_streaks
+# ggsave(p_streaks, filename = 'research/npk_replicated.png', width = 12, height = 9)
 
-font <- 'Latin Modern Roman 10'
+# font <- 'Latin Modern Roman 10'
 extrafont::loadfonts(quiet = TRUE)
+f <- extrafont::fonts()
+f |> stringr::str_subset('CMU')
 theme_set(theme_classic())
 theme_update(
-  text = element_text(family = font)
+  text = element_text(family = 'Times New Roman')
 )
-  
 p <- agg_runs |> 
   filter(p == 0.5, k >= 2, k <= 4, n <= 50) |> 
   arrange(p, k, n) |> 
@@ -88,7 +90,7 @@ p <- agg_runs |>
   ) +
   geom_line() +
   geom_hline(aes(yintercept = p)) +
-  labs(x = 'n', y = 'p') +
+  labs(x = 'wtf hotdog', y = 'p') +
   theme(
     legend.position = c(0.5, 0.8)
   )
