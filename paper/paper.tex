@@ -234,27 +234,27 @@ Defense round wins & 0 & 1 & 2 & 3 & 4 & 5 \\
 
 There have been a handful of studies of the distribution of games played
 in a series of a professional sport. Most assume a constant probability
-\(p\) of a given team winning a game in the series, regardless of the
+\(\phi\) of a given team winning a game in the series, regardless of the
 series state. Mosteller (1952) observed that the American League had
 dominated the National League in Major League Baseball's (MLB) World
 Series matchups, implying that matchups should not modeled with
-\(p = 0.5\). Mosteller proposed three approaches for identifying the
+\(\phi = 0.5\). Mosteller proposed three approaches for identifying the
 optimal constant probability value of the stronger team in the World
-Series, finding \(p \approx 0.65\). in each case: (1) solving for \(p\)
-from the empirical average number of games won by the loser of the
+Series, finding \(\phi \approx 0.65\). in each case: (1) solving for
+\(p\) from the empirical average number of games won by the loser of the
 series, which he called the ``method of moments'' approach; (2)
 maximizing the likelihood that the sample would have been drawn from a
 population in which the probability of a team winning a game is constant
 across the series (i.e.~maximum likelihood), and (3) minimizing the
-chi-square goodness of fit statistic for \(p\).
+chi-square goodness of fit statistic for \(\phi\).
 
 Chance (2020) re-examines the constant probability notion in Major
-League Baseball's World Series (1923--2018), the National Basketball
-Association's Finals (1951--2018), and the National Hockey League's
-Stanley Cup (1939--2018). Chance finds strong evidence against the null
-hypothesis of \(p = 0.5\) in the MLB and NHL championship series when
-applying Mosteller's first and second methods.{[}\^{}8{]} {[}\^{}8{]}:
-Chance goes on to outline a conditional probability framework
+League Baseball's (MLB) World Series (1923--2018), the National
+Basketball Association's (NBA) Finals (1951--2018), and the National
+Hockey League's (NHL) Stanley Cup (1939--2018). Chance finds strong
+evidence against the null hypothesis of \(\phi = 0.5\) in the MLB and
+NHL championship series when applying Mosteller's first and second
+methods. Chance goes on to outline a conditional probability framework
 (likelihood of winning a game given the series state) which can exactly
 explain the distribution of the number of games played.
 
@@ -272,23 +272,23 @@ positive recency is the expectation of observing future results that
 match recent results.
 
 Studying both player streaks and team streaks in basketball, in both
-observational and controlled settings. Gilovich et al. (1985) do not
-find evidence for the hot hand phenomenon. However, Miller and Sanjurjo
-(2018) refuted the conclusions of Gilovich et al., proving a framework
-for quantifying streak selection bias, which effectively works in the
-manner posited by the gambler's fallacy\footnote{Streak selection bias,
-  ``in conjunction with a quasi-Bayesian model of decision making under
-  sample size neglect\ldots{} provides a novel structural candidate
-  explanationfor the persistence of gambler's fallacy beliefs'', per
-  Miller and Sanjurjo (2018).}. Specifically, Miller and Sanjurjo say
-that a ``bias exists in a common measure of the conditional dependence
-of present outcomes on streaks of past outcomes in sequential data''
-implying that, under i.i.d. conditions, ``the proportion of successes
-among the outcomes that immediately follow a streak of consecutive
-successes is expected to be strictly less than the underlying
-(conditional) probability of success''. When applying streak selection
-bias to Giloveih et al.'s data, Miller and Sanjurjo come to the opposite
-conclusions as Giloveih et al.
+observational and controlled settings. Gilovich et al. (1985),
+henceforth GVT, do not find evidence for the hot hand phenomenon.
+However, Miller and Sanjurjo (2018), henceforth MS, refuted the
+conclusions of GVT, proving a framework for quantifying streak selection
+bias, which effectively works in the manner posited by the gambler's
+fallacy\footnote{Streak selection bias, ``in conjunction with a
+  quasi-Bayesian model of decision making under sample size
+  neglect\ldots{} provides a novel structural candidate explanation for
+  the persistence of gambler's fallacy beliefs'', per MS (2018).}.
+Specifically, MS say that a ``bias exists in a common measure of the
+conditional dependence of present outcomes on streaks of past outcomes
+in sequential data'' implying that, under i.i.d. conditions, ``the
+proportion of successes among the outcomes that immediately follow a
+streak of consecutive successes is expected to be strictly less than the
+underlying (conditional) probability of success''. When applying streak
+selection bias to GVT.'s data, MS come to the opposite conclusions as
+GVT.
 
 Despite the plethora of existing research on games played in a series
 and momentum in sports, these topics have yet to be investigated heavily
@@ -298,9 +298,19 @@ other FPS titles such as Counter-Strike (Xenopoulos, Freeman, and Silva
 CoD SnD. However, research on round-level trends is sparse, perhaps
 because games like Counter-Strike and Valorant both have economic
 aspects that can create clear advantages on side in a given round, given
-how prior rounds played out.\footnote{Additionally, both Counter-Strike
-  and Valorant have overtime rules and blocked offensive/defensive roles
-  (i.e.~playing either offense or defense for many consecutive rounds).}
+how prior rounds played out.
+
+Additionally, both Counter-Strike and Valorant have overtime rules and
+blocked offensive/defensive roles (i.e.~playing either offense or
+defense for many consecutive rounds). On the other hand, teams in CoD
+SnD rotate sides every round, analogous to a 1-1-1-1-1-1-1 format for
+home advantage in best-of-seven series for professional sports like the
+MLB, NBA, and NHL.\footnote{1-1-1-1-1-1-1 is not used today in these
+  leagues, but it was at least one in each league.} While theoretically
+one might be able to account for any kind of balanced rotation, such as
+a ``blocky'' on like a 5-5-1, the rotation of team sides every round is
+convenient, particularly for convincing ourselves that rounds could
+reasonably be modeled as i.i.d. Bernoulli trials.
 
 \hypertarget{methodology}{%
 \section{Methodology}\label{methodology}}
@@ -309,36 +319,41 @@ how prior rounds played out.\footnote{Additionally, both Counter-Strike
 \subsection{Distribution of rounds
 played}\label{sec:method-rounds-played}}
 
-The general formula for the probability \(P_E(r)\) that a best-of-\(s\)
-series (\(s = 11\) for CoD SnD) lasts \(r\) rounds given constant
-probability \(p\) of one team\footnote{If \(p > 0.5\), then one might
-  say that this team is the better team (known in hindsight).} winning
-each round is
+The formula for the expected proportion of seriesn a best-of-\(s\)
+format (\(s = 11\) rounds for CoD SnD), ending in \(r\) rounds
+(\(r \leq s\)), \(\hat{\Phi}(r)\), for a constant round win probability
+\(\phi\) (\(0 \leq \phi \leq 1\)) for one team\footnote{If
+  \(\phi > 0.5\), then one might say that this team is the better team
+  (known in hindsight).} is
 
 \[
 m = \frac{s + 1}{2}
 \]
 
 \begin{equation}\protect\hypertarget{eq:series-length}{}{
-P_E(r) = \frac{(r - 1)!}{(m - 1)!(r - s)!}(p^{m}(1 - p)^{r - m} + p^{r - m}(1 - p)^m).
+\hat{\Phi}(r) = \frac{(r - 1)!}{(m - 1)!(r - s)!}(\phi^{m}(1 - \phi)^{r - m} + \phi^{r - m}(1 - \phi)^m).
 }\label{eq:series-length}\end{equation}
 
-The chi-square goodness of fit statistic can be used to test the
-constant found probability hypothesis for \(0 \leq p \leq 1\).
+To evaluate the constant round win probability hypothesis--that is, that
+the expected and observed round win rates, \(\hat{\Phi}(r)\) and
+\(\Phi(r)\) respectively, are equal to one another--we can compute the
+chi-square goodness of fit statistic, \(\chi^2\).
 
 \begin{equation}\protect\hypertarget{eq:chi-squ}{}{
-\chi^2 = \sum^R \frac{(P_O(r) - P_E(r))^2}{P_E(r)}
+\chi^2 = \sum^R \frac{(\Phi(r) - \hat{\Phi}(r))^2}{\hat{\Phi}(r)}
 }\label{eq:chi-squ}\end{equation}
 
-For CoD SnD, \(r \in R [6, 7, 8, 9, 10, 11]\).
+For CoD SnD, \(r \in R = [6, 7, 8, 9, 10, 11]\).
 
 \hypertarget{sec:method-momentum}{%
 \subsection{Momentum}\label{sec:method-momentum}}
 
-Without accounting for the streak selection bias described by Miller and
-Sanjurjo (2018), the round win probability after a streak of \(k\) round
-wins for a best-of-\(s\) series (\(s = 11\) for CoD SnD), accounting for
-the series lasting \(r\) rounds known in hindsight, is
+When considering momentum in consecutive rounds wins, I use the
+descriptor ``hindsight'' because I account for the length of the series
+(\(r\) rounds). Without accounting for the streak selection bias
+described by MS (2018), the ``hindsight'' Bernoulli round win
+probability immediately following a streak of \(k\) round wins for a
+best-of-\(s\) series, \(p^{w|kr}\), is
 
 \[
 m = \frac{s + 1}{2}
@@ -354,16 +369,14 @@ m = \frac{s + 1}{2}
 \label{eq:pwkr}
 \end{equation}
 
-The ``hindsight'' round loss probability after a streak of \(k\) round
-losses for a series lasting \(r\) rounds, \(p^{l|kr}\), can be
-formulated symmetrically.\footnote{Note that these probabilities are
-  separate from the constant round probabilities in Sections
-  \ref{sec:method-rounds-played} and \ref{sec:results-rounds-played}.}
+The hindsight Bernoulli round loss probability after a streak of \(k\)
+round wins, \(p^{l|kr}\), can be formulated symmetrically.
 
-However, as shown by Miller and Sanjurjo, we should expect the observed
-proportion of rounds wins after a streak \(k\) rounds wins for a series
-lasting \(r\) rounds, \(\hat{P}_{w|kr}\), to be strictly less than
-\(p^{w|kr}\).
+However, as shown by MS, we should expect the proportion of rounds wins
+immediately following a streak \(k\) rounds wins for a series lasting
+\(r\) rounds, \(\hat{P}^{w|kr}\), to be strictly less than
+\(p^{w|kr}\).\footnote{See Appendix E.1 of MS (2018) for details on the
+  proof that follows.}
 
 \begin{quote}
 Theorem 1: \emph{Let}
@@ -380,10 +393,19 @@ particular,}
 \(E[\hat{P}_k(\mathbf{X}) | I_k(\mathbf{X}) \neq \emptyset] < p.\)
 \end{quote}
 
-Miller and Sanjurjo (2018) note that there does not exists a closed form
-representation for
-\(E[\hat{P}_k(\mathbf{X}) | I_k(\mathbf{X}) \neq \emptyset]\) for
-\(k > 1\).
+MS (2018) note that there does not exists a closed form representation
+for \(E[\hat{P}_k(\mathbf{X}) | I_k(\mathbf{X}) \neq \emptyset]\)
+(\(\hat{P}_k(\mathbf{X})\) is the analogue for \(\hat{P}^{w|kr}\) in my
+CoD SnD notation), for \(k > 1\). Figure 1 shows how the expected value
+varies as a function of the total number of trials \(n\), given \(p\)
+and \(k > 1\).\footnote{I've adapted the code from Vafa (2017), which
+  implements MS's framework (2018).}
+
+\begin{figure}
+\centering
+\includegraphics{images/npkd.png}
+\caption{The expected value of the proportion of successes on trials that immediately follow $k$ consecutive successes, $E[\hat{P}_k(\mathbf{X}) | I_k(\mathbf{X}) \neq \emptyset]$, for Bernoulli trial success $p = 0.5$ and streak lengths $k \in [2, 3, 4]$, as a function of the total number of trials $n.$}
+\end{figure}
 
 \hypertarget{results}{%
 \section{Results}\label{results}}
@@ -391,32 +413,29 @@ representation for
 First, I investigate the constant probability assumption and the
 distribution of rounds played in a series. Chance's (2020) work is
 closely related to mine, and, in fact, provides a guide for this
-investigation.
+investigation. Afterwards, I investigate post-streak win rates and the
+context of momentum, leveraging MS's (2018) framework for streak
+selection bias.
 
 \hypertarget{sec:results-rounds-played}{%
 \subsection{Distribution of rounds
 played}\label{sec:results-rounds-played}}
 
-Using Equation \ref{eq:chi-squ}, \(\chi^2 = 16.0\) (p-value of 0.0068)
-for a naive constant round win probability \(p_0 = 0.5\). Thus, I can
-comfortably reject the constant probability null hypothesis for
-\(p_0 = 0.5\), even at a confidence level of \(\alpha = 0.01\).
-Afterwards, I investigate post-streak win rates, building on my
-learnings from the constant probability assumption analysis. I agree
-with Miller and Sanjurjo's (2018) framework for streak selection bias,
-accounting for it in when analyzing momentum.
+Using Equation \ref{eq:chi-squ}, I find that \(\chi^2 = 16.0\) (p-value
+of 0.0068) for the naive constant round win probability
+\(\phi_0 = 0.5\). Thus, I can comfortably reject the constant
+probability null hypothesis for \(\phi_0 = 0.5\), even at a confidence
+level of \(\alpha = 0.01\).
 
 Table \ref{tbl:cod-prob-series-lasting-r-rounds} shows the expected
-probabilities for \(s = 11\) under the naive assumption that
-\(p_0 = 0.5\) for a given round, along with the observed proportions
-\(P_O(r)\) in CoD SnD.
+series lasting \(r\) rounds, \(\hat{\Phi}_0(r)\) (under the assumption
+\(\phi_0 = 0.5\)), for \(s = 11\), along with the observed proportions,
+\(\Phi(r)\), in CoD SnD.
 
 \begin{longtable}{rrrr}
-\caption{The probabilities that a best-of-11 series lasts $r$ rounds ($P_E(r)$, where $r \in [6, 7, 8, 9, 10, 11]$) under the assumption that each team has a 50\% probability ($p_0 = 0.5$) of winning each game. The observed frequencies observed are shown as a count $N_O(r)$ and as a proportion $P_O(r)$ of all series.}\label{tbl:cod-prob-series-lasting-r-rounds} \\
+\caption{The expected proportion of series lasting $r$ rounds ($\hat{\Phi}_0(r)$) in a best-of-11 format, wehre $r \in R = [6, 7, 8, 9, 10, 11]$ under the assumption that each team has a constant round win probability $\phi_0 = 0.5$. The observed frequencies for CoD SnD are shown as a count $N(r)$ and as a proportion $\Phi(r)$ of all series ($\sum^R N(r)$).}\label{tbl:cod-prob-series-lasting-r-rounds} \\
 \toprule
-&  & \multicolumn{2}{c}{Observed} \\ 
-\cmidrule(lr){3-4}
-$r$ & $P_E(r)$ & $P_O(r)$ & $N_O(r)$ \\ 
+$r$ & $\hat{\Phi}_0(r)$ & $\Phi(r)$ & $N(r)$ \\ 
 \midrule
 6 & $3.1\%$ & $4.7\%$ & 40 \\ 
 7 & $9.4\%$ & $11.9\%$ & 101 \\ 
@@ -428,44 +447,46 @@ $r$ & $P_E(r)$ & $P_O(r)$ & $N_O(r)$ \\
 \end{longtable}
 
 Table \ref{tbl:mosteller-methods-results} shows the alternate values for
-the constant round win probability \(p\) that I find when applying the
-three methods suggested by Mosteller (1952). Each is approximately or
-equal to 0.575, and, when applying Equation \ref{eq:chi-squ}, each
-results in a \(\chi^2\) value for which I cannot reject the constant
-probability null hypothesis.
+the constant round win probability that I find when applying the three
+methods suggested by Mosteller (1952). Each is approximately or equal to
+0.575, and, when applying Equation \ref{eq:chi-squ}, each results in a
+\(\chi^2\) value for which I cannot reject the constant probability null
+hypothesis.
 
 \begin{longtable}[]{@{}lrr@{}}
-\caption{Alternate estimates of the constant probability \(p\) for winning a given round in a CoD SnD, applying the three methods suggested by Mosteller (1952), in addition to the naive \(p = 0.5\).}\label{tbl:mosteller-methods-results} \\
+\caption{Alternate estimates of the constant probability ($\phi$) for winning a given round in a CoD SnD, applying the three methods suggested by Mosteller (1952), in addition to the naive ($\phi_0 = 0.5$).}\label{tbl:mosteller-methods-results} \\
 \toprule()
-Method & \(p(r)\) & \(\chi^2\) (p-value) \\
+Method & $\phi$ & $\chi^2$ (p-value) \\
 \midrule()
 \endfirsthead
 \toprule()
-Method & \(p(r)\) & \(\chi^2\) (p-value) \\
+Method & $\phi(r)$ & $\chi^2$ (p-value) \\
 \midrule()
 \endhead
 0. Naive & 0.5000 & 16.0 (\textless=0.01) \\
 1. Method of moments & 0.5725 & 3.6 (0.6) \\
 2. Maximum likelihood & 0.5750 & 3.5 (0.62) \\
-3. Minimum \(\chi^2\) & 0.5775 & 3.5 (0.62) \\
+3. Minimum ($\chi^2$) & 0.5775 & 3.5 (0.62) \\
 \bottomrule()
 \end{longtable}
 
 Table \ref{tbl:expected-series-lengths-alternative-ps} shows the new
-\(P_E(r)\) when re-applying Equation \ref{eq:series-length} for the
-maximum likelihood estimate \(p_2 = 0.575\).\footnote{The method of
-  moments and minimum \(\chi^2\) estimates for \(p\) are omitted simply
-  because the results would be nearly identical to those for the maximum
-  likelihood estimate of \(p\) (since they are all \(\approx 0.575\)).}
-I observe that \(P_E(r)\) is notably larger for \(p_{2}\) when
-\(r \in [6, 7]\), more closely matching \(P_O(r)\). \(p_{2}\) is also
-closer to \(P_O(r)\) for \(r \in [9, 10]\), although not for
-\(r \in [8, 11]\).
+\(\hat{\Phi}(r)\) when re-applying Equation \ref{eq:series-length} for
+the maximum likelihood estimate \(\phi_2 = 0.575\), resulting in a new
+set of expected proportions of series lasting \(r\) rounds
+\(\hat{\Phi}_2(r)\).\footnote{The method of moments and minimum
+  \(\chi^2\) estimates for \(\phi\) are omitted simply because the
+  results would be nearly identical to those for the maximum likelihood
+  estimate of \(\phi\) (since they are all \(\approx 0.575\)).} I
+observe that \(\hat{\Phi}_2(r)\) is larger than \(\hat{\Phi}_0(r)\) for
+\(r \in [6, 7]\), more closely matching \(\Phi(r)\). \(\hat{\Phi}_2(r)\)
+is also closer to the observed \(\Phi(r)\) for \(r \in [9, 10]\),
+although not for \(r \in [8, 11]\).
 
 \begin{longtable}[]{@{}rrrr@{}}
-\caption{The probabilities that a best-of-11 series lasts $r$ rounds under the naive assumption $p_0 = 0.5$ and the maximum likelihood estimation $p_2 = 0.575$.}\label{tbl:expected-series-lengths-alternative-ps} \\
+\caption{The observed proportion of series $\Phi(r)$ ending in $r$ rounds in CoD SnD's best-of-11 format, compared to the expected proportion $\hat{\Phi}_0(r)$ the naive assumption $\phi_0 = 0.5$ and the expected proportion $\hat{\Phi}_2(r)$ under the maximum likelihood estimate $\phi_2 = 0.575$ for constant round win probability.}\label{tbl:expected-series-lengths-alternative-ps} \\
 \toprule()
-$r$ & $p_0(r)$ = 0.5 & $p_2(r)$ = 0.575 & $P_O(r)$ \\
+$r$ & $\hat{\Phi}_0(r)$ = 0.5 & $\hat{\Phi}_2(r)$ = 0.575 & $\Phi(r)$ \\
 \midrule()
 \endhead
 6 & 3.1\% & 4.2\% & 4.7\% \\
@@ -477,45 +498,41 @@ $r$ & $p_0(r)$ = 0.5 & $p_2(r)$ = 0.575 & $P_O(r)$ \\
 \bottomrule()
 \end{longtable}
 
-It is fair to conclude that the constant round win probability
+Observing that \(\hat{\Phi}_2(r)\) reasonably matches \(\Phi(r)\)
+(especially in comparison to \(\hat{\Phi}_0(r)\)), along with the null
+hypothesis rejection shown in Table \ref{tbl:mosteller-methods-results},
+it is fair to conclude that the constant round win probability
 assumption can be valid in CoD SnD series with the appropriate choice of
-\(p\) (\(\approx 0.575\)).
+\(\phi\) (\(\approx 0.575\)).
 
 \hypertarget{sec:results-momentum}{%
 \subsection{Momentum}\label{sec:results-momentum}}
 
 Given that people typically perceive streaks as beginning after the
 third success (or failure) at minimum (Carlson and Shu 2007), I focus on
-round win percentages in rounds immediately following streaks of three
-wins.\footnote{Three happens to also be a reasonable number for series
-  that lasts at maximum 11 rounds.} Table
-\ref{tbl:cod-round-win-prop-after-k-wins} shows
-\(\hat{P}^{kr,\text{win}}_O\) and \(\hat{P}^{kr,\text{loss}}_O\) for
-\(k = 3\) streaks respectively.
-
-TODO: Put p-value in parentheses
+streaks of three round wins.\footnote{Three happens to also be a
+  reasonable number for series that lasts at maximum 11 rounds.} Table
+\ref{tbl:cod-round-win-prop-after-k-wins} shows \(P^{w,kr}\) and
+\(P^{l,kr}\) for round win rate and loss rate following \(k = 3\) round
+win streaks respectively.
 
 \begin{longtable}{rrrrrrr}
 \caption{First, observed proportion of wins ($\hat{P}^{kr,\text{win}}_O$) and expected proportion of wins, both un-adjusted ($\hat{P}^{kr,\text{win}}_{E,\text{unadj.}}$) and adjusted ($\hat{P}^{kr,\text{win}}_{E,\text{adj.}}$), after 3-round win streak, for a series lasting $r$ rounds. Second, observed proportion of losses ($\hat{P}^{kr,\text{loss}}_O$) and expected proportion of losses, both un-adjusted ($\hat{P}^{kr,\text{loss}}_{E,\text{unadj.}}$) and adjusted ($\hat{P}^{kr,\text{loss}}_{E,\text{adj.}}$), after 3-round loss streak}\label{tbl:cod-round-win-prop-after-k-wins} \\
 \toprule
 \multicolumn{7}{c}{\text{3 round win streak}} \\
- &  &  & \multicolumn{2}{c}{\text{Unadjusted}} & \multicolumn{2}{c}{\text{Adjusted}} \\ 
-\cmidrule(lr){4-5} \cmidrule(lr){6-7}
-$r$ & $N^{kr,\text{win}}_O$ & $\hat{P}^{kr,\text{win}}_O$ & $\hat{P}^{kr,\text{win}}_{E,\text{unadj.}}$ &  $p$-value & $\hat{P}^{kr,\text{win}}_{E,\text{adj.}}$ & $p$-value \\ 
+$r$ & $N^{kr,\text{win}}_O$ & $\hat{P}^{kr,\text{win}}_O$ & $\hat{P}^{kr,\text{win}}_{E,\text{unadj.}}$ & $\hat{P}^{kr,\text{win}}_{E,\text{adj.}}$ \\ 
 \midrule
-7 & 209 & $75\%$ & $75\%$ & 0.58 & $61\%$ & <=0.01 \\ 
-8 & 209 & $62\%$ & $60\%$ & 0.28 & $45\%$ & <=0.01 \\ 
-9 & 193 & $52\%$ & $50\%$ & 0.33 & $35\%$ & <=0.01 \\ 
-10 & 151 & $44\%$ & $43\%$ & 0.45 & $29\%$ & <=0.01 \\ 
-11 & 150 & $40\%$ & $38\%$ & 0.29 & $25\%$ & <=0.01 \\ 
+7 & 209 & $75\%$ & $75\%$ (0.58) & $61\%$ (<=0.01) \\
+8 & 209 & $62\%$ & $60\%$ (0.28) & $45\%$ (<=0.01) \\
+9 & 193 & $52\%$ & $50\%$ (0.33) & $35\%$ (<=0.01) \\
+10 & 151 & $44\%$ & $43\%$ (0.45) & $29\%$ (<=0.01) \\
+11 & 150 & $40\%$ & $38\%$ (0.29) & $25\%$ (<=0.01) \\
 \toprule
 \multicolumn{7}{c}{\text{3 round loss streak}} \\
- &  &  & \multicolumn{2}{c}{\text{Unadjusted}} & \multicolumn{2}{c}{\text{Adjusted}} \\ 
-\cmidrule(lr){4-5} \cmidrule(lr){6-7}
-$r$ & $N^{kr,\text{loss}}_O$ & $\hat{P}^{kr,\text{loss}}_O$ & $\hat{P}^{kr,\text{loss}}_{E,\text{unadj.}}$ &  $p$-value & $\hat{P}^{kr,\text{loss}}_{E,\text{adj.}}$ & $p$-value \\ 
+$r$ & $N^{kr,\text{loss}}_O$ & $\hat{P}^{kr,\text{loss}}_O$ & $\hat{P}^{kr,\text{loss}}_{E,\text{unadj.}}$ & $\hat{P}^{kr,\text{loss}}_{E,\text{adj.}}$ \\ 
 \midrule
-10 & 60 & $13\%$ & $14\%$ & 0.64 & $10\%$ & 0.26 \\ 
-11 & 129 & $24\%$ & $25\%$ & 0.63 & $16\%$ & <=0.01 \\ 
+10 & 60 & $13\%$ & $14\%$ (0.64) & $10\%$ (0.26) \\ 
+11 & 129 & $24\%$ & $25\%$ (0.63) & $16\%$ (<=0.01) \\ 
 \bottomrule
 \end{longtable}
 
@@ -566,6 +583,10 @@ Steeger, Gregory M., Johnathon L. Dulin, and Gerardo O. Gonzalez. 2021.
 {``Winning and Losing Streaks in the National Hockey League: Are Teams
 Experiencing Momentum or Are Games a Sequence of Random Events?''}
 \emph{Journal of Quantitative Analysis in Sports} 17 (3): 155170.
+
+\leavevmode\vadjust pre{\hypertarget{ref-vafa2017}{}}%
+Vafa, Keyon. 2017. {``Is the Hot Hand Fallacy a Fallacy?''}
+\url{https://keyonvafa.github.io/hot-hand/}.
 
 \leavevmode\vadjust pre{\hypertarget{ref-xenopoulos2022}{}}%
 Xenopoulos, Peter, William Robert Freeman, and Claudio Silva. 2022.
