@@ -71,12 +71,11 @@ professional Search and Destroy (SnD) matches of the popular
 first-person shooter game Call of Duty (CoD). First, I find evidence
 supprting the hypothesis that round win probability can be modeled as a
 constant across the series, although not at the naive 50\%. Second, I
-examine post-streak round win probability, in search of evidence
-positive recency (the ``hot hand'' fallacy) or negative recency (the
-``gambler's falacy''). I find that teams perform significantly worse
-than expected after streaks of 2, 3, and 4 wins when series end up going
-to 9, 10, or 11 (maximum) rounds, suggesting the presence of negative
-recency.
+examine post-streak round win probability, given the series outcome. I
+find no evidence that post-streak win rate is significantly different
+than expected for combinations of streak length, series length, and
+series winner, suggesting that the perception of momentum at the team
+level is deceiving.
 \end{abstract}
 
 
@@ -466,7 +465,7 @@ getting this expected number of successes is
 
 Plugging in the notional probability \(p^{w|kr}_0\) for the null
 \(\omega_0\) and the observed probability
-\(p^{w|kr} = \frac{N^{w|kr}}{P^{w|kr}}\), where \(N^{w|kr}\) is the
+\(p^{w|kr} = N^{w|kr} \times P^{w|kr}\), where \(N^{w|kr}\) is the
 observed number of instances where a teams wins the round immediately
 following a \(k\)-round winning streak in a series lasting \(r\) rounds,
 for the observed \(\omega\), we can evaluate whether the observed
@@ -584,54 +583,51 @@ Given that people typically perceive streaks as beginning after the
 third success (or failure) at minimum (Carlson and Shu 2007), I focus on
 streaks of three round wins.\footnote{Three happens to also be a
   reasonable number for series that lasts at maximum 11 rounds.} Table
-\ref{tbl:cod-pw3r-pl3r} shows \(P^{w,kr}\) and \(P^{l,kr}\) for round
-win rate and loss rate following \(k = 3\) round win streaks
+\ref{tbl:cod-pw3r-pl3r} compares the observed round win rate
+\(P^{w,kr}\) following streaks of \(k=3\) round wins given the series
+outcome (\(r\) rounds and winner) with the notional and MS expected
+proportions, \(\hat{P}^{w|kr}_0\) and \(\hat{P}^{w|kr}_{MS}\)
 respectively.
 
-First,
-
-\begin{longtable}{rrrrrrr}
-\caption{Observed count and proportion of round wins immediately following round win streak of $k=3$, $N^{w|kr}$ and $P^{w|kr}$ respectively, in series lasting $r$ rounds. Additionally, notional expected proportion, $\hat{P}^{w|kr}_0$ and binomial test p-value, assuming notional round probability $p^{w|kr}$ and using observed counts; MS expected proportion $\hat{P}^{w|kr}_{MS}$; and $\hat{D}^{w|kr} = \hat{P}^{w|kr}_{MS} - \hat{P}^{w|kr}_0$ and proportion test p-value. Fields presented in groups, split by whether the team won the round immediately following the 3-round win streak, and whether the team won the series. The post-streak loss analogues are presented as $N^{\ell|kr}$, $P^{\ell|kr}$, $\hat{P}^{\ell|kr}_0$, $\hat{P}^{\ell|kr}_{MS}$, and $\hat{D}^{\ell|kr}$.}
+\begin{longtable}{rrrrrr}
+\caption{Observed count and proportion of round wins immediately following round win streak of $k=3$, $N^{w|kr}$ and $P^{w|kr}$ respectively, given the length of the series ($r$ rounds) and the series winner. Additionally, the notional and MS expected proportions, $\hat{P}^{w|kr}_0$ and $\hat{P}^{w|kr}_{MS}$ respectively, and the $p$-values of binomial tests comparing the underlying notional and MS round win probabilities, $p^{w|kr}_0$ and $p^{w|kr}_{MS}$, to the probability implied by the observed proportion $p^{w|kr} = N^{w|kr} \times P^{w|kr}$.}
 \label{tbl:cod-pw3r-pl3r} \\
 \toprule
-\multicolumn{6}{c}{\text{win series, win after 3-round win streak}} \\
+$r$ & \text{Win series?} & $N^{w|kr}$ & $P^{w|kr}$ & $\hat{P}^{w|kr}_0$ ($p$-value) & $\hat{P}^{w|kr}_{MS}$ ($p$-value) \\ 
 \midrule
-$r$ & $N^{w|kr}$ & $P^{w|kr}$ & $\hat{P}^{w|kr}_0$ ($p$-value) & $\hat{P}^{w|kr}_{MS}$ & $\hat{D}^{w|kr}$ ($p$-value) \\ 
-\midrule
-7 & 209 & 74.6\% & 75.0\% (0.58) & 75.7\% & -0.7\% (0.94) \\ 
-8 & 209 & 62.2\% & 60.0\% (0.28) & 61.9\% & -1.9\% (1.00) \\ 
-9 & 193 & 51.8\% & 50.0\% (0.33) & 52.7\% & -2.7\% (0.97) \\ 
-10 & 151 & 43.7\% & 42.9\% (0.45) & 44.7\% & -1.8\% (0.94) \\ 
-11 & 150 & 40.0\% & 37.5\% (0.29) & 38.8\% & -1.3\% (1.00) \\ 
-\toprule
-\toprule
-\multicolumn{6}{c}{\text{lose series, win after 3-round win streak}} \\
-\midrule
-$r$ & $N^{w|kr}$ & $P^{w|kr}$ & $\hat{P}^{w|kr}_0$ ($p$-value) & $\hat{P}^{w|kr}_{MS}$ & $\hat{D}^{w|kr}$ ($p$-value) \\ 
-\midrule
-10 & 60 & 13.3\% & 14.3\% (0.64) & 26.7\% & -12.4\% (1.00) \\ 
-11 & 129 & 24.0\% & 25.0\% (0.63) & 30.8\% & -5.8\% (0.98) \\ 
-\toprule
-\toprule
-\multicolumn{6}{c}{\text{win series, lose after 3-round win streak}} \\
-\midrule
-$r$ & $N^{\ell|kr}$ & $P^{\ell|kr}$ & $\hat{P}^{\ell|kr}_0$ ($p$-value) & $\hat{P}^{\ell|kr}_{MS}$ & $\hat{D}^{\ell|kr}$ ($p$-value) \\ 
-\midrule
-7 & 209 & 25.4\% & 25.0\% (0.48) & 6.4\% & 18.6\% (0.98) \\ 
-8 & 209 & 37.8\% & 40.0\% (0.76) & 14.7\% & 25.3\% (0.96) \\ 
-9 & 193 & 48.2\% & 50.0\% (0.72) & 22.2\% & 27.8\% (0.97) \\ 
-10 & 151 & 56.3\% & 57.1\% (0.62) & 26.7\% & 30.5\% (0.99) \\ 
-11 & 150 & 60.0\% & 62.5\% (0.76) & 30.8\% & 31.7\% (0.95) \\ 
-\toprule
-\toprule
-\multicolumn{6}{c}{\text{lose series, lose after 3-round win streak}} \\
-\midrule
-$r$ & $N^{\ell|kr}$ & $P^{\ell|kr}$ & $\hat{P}^{\ell|kr}_0$ ($p$-value) & $\hat{P}^{\ell|kr}_{MS}$ & $\hat{D}^{\ell|kr}$ ($p$-value) \\ 
-\midrule
-10 & 60 & 86.7\% & 85.7\% (0.51) & 44.7\% & 41.1\% (1.00) \\ 
-11 & 129 & 76.0\% & 75.0\% (0.45) & 38.8\% & 36.2\% (0.95) \\ 
+7 & yes & 209 & 74.6\% & 75.0\% (0.94) & 75.7\% (0.69) \\ 
+8 & yes & 209 & 62.2\% & 60.0\% (0.53) & 61.9\% (0.94) \\ 
+9 & yes & 193 & 51.8\% & 50.0\% (0.67) & 52.7\% (0.83) \\ 
+10 & no & 60 & 13.3\% & 14.3\% (1.00) & 26.7\% (0.02) \\ 
+10 & yes & 151 & 43.7\% & 42.9\% (0.87) & 44.7\% (0.87) \\ 
+11 & no & 129 & 24.0\% & 25.0\% (0.84) & 30.8\% (0.11) \\ 
+11 & yes & 150 & 40.0\% & 37.5\% (0.56) & 38.8\% (0.80) \\ 
+
 \bottomrule
 \end{longtable}
+
+We observe that, with the exception of \(\hat{P}^{w|kr}_{MS}\) when
+\(r = 10\) and the eventual series loser is the team that wins after a
+streak of three round wins\footnote{This implies that the opponent, th
+  eventual series winner, goes on to win the series 6-4 after going down
+  0-4. This is the only scenario in which one team wins four rounds
+  consecutively but loses a best-of-11 series in 10 rounds.}, all
+binomial test \(p\)-values are greater than the typical
+\(\alpha = 0.05\) threshold, implying that we cannot reject the null
+hypothesis that the expected notional and MS post-streak round win rates
+are different than the observed proportion. As noted before, the MS
+expectations may be unreliable for CoD SnD, so one is inclined to prefer
+the results of the notional binomial tests.
+
+When performing the same tests for streaks of two, four, and five, there
+is no case in which I can reject the binomial null hypothesis for the
+expected notional probability \(p^{w|kr}_0\). The null hypothesis can be
+rejected for expected MS probability \(p^{w|kr}_{MS}\) when
+\(k = 4, r = [7, 8, 10]\) and \(k = 5, r = [7, 8]\). Nonetheless, the
+usefulness of \(p^{w|kr}_{MS}\) is questionable, as described before,
+and the sample sizes are smaller for these conditions (all under 20
+instances, with the exception of \(k = 4, r = [7, 8]\) with 70 and 39
+observations respectively).
 
 \hypertarget{references}{%
 \section*{References}\label{references}}

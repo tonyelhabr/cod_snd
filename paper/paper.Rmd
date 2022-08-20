@@ -7,7 +7,7 @@ authors:
     email: anthonyelhabr@gmail.com
     url: https://tonyelhabr.rbind.io
 abstract: |
-  My research investigates patterns in round win percentages in professional Search and Destroy (SnD) matches of the popular first-person shooter game Call of Duty (CoD). First, I find evidence supprting the hypothesis that round win probability can be modeled as a constant across the series, although not at the naive 50%. Second, I examine post-streak round win probability, in search of evidence positive recency (the "hot hand" fallacy) or negative recency (the "gambler's falacy"). I find that teams perform significantly worse than expected after streaks of 2, 3, and 4 wins when series end up going to 9, 10, or 11 (maximum) rounds, suggesting the presence of negative recency.
+  My research investigates patterns in round win percentages in professional Search and Destroy (SnD) matches of the popular first-person shooter game Call of Duty (CoD). First, I find evidence supprting the hypothesis that round win probability can be modeled as a constant across the series, although not at the naive 50%. Second, I examine post-streak round win probability, given the series outcome. I find no evidence that post-streak win rate is significantly different than expected for combinations of streak length, series length, and series winner, suggesting that the perception of momentum at the team level is deceiving.
 bibliography: references.bib  
 output:
   rticles::arxiv_article:
@@ -411,7 +411,7 @@ If there are $\sigma$ observed successes in a sample of $r$ trials and we expect
 \Pr(\sigma) = {\binom {r}{\sigma}} \omega^{\sigma}(1-\omega)^{r-\sigma}.
 }\label{eq:binom}\end{equation}
 ```
-Plugging in the notional probability $p^{w|kr}_0$ for the null $\omega_0$ and the observed probability $p^{w|kr} = \frac{N^{w|kr}}{P^{w|kr}}$, where $N^{w|kr}$ is the observed number of instances where a teams wins the round immediately following a $k$-round winning streak in a series lasting $r$ rounds, for the observed $\omega$, we can evaluate whether the observed probability is not significantly different from the notional probability. If we reject this hypothesis, then we might consider team momentum, represented by post-streak success, plausible.
+Plugging in the notional probability $p^{w|kr}_0$ for the null $\omega_0$ and the observed probability $p^{w|kr} = N^{w|kr} \times P^{w|kr}$, where $N^{w|kr}$ is the observed number of instances where a teams wins the round immediately following a $k$-round winning streak in a series lasting $r$ rounds, for the observed $\omega$, we can evaluate whether the observed probability is not significantly different from the notional probability. If we reject this hypothesis, then we might consider team momentum, represented by post-streak success, plausible.
 
 Returning to the streak-selection adjustment framework proposed by MS, one can perform the same binomial test, swapping out $p^{w|kr}_0$ with $p^{w|kr}_{MS}$. Of course, given the caveats mentioned before, the results should be heeded with caution.
 
@@ -801,6 +801,21 @@ Observing that $\hat{\Phi}_2(r)$ reasonably matches $\Phi(r)$ (especially in com
 
 ```{r}
 #| label: cod_round_win_prop_after_k_wins
+vectorized_binom_test <- function(x, n, p, ...) {
+  map_dfr(
+    seq_along(x), 
+    function(i) {
+      res <- binom.test(x[i], n[i], p = p[i], ...)
+      tibble(
+        estimate = res$estimate,
+        conf.low = res$conf.int[[1]],
+        conf.high = res$conf.int[[2]],
+        p.value = res$p.value
+      )
+    }
+  )
+}
+
 cod_round_streaks <- cod_rounds |> 
   group_by(series_id, team) |> 
   mutate(
@@ -828,54 +843,35 @@ postprocess_round_streaks <- function(k, probs_nx_k, ...) {
   col_syms <- syms(cols)
   cod_round_streaks_after_x <- cod_round_streaks |> 
     drop_na(!!!col_syms) |> 
-    count(n_rounds, win_series, win_round, won_prior_round1, !!!col_syms, sort = TRUE)
+    count(n_rounds, win_series, ..., win_round, won_prior_round1, !!!col_syms, sort = TRUE)
   
   cod_round_win_prop_after_z <- cod_round_streaks_after_x |> 
     filter(won_prior_round1, !!!col_syms)
   
   suppressMessages(
     cod_round_win_prop_after_z_with_probs <- cod_round_win_prop_after_z |> 
-      group_by(win_series, n_rounds) |> 
+      group_by(win_series, n_rounds, ...) |> 
       mutate(
         total = sum(n),
         prop = n / total
       ) |> 
       ungroup() |> 
-      select(n_rounds, win_round, win_series, n, total, prop) |> 
-      arrange(n_rounds, win_round) |> 
+      select(n_rounds, win_round, win_series, ..., n, total, prop) |> 
+      # filter(!win_round) |> 
+      arrange(n_rounds, win_round, ...) |> 
       inner_join(
         probs_nx_k
       )
   )
   
-  suppressMessages(
-    full_join(
-      cod_round_win_prop_after_z_with_probs |> 
-        nest(data = -c(n_rounds, win_series, win_round)) |> 
-        mutate(
-          ## TODO: Vectorize this.
-          binom_p_value = map_dbl(
-            data, 
-            ~binom.test(.x$n, .x$total, .x$notional_prop, alternative = 'greater') |> 
-              broom::tidy() |>
-              pull(p.value)
-          ),
-          binom_is_signif = binom_p_value <= 0.05
-        ) |> 
-        unnest(data),
-      cod_round_win_prop_after_z_with_probs |> 
-        select(n_rounds, win_round, win_series, n, total, prop, notional_prop) |> 
-        mutate(
-          notional_n = as.integer(n * notional_prop / prop),
-          notional_total = as.integer(total * notional_prop / prop), 
-          compared_p_value = vectorized_prop_test(n, total, notional_n, notional_total)$p.value,
-          compared_is_signif = compared_p_value <= 0.05
-        )
+  cod_round_win_prop_after_z_with_probs |> 
+    mutate(
+      notional_p_value = vectorized_binom_test(n, total, p = notional_prop)$p.value,
+      ms_p_value = vectorized_binom_test(n, total, p = ms_prop)$p.value
     )
-  )
 }
 
-summarize_cod_win_prop_after_k_wins <- function(k) {
+summarize_cod_win_prop_after_k_wins <- function(k, ...) {
   probs_nx_k <- crossing(
     n_rounds = 7L:11L,
     win_series = c(TRUE, FALSE),
@@ -898,9 +894,15 @@ summarize_cod_win_prop_after_k_wins <- function(k) {
         n_rounds, naive_prop, 
         ~simulate_post_streak_prob(n = ..1, k = !!k, p = ..2)
       ),
-      diff_prop = notional_prop - ms_prop
-    ) |> 
-    filter(notional_prop > 0, notional_prop < 1)
+      across(
+        ms_prop,
+        ~ifelse(win_round, .x, naive_prop + (naive_prop - .x))
+      ),
+      across(
+        ms_prop,
+        ~ifelse(is.nan(ms_prop), naive_prop, .x)
+      )
+    )
   
   postprocess_round_streaks(
     k = k,
@@ -908,58 +910,102 @@ summarize_cod_win_prop_after_k_wins <- function(k) {
   )
 }
 
-cod_round_win_prop_after_k_wins <- tibble(win_streak = 3L) |>
+summarize_cod_win_prop_after_k_wins_i_rounds <- function(k) {
+  probs_nx_k <- crossing(
+    n_rounds = 7L:11L,
+    round = 3L:11L,
+    win_series = c(TRUE, FALSE),
+    win_round = c(TRUE, FALSE)
+  ) |> 
+    filter(round >= (!!k + 1L)) |> 
+    mutate(
+      is_valid = case_when(
+        win_series ~ TRUE,
+        (n_rounds - !!k - 6L) >= 0L ~ TRUE,
+        TRUE ~ FALSE
+      )
+    ) |> 
+    filter(is_valid) |> 
+    select(-is_valid) |> 
+    mutate(
+      naive_prop = ifelse(win_series, 6L / n_rounds, (n_rounds - 6L) / n_rounds),
+      notional_prop = (ifelse(win_series, 6L, n_rounds - 6L) - k) / (n_rounds - k),
+      across(c(naive_prop, notional_prop), ~ifelse(win_round, .x, 1 - .x)),
+      ms_prop = map2_dbl(
+        n_rounds, naive_prop, 
+        ~simulate_post_streak_prob(n = ..1, k = !!k, p = ..2)
+      ),
+      across(
+        ms_prop,
+        ~ifelse(win_round, .x, naive_prop + (naive_prop - .x))
+      )
+    )
+  
+  postprocess_round_streaks(
+    k = k,
+    probs_nx_k = probs_nx_k,
+    round
+  )
+}
+
+cod_round_win_prop_after_k_wins <- tibble(win_streak = 2L:5L) |>
   mutate(
     data = map(win_streak, summarize_cod_win_prop_after_k_wins)
   ) |>
   unnest(data)
+cod_round_win_prop_after_k_wins |> filter(win_round, notional_p_value < 0.05)
+cod_round_win_prop_after_k_wins |> filter(win_round, ms_p_value < 0.05)
+
+cod_round_win_prop_after_k_wins_i_rounds <- tibble(win_streak = 2L:3L) |>
+  mutate(
+    data = map(win_streak, summarize_cod_win_prop_after_k_wins_i_rounds)
+  ) |>
+  unnest(data)
+cod_round_win_prop_after_k_wins_i_rounds |> filter(win_round, notional_p_value < 0.05)
 ```
 
 ```{r}
 #| label: cod_round_win_prop_after_k_wins-table
 cod_round_win_prop_after_k_wins |> 
+  filter(win_streak == 2L) |> 
   mutate(
     across(
       matches('p_value'), 
       ~case_when(
         .x <= 0.01 ~ '<=0.01', 
-        round(.x, 2) == 1 ~ '1.00',
-        TRUE ~ as.character(round(.x, 2))
+        TRUE ~ sprintf('%.2f', .x)
       )
     ),
     prop_lab = scales::percent(prop, accuracy = 0.1),
-    binom_lab = sprintf('%.1f%% (%s)', round(100 * notional_prop, 1), binom_p_value),
-    compared_lab = scales::percent(ms_prop, accuracy = 0.1),
-    diff_lab = sprintf('%.1f%% (%s)', round(100 * diff_prop, 1), compared_p_value)
+    notional_lab = sprintf('%.1f%% (%s)', round(100 * notional_prop, 1), notional_p_value),
+    ms_lab = sprintf('%.1f%% (%s)', round(100 * ms_prop, 1), ms_p_value)
   ) |>
-  arrange(win_streak, n_rounds, win_series) |> 
+  arrange(n_rounds, win_series, win_round) |> 
   transmute(
-    win_series,
-    win_round,
     n_rounds,
+    across(win_series, ~ifelse(.x, 'yes', 'no')),
+    win_round,
     total,
     prop_lab,
-    binom_lab,
-    compared_lab,
-    diff_lab
+    notional_lab,
+    ms_lab
   ) |>
-  group_split(win_series, win_round) |> 
+  group_split(win_round) |> 
   walk(
     function(df) {
       message(sprintf('win_round=%s, win_series=%s', df$win_round[[1]], df$win_series[[1]]))
       df <- df |> 
         select(
-          -c(win_series, win_round)
+          -c(win_round)
         ) |> 
         gt::gt() |> 
         gt::cols_label(
-          # win_streak = 'Streak',
           n_rounds = 'r',
+          win_series = 'Win series?',
           total = 'N',
           prop_lab = 'O',
-          binom_lab = 'a',
-          compared_lab = 'b',
-          diff_lab = 'c'
+          notional_lab = 'a',
+          ms_lab = 'b'
         ) |> 
         gt::as_latex() |> 
         cat()
@@ -968,56 +1014,34 @@ cod_round_win_prop_after_k_wins |>
 
 ```
 
-Given that people typically perceive streaks as beginning after the third success (or failure) at minimum [@carlson2007], I focus on streaks of three round wins.[^19] Table \ref{tbl:cod-pw3r-pl3r} shows $P^{w,kr}$ and $P^{l,kr}$ for round win rate and loss rate following $k = 3$ round win streaks respectively.
+Given that people typically perceive streaks as beginning after the third success (or failure) at minimum [@carlson2007], I focus on streaks of three round wins.[^19] Table \ref{tbl:cod-pw3r-pl3r} compares the observed round win rate $P^{w,kr}$ following streaks of $k=3$ round wins given the series outcome ($r$ rounds and winner) with the notional and MS expected proportions, $\hat{P}^{w|kr}_0$ and $\hat{P}^{w|kr}_{MS}$ respectively.
 
 [^19]: Three happens to also be a reasonable number for series that lasts at maximum 11 rounds.
 
-First,
-
 ```{=tex}
-\begin{longtable}{rrrrrrr}
-\caption{Observed count and proportion of round wins immediately following round win streak of $k=3$, $N^{w|kr}$ and $P^{w|kr}$ respectively, in series lasting $r$ rounds. Additionally, notional expected proportion, $\hat{P}^{w|kr}_0$ and binomial test p-value, assuming notional round probability $p^{w|kr}$ and using observed counts; MS expected proportion $\hat{P}^{w|kr}_{MS}$; and $\hat{D}^{w|kr} = \hat{P}^{w|kr}_{MS} - \hat{P}^{w|kr}_0$ and proportion test p-value. Fields presented in groups, split by whether the team won the round immediately following the 3-round win streak, and whether the team won the series. The post-streak loss analogues are presented as $N^{\ell|kr}$, $P^{\ell|kr}$, $\hat{P}^{\ell|kr}_0$, $\hat{P}^{\ell|kr}_{MS}$, and $\hat{D}^{\ell|kr}$.}
+\begin{longtable}{rrrrrr}
+\caption{Observed count and proportion of round wins immediately following round win streak of $k=3$, $N^{w|kr}$ and $P^{w|kr}$ respectively, given the length of the series ($r$ rounds) and the series winner. Additionally, the notional and MS expected proportions, $\hat{P}^{w|kr}_0$ and $\hat{P}^{w|kr}_{MS}$ respectively, and the $p$-values of binomial tests comparing the underlying notional and MS round win probabilities, $p^{w|kr}_0$ and $p^{w|kr}_{MS}$, to the probability implied by the observed proportion $p^{w|kr} = N^{w|kr} \times P^{w|kr}$.}
 \label{tbl:cod-pw3r-pl3r} \\
 \toprule
-\multicolumn{6}{c}{\text{win series, win after 3-round win streak}} \\
+$r$ & \text{Win series?} & $N^{w|kr}$ & $P^{w|kr}$ & $\hat{P}^{w|kr}_0$ ($p$-value) & $\hat{P}^{w|kr}_{MS}$ ($p$-value) \\ 
 \midrule
-$r$ & $N^{w|kr}$ & $P^{w|kr}$ & $\hat{P}^{w|kr}_0$ ($p$-value) & $\hat{P}^{w|kr}_{MS}$ & $\hat{D}^{w|kr}$ ($p$-value) \\ 
-\midrule
-7 & 209 & 74.6\% & 75.0\% (0.58) & 75.7\% & -0.7\% (0.94) \\ 
-8 & 209 & 62.2\% & 60.0\% (0.28) & 61.9\% & -1.9\% (1.00) \\ 
-9 & 193 & 51.8\% & 50.0\% (0.33) & 52.7\% & -2.7\% (0.97) \\ 
-10 & 151 & 43.7\% & 42.9\% (0.45) & 44.7\% & -1.8\% (0.94) \\ 
-11 & 150 & 40.0\% & 37.5\% (0.29) & 38.8\% & -1.3\% (1.00) \\ 
-\toprule
-\toprule
-\multicolumn{6}{c}{\text{lose series, win after 3-round win streak}} \\
-\midrule
-$r$ & $N^{w|kr}$ & $P^{w|kr}$ & $\hat{P}^{w|kr}_0$ ($p$-value) & $\hat{P}^{w|kr}_{MS}$ & $\hat{D}^{w|kr}$ ($p$-value) \\ 
-\midrule
-10 & 60 & 13.3\% & 14.3\% (0.64) & 26.7\% & -12.4\% (1.00) \\ 
-11 & 129 & 24.0\% & 25.0\% (0.63) & 30.8\% & -5.8\% (0.98) \\ 
-\toprule
-\toprule
-\multicolumn{6}{c}{\text{win series, lose after 3-round win streak}} \\
-\midrule
-$r$ & $N^{\ell|kr}$ & $P^{\ell|kr}$ & $\hat{P}^{\ell|kr}_0$ ($p$-value) & $\hat{P}^{\ell|kr}_{MS}$ & $\hat{D}^{\ell|kr}$ ($p$-value) \\ 
-\midrule
-7 & 209 & 25.4\% & 25.0\% (0.48) & 6.4\% & 18.6\% (0.98) \\ 
-8 & 209 & 37.8\% & 40.0\% (0.76) & 14.7\% & 25.3\% (0.96) \\ 
-9 & 193 & 48.2\% & 50.0\% (0.72) & 22.2\% & 27.8\% (0.97) \\ 
-10 & 151 & 56.3\% & 57.1\% (0.62) & 26.7\% & 30.5\% (0.99) \\ 
-11 & 150 & 60.0\% & 62.5\% (0.76) & 30.8\% & 31.7\% (0.95) \\ 
-\toprule
-\toprule
-\multicolumn{6}{c}{\text{lose series, lose after 3-round win streak}} \\
-\midrule
-$r$ & $N^{\ell|kr}$ & $P^{\ell|kr}$ & $\hat{P}^{\ell|kr}_0$ ($p$-value) & $\hat{P}^{\ell|kr}_{MS}$ & $\hat{D}^{\ell|kr}$ ($p$-value) \\ 
-\midrule
-10 & 60 & 86.7\% & 85.7\% (0.51) & 44.7\% & 41.1\% (1.00) \\ 
-11 & 129 & 76.0\% & 75.0\% (0.45) & 38.8\% & 36.2\% (0.95) \\ 
+7 & yes & 209 & 74.6\% & 75.0\% (0.94) & 75.7\% (0.69) \\ 
+8 & yes & 209 & 62.2\% & 60.0\% (0.53) & 61.9\% (0.94) \\ 
+9 & yes & 193 & 51.8\% & 50.0\% (0.67) & 52.7\% (0.83) \\ 
+10 & no & 60 & 13.3\% & 14.3\% (1.00) & 26.7\% (0.02) \\ 
+10 & yes & 151 & 43.7\% & 42.9\% (0.87) & 44.7\% (0.87) \\ 
+11 & no & 129 & 24.0\% & 25.0\% (0.84) & 30.8\% (0.11) \\ 
+11 & yes & 150 & 40.0\% & 37.5\% (0.56) & 38.8\% (0.80) \\ 
+
 \bottomrule
 \end{longtable}
 ```
+We observe that, with the exception of $\hat{P}^{w|kr}_{MS}$ when $r = 10$ and the eventual series loser is the team that wins after a streak of three round wins[^20], all binomial test $p$-values are greater than the typical $\alpha = 0.05$ threshold, implying that we cannot reject the null hypothesis that the expected notional and MS post-streak round win rates are different than the observed proportion. As noted before, the MS expectations may be unreliable for CoD SnD, so one is inclined to prefer the results of the notional binomial tests.
+
+[^20]: This implies that the opponent, th eventual series winner, goes on to win the series 6-4 after going down 0-4. This is the only scenario in which one team wins four rounds consecutively but loses a best-of-11 series in 10 rounds.
+
+When performing the same tests for streaks of two, four, and five, there is no case in which I can reject the binomial null hypothesis for the expected notional probability $p^{w|kr}_0$. The null hypothesis can be rejected for expected MS probability $p^{w|kr}_{MS}$ when $k = 4, r = [7, 8, 10]$ and $k = 5, r = [7, 8]$. Nonetheless, the usefulness of $p^{w|kr}_{MS}$ is questionable, as described before, and the sample sizes are smaller for these conditions (all under 20 instances, with the exception of $k = 4, r = [7, 8]$ with 70 and 39 observations respectively).
+
 # References {.unnumbered}
 
 ::: {#refs}
