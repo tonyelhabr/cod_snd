@@ -319,93 +319,107 @@ reasonably be modeled as i.i.d. Bernoulli trials.
 \subsection{Distribution of rounds
 played}\label{sec:method-rounds-played}}
 
-The formula for the expected proportion of seriesn a best-of-\(s\)
-format (\(s = 11\) rounds for CoD SnD), ending in \(r\) rounds
-(\(r \leq s\)), \(\hat{\Phi}(r)\), for a constant round win probability
-\(\phi\) (\(0 \leq \phi \leq 1\)) for one team\footnote{If
-  \(\phi > 0.5\), then one might say that this team is the better team
-  (known in hindsight).} is
-
-\[
-m = \frac{s + 1}{2}
-\]
+The formula for the expected proportion of series a best-of-\(s\) format
+ending in \(r\) rounds (\(r \leq s\)), \(\hat{\Phi}(r)\), for a constant
+round win probability \(\phi\) (\(0 \leq \phi \leq 1\)) for one
+team\footnote{If \(\phi > 0.5\), then one might say that this team is
+  the better team (known in hindsight).} is
 
 \begin{equation}\protect\hypertarget{eq:m}{}{
 m = \frac{s + 1}{2}
 }\label{eq:m}\end{equation}
 
 \begin{equation}\protect\hypertarget{eq:series-length}{}{
-\hat{\Phi}(r) = \frac{(r - 1)!}{(m - 1)!(r - s)!}(\phi^{m}(1 - \phi)^{r - m} + \phi^{r - m}(1 - \phi)^m).
+\hat{\Phi}(r) = \frac{(r - 1)!}{(m - 1)!(r - s)!}(\phi^{m}(1 - \phi)^{r - m} + \phi^{r - m}(1 - \phi)^m)
 }\label{eq:series-length}\end{equation}
 
-To evaluate the constant round win probability hypothesis--that is, that
-the expected and observed round win rates, \(\hat{\Phi}(r)\) and
-\(\Phi(r)\) respectively, are equal to one another--we can compute the
-chi-square goodness of fit statistic, \(\chi^2\).
+\(s = 11\) rounds for CoD SnD.\footnote{\(\phi\) and other symbols are
+  selected so as to avoid reserve symbols, like \(p\) for usage in other
+  contexts, without risking confusion. Upper-case symbol, e.g.~\(\Phi\),
+  are consistently used in this paper to represent proportions, while
+  lower-case symbols corresponding to proportions represent
+  probabilities. ``Hats'', e.g.~\(\hat{\Phi}\), are used to convey
+  expectations, while ``bare'' symbols mirroring hat-ed symbols convey
+  observational data.}
+
+To evaluate the constant round win probability null hypothesis---that
+is, that the expected and observed round win rates, \(\hat{\Phi}(r)\)
+and \(\Phi(r)\) respectively, are equal to one another---we can compute
+the chi-square goodness of fit statistic, \(\chi^2\),
 
 \begin{equation}\protect\hypertarget{eq:chi-squ}{}{
-\chi^2 = \sum^R \frac{(\Phi(r) - \hat{\Phi}(r))^2}{\hat{\Phi}(r)}
+\chi^2 = \sum^R \frac{(\Phi(r) - \hat{\Phi}(r))^2}{\hat{\Phi}(r)}.
 }\label{eq:chi-squ}\end{equation}
 
-For CoD SnD, \(r \in R = [6, 7, 8, 9, 10, 11]\).
+\(r \in R = [6, 7, 8, 9, 10, 11]\) for CoD SnD.
 
 \hypertarget{sec:method-momentum}{%
 \subsection{Momentum}\label{sec:method-momentum}}
 
-Removing our knowledge of a streak, we might model the Bernoulli round
-win probability as
+Let us now consider round win rate immediately following a streak of
+\(k\) wins, given that the series lasts \(r\) rounds. Removing our
+knowledge of a streak, we might model the Bernoulli round win
+probability as
 
 \begin{equation}\protect\hypertarget{eq:pwr}{}{
-p^{w|r} = p(\text{win | r})=\{
-\begin{array}{cl}
-\frac{m}{r}, & \text{team wins series} \\
-\frac{r - m}{r}, & \text{team loses series}
-\end{array}.
+p_0(\text{win} | r) = p^{w|r}_0 = \{
+\begin{array}{rcll}
+p^{w|r_W} & = & \frac{m}{r}, & \text{team wins series} \\
+p^{w|r_L} & = & \frac{r - m}{r}, & \text{team loses series}
+\end{array}
 }
 \label{eq:pwr}
 \end{equation}
 
-The Bernoulli round loss probability after a streak of \(k\) round wins,
-\(p^{\ell|kr}_0\), can be formulated symmetrically.
+using \(m\) from Equation \ref{eq:m}. The Bernoulli round loss
+probability for a series lasting \(r\) rounds, \(p^{\ell|kr}_0\)
+(i.e.~\(\ell = 1 - w, w \in [0, 1]\)), can be formulated symmetrically.
 
 As shown by MS, we should expect the proportion of rounds wins
 immediately following a streak of \(k\) rounds wins for a series lasting
 \(r\) rounds, \(\hat{P}^{w|kr}_{MS}\), to be strictly less than
 \(p^{w|r}\).\footnote{See Appendix E.1 of MS for details on the proof
-  that follows.}
+  that follows.}\footnote{Here, I choose symbols, e.g.~\(\pi\), \(x\),
+  etc. that mostly do not conflict with syntax in other places. The
+  exceptions are \(k\) and \(r\), which are used to represent streak
+  length and number of trials globally.}
 
 \begin{quote}
 Theorem 1: \emph{Let}
-\(\mathbf{X} = \{X_i\}^{n}_{i=1}, n \geq 3\)\emph{, be a sequence of
+\(\mathbf{X} = \{X_i\}^{r}_{i=1}, r \geq 3\)\emph{, be a sequence of
 independent Bernoulli trials, each with probability of success}
 \(0 < \pi < 1\)\emph{. Let} \(\hat{\Pi}_k(\mathbf{X})\) \emph{be the
 proportion of successes on the subset of trials} \(I_k(\mathbf{X})\)
 \emph{that immediately follow} \(k\) consecutive successes, that is,
 \(\hat{\Pi}_k(\mathbf{X}) := \sum_{i \in I_k(\mathbf{X})} X_i | I_k(\mathbf{X}) |. \hat{\Pi}_k\)
 \emph{is a biased estimate of}
-\(\mathbb{\Pi}(X_t = 1 | \prod_{j=t-k}^{t-1} X_j = 1) \equiv p\)
-\emph{for all} \(k\) \emph{such that} \(1 \leq k \leq n - 2\)\emph{. In
+\(\mathbb{P}(X_t = 1 | \prod_{j=t-k}^{t-1} X_j = 1) \equiv \pi\)
+\emph{for all} \(k\) \emph{such that} \(1 \leq k \leq r - 2\)\emph{. In
 particular,}
 \(E[\hat{\Pi}_k(\mathbf{X}) | I_k(\mathbf{X}) \neq \emptyset] < \pi.\)
 \end{quote}
 
-MS note that there does not exists a closed form representation for
-\(E[\hat{\Pi}_k(\mathbf{X}) | I_k(\mathbf{X}) \neq \emptyset]\) for
-\(k > 1\). (\(\hat{\Pi}_k(\mathbf{X})\) is the analogue for
-\(\hat{P}^{w|kr}_{MS}\) in my notation for CoD SnD.) Figure 1 shows how
-the expected value varies as a function of the total number of trials
-\(n\), given \(\pi\) and \(k > 1\).\footnote{I've adapted the code from
-  Vafa (2017), which implements MS's framework (2018).}
+MS notes that there does not exists a closed form representation for
+\(E[\hat{\Pi}_k(\mathbf{X}) | I_k(\mathbf{X}) \neq \emptyset]\),
+henceforth \(E^\Pi\), for \(k \> 1\). One may recursively build a
+collection of dictionaries to quantify \(E^\Pi\) analytically, or, more
+reasonably for large values of \(n\), one may run simulations to
+estimate the expected value. Indeed, Figure 1 uses simulation to
+estimate \(E^\Pi\) as a function of the total number of trials \(r\),
+given \(\pi\) and \(k\).\footnote{I've adapted the code from Vafa
+  (2017), which implements MS's framework (2018).}\footnote{Note that
+  \(\pi\) and \(\hat{\Pi}_k(\mathbf{X})\) are analogues for
+  \(p_0^{w|r}\) and \(\hat{P}^{w|kr}_{MS}\) in my notation for CoD SnD.}
 
 \begin{figure}
 \centering
 \includegraphics{images/pwkr_ms.png}
-\caption{The expected value of the proportion of successes on trials that immediately follow $k$ consecutive successes, $E[\hat{\Pi}_k(\mathbf{X}) | I_k(\mathbf{X}) \neq \emptyset]$, for Bernoulli trial success $\pi = 0.5$ and streak lengths $k \in [2, 3, 4]$, as a function of the total number of trials $n.$}
+\caption{The expected value of the proportion of successes on trials, $E^\Pi$, that immediately follow $k$ consecutive successes for Bernoulli trial success $\pi = 0.5$ and streak lengths $k \in [2, 3, 4]$, as a function of the total number of trials $r$.}
 \end{figure}
 
 My context is fundamentally different from that of GVT and MS, both of
-whom focus on longitudinal data in controlled settings. GVT also perform
-statistical tests on shots from players in live games,
+whom focus on longitudinal data in controlled settings. GVT also
+performs statistical tests on shots from players in live games,
 i.e.~``observational'' data, but they note that their findings are
 likely affected player shot selection in the face of defensive strategy
 by the opposing team. The number of trials is fixed in their
@@ -413,44 +427,57 @@ experimental designs, but in CoD SnD, the number of rounds played is
 determined as a function of the max number of possible rounds (\(s\))
 and whether or not the team wins the series, as shown in Equation
 \ref{eq:pwr}. The Bernoulli trial success probability, i.e.~a round win
-in CoD SnD, is not independent of the opponent.
+in CoD SnD, is not independent of the opponent. Consequently, a
+statistical test of the difference in \(\hat{P}^{w|kr}\) and
+\(\hat{P}^{\ell|kr}\), as performed by GVT and MS to evaluate their
+respective hypothesis regarding post-streak success rates is not
+appropriate.
 
-Consequently, a statistical test of the difference in \(\hat{P}^{w|kr}\)
-and \(\hat{P}^{\ell|kr}\), as performed by GVT and MS to evaluate their
-respective hypothesis regarding
-\(E[\hat{P}_k(\mathbf{X}) | I_k(\mathbf{X}) \neq \emptyset]\) (Theorem
-1), is not appropriate.
-
-Let us consider another form of the expected proportion of rounds won
+One might consider another form of the expected proportion of rounds won
 immediately after a streak of \(k\) round wins in a best-of-\(s\) series
-given the length of the series (\(r\) rounds), the ``hindsight''
+given the length of the series (\(r\) rounds), the ``notional''
 proportion \(\hat{P}^{w|kr}_0\). The Bernoulli round win probability
 underlying \(\hat{P}^{w|kr}_0\) is
 
 \begin{equation}\protect\hypertarget{eq:pwkr}{}{
-p_0^{w|kr} = p_0(\text{win | k, r})=\{
-\begin{array}{cl}
-\frac{m - k}{i - k}, & \text{team wins series} \\
-\frac{s - m - k}{i - k}, & \text{team loses series}
-\end{array}.
+p_0(\text{win} | k, r) = p^{w|kr}_0 =\{
+\begin{array}{rcll}
+p_0^{w|kr_W} & = & \frac{m - k}{i - k}, & \text{team wins series} \\
+p_0^{w|kr_L} & = & \frac{s - m - k}{i - k}, & \text{team loses series}
+\end{array}
 }
 \label{eq:pwkr}
 \end{equation}
 
-A binomial test for the expected proportion of round wins following
-streaks of \(k\) round wins in a series lasting \(r\) rounds,
-\(\hat{P}^{w|kr}_0\), assuming \(p^{w|kr}_0\) as the probability of
-success, can be used to verify that \(\hat{P}^{w|kr}_0\) is reasonable
-as to use as a baseline with which to compare \(\hat{P}^{w|kr}_{MS}\).
-If the binomial test shows that we cannot reject the null hypothesis
-that the expected \(\hat{P}^{w|kr}_0\) is different from the observed
-proportion \(P^{w|kr}\).
+using \(m\) from Equation \ref{eq:m}. We can perform a binomial test to
+test the null hypothesis \(H_0 : \omega = \omega_0\) for the observed
+probability of success \(\omega\) and a user-specified \(\omega_0\),
+where \(0 \leq \omega_0 \leq 1\).\footnote{\(\omega\) and other symbols
+  are chosen so as to not conflict with symbols already used elsewhere
+  for in other equations, either generic or for CoD SnD specifically.}
 
-A proportion test of \(\hat{P}^{w|kr}_0\) and \(\hat{P}^{w|kr}_{MS}\)
-can tell us whether the momentum exists in CoD SnD. A null result means
-we cannot say that there is a difference between the hindsight expected
-proportion \(\hat{P}^{w|kr}_0\) and the expected proportion adjusted for
-streak-selection bias, \(\hat{P}^{w|kr}_0\).
+If there are \(\sigma\) observed successes in a sample of \(r\) trials
+and we expect that there should be \(r * \omega_0\), the probability of
+getting this expected number of successes is
+
+\begin{equation}\protect\hypertarget{eq:binom}{}{
+\Pr(\sigma) = {\binom {r}{\sigma}} \omega^{\sigma}(1-\omega)^{r-\sigma}.
+}\label{eq:binom}\end{equation}
+
+Plugging in the notional probability \(p^{w|kr}_0\) for the null
+\(\omega_0\) and the observed probability
+\(p^{w|kr} = \frac{N^{w|kr}}{P^{w|kr}}\), where \(N^{w|kr}\) is the
+observed number of instances where a teams wins the round immediately
+following a \(k\)-round winning streak in a series lasting \(r\) rounds,
+for the observed \(\omega\), we can evaluate whether the observed
+probability is not significantly different from the notional
+probability. If we reject this hypothesis, then we might consider team
+momentum, represented by post-streak success, plausible.
+
+Returning to the streak-selection adjustment framework proposed by MS,
+one can perform the same binomial test, swapping out \(p^{w|kr}_0\) with
+\(p^{w|kr}_{MS}\). Of course, given the caveats mentioned before, the
+results should be heeded with caution.
 
 \hypertarget{results}{%
 \section{Results}\label{results}}
