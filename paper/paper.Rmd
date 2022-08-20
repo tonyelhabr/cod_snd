@@ -261,28 +261,28 @@ For CoD SnD, $r \in R = [6, 7, 8, 9, 10, 11]$.
 
 ## Momentum {#sec:method-momentum}
 
-The hindsight Bernoulli round loss probability after a streak of $k$ round wins, $p^{l|kr}_0$, can be formulated symmetrically. We might consider these as a reference when considering the
-
 Removing our knowledge of a streak, we might model the Bernoulli round win probability as
 
 ```{=tex}
 \begin{equation}\protect\hypertarget{eq:pwr}{}{
-  p^{w|r} = p(\text{win | r})=\{
-    \begin{array}{cl}
-    \frac{m}{r}, & \text{team wins series} \\
-    \frac{r - m}{r}, & \text{team loses series}
-    \end{array}.
-  }
+p^{w|r} = p(\text{win | r})=\{
+\begin{array}{cl}
+\frac{m}{r}, & \text{team wins series} \\
+\frac{r - m}{r}, & \text{team loses series}
+\end{array}.
+}
 \label{eq:pwr}
 \end{equation}
 ```
+The Bernoulli round loss probability after a streak of $k$ round wins, $p^{\ell|kr}_0$, can be formulated symmetrically.
+
 As shown by MS, we should expect the proportion of rounds wins immediately following a streak of $k$ rounds wins for a series lasting $r$ rounds, $\hat{P}^{w|kr}_{MS}$, to be strictly less than $p^{w|r}$.[^12]
 
 [^12]: See Appendix E.1 of MS for details on the proof that follows.
 
-> Theorem 1: *Let* $\mathbf{X} = \{X_i\}^{n}_{i=1}, n \geq 3$*, be a sequence of independent Bernoulli trials, each with probability of success* $0 < p < 1$*. Let* $\hat{P}_k(\mathbf{X})$ *be the proportion of successes on the subset of trials* $I_k(\mathbf{X})$ *that immediately follow* $k$ consecutive successes, that is, $\hat{P}_k(\mathbf{X}) := \sum_{i \in I_k(\mathbf{X})} X_i | I_k(\mathbf{X}) |. \hat{P}_k$ *is a biased estimate of* $\mathbb{P}(X_t = 1 | \prod_{j=t-k}^{t-1} X_j = 1) \equiv p$ *for all* $k$ *such that* $1 \leq k \leq n - 2$*. In particular,* $E[\hat{P}_k(\mathbf{X}) | I_k(\mathbf{X}) \neq \emptyset] < p.$
+> Theorem 1: *Let* $\mathbf{X} = \{X_i\}^{n}_{i=1}, n \geq 3$*, be a sequence of independent Bernoulli trials, each with probability of success* $0 < \pi < 1$*. Let* $\hat{\Pi}_k(\mathbf{X})$ *be the proportion of successes on the subset of trials* $I_k(\mathbf{X})$ *that immediately follow* $k$ consecutive successes, that is, $\hat{\Pi}_k(\mathbf{X}) := \sum_{i \in I_k(\mathbf{X})} X_i | I_k(\mathbf{X}) |. \hat{\Pi}_k$ *is a biased estimate of* $\mathbb{\Pi}(X_t = 1 | \prod_{j=t-k}^{t-1} X_j = 1) \equiv p$ *for all* $k$ *such that* $1 \leq k \leq n - 2$*. In particular,* $E[\hat{\Pi}_k(\mathbf{X}) | I_k(\mathbf{X}) \neq \emptyset] < \pi.$
 
-MS note that there does not exists a closed form representation for $E[\hat{P}_k(\mathbf{X}) | I_k(\mathbf{X}) \neq \emptyset]$ for $k > 1$. ($\hat{P}_k(\mathbf{X})$ is the analogue for $\hat{P}^{w|kr}_{MS}$ in my notation for CoD SnD.) Figure 1 shows how the expected value varies as a function of the total number of trials $n$, given $p$ and $k > 1$.[^13]
+MS note that there does not exists a closed form representation for $E[\hat{\Pi}_k(\mathbf{X}) | I_k(\mathbf{X}) \neq \emptyset]$ for $k > 1$. ($\hat{\Pi}_k(\mathbf{X})$ is the analogue for $\hat{P}^{w|kr}_{MS}$ in my notation for CoD SnD.) Figure 1 shows how the expected value varies as a function of the total number of trials $n$, given $\pi$ and $k > 1$.[^13]
 
 [^13]: I've adapted the code from Vafa [-@vafa2017], which implements MS's framework [-@miller2018].
 
@@ -315,19 +315,22 @@ simulate_post_streak_prob <- function(sims = 10000, seed = 42, ...) {
 
 # library(extrafont)
 # library(ggplot2)
-# set.seed(42)
-# runs <- rerun(
-#   1000,
-#   crossing(
-#     n = 1:50,
-#     k = 2:4,
-#     p = 0.5
-#   ) |>
-#     mutate(
-#       next_p = pmap_dbl(list(n, k, p), ~simulate_post_streak_prob(sims = 1000, n = ..1, k = ..2, p = ..3))
-#     )
-# ) |>
-#   reduce(bind_rows)
+# library(latex2exp)
+# # set.seed(42)
+# # runs <- rerun(
+# #   1000,
+# #   crossing(
+# #     n = 1:50,
+# #     k = 2:4,
+# #     p = 0.5
+# #   ) |>
+# #     mutate(
+# #       next_p = pmap_dbl(list(n, k, p), ~simulate_post_streak_prob(sims = 1000, n = ..1, k = ..2, p = ..3))
+# #     )
+# # ) |>
+# #   reduce(bind_rows)
+# # qs::qsave(runs, 'data/runs_1000x1000_nkp.qs')
+# runs <- qs::qread('data/runs_1000x1000_nkp.qs')
 # 
 # agg_runs <- runs |>
 #   filter(!is.nan(next_p)) |>
@@ -343,30 +346,33 @@ simulate_post_streak_prob <- function(sims = 10000, seed = 42, ...) {
 # theme_update(
 #   text = element_text(family = 'CMU Typewriter Text')
 # )
-# p <- agg_runs |> 
-#   arrange(p, k, n) |> 
+# 
+# p <- agg_runs |>
+#   arrange(p, k, n) |>
 #   mutate(
 #     across(k, factor)
-#   ) |> 
+#   ) |>
 #   ggplot() +
 #   aes(x = n, y = next_p, color = k, group = k) +
 #   guides(
 #     color = guide_legend(
+#       title = 'streak length (k)',
 #       title.hjust = 0.5,
 #       nrow = 1, override.aes = list(size = 3)
 #     )
 #   ) +
 #   geom_line() +
 #   geom_hline(aes(yintercept = p)) +
-#   labs(x = 'n', y = 'p') +
+#   labs(x = 'number of trials (n)', y = expression('post-streak probability of success'~(pi))) +
 #   theme(
 #     legend.position = c(0.5, 0.8)
 #   )
+# p
 # 
 # ggsave(
-#   p, 
-#   filename = 'paper/images/npkd.png', 
-#   width = 5.5, 
+#   p,
+#   filename = 'paper/images/pwkr_ms.png',
+#   width = 5.5,
 #   height = 3
 # )
 ```
@@ -374,30 +380,28 @@ simulate_post_streak_prob <- function(sims = 10000, seed = 42, ...) {
 ```{=tex}
 \begin{figure}
 \centering
-\includegraphics{images/npkd.png}
-\caption{The expected value of the proportion of successes on trials that immediately follow $k$ consecutive successes, $E[\hat{P}_k(\mathbf{X}) | I_k(\mathbf{X}) \neq \emptyset]$, for Bernoulli trial success $p = 0.5$ and streak lengths $k \in [2, 3, 4]$, as a function of the total number of trials $n.$}
+\includegraphics{images/pwkr_ms.png}
+\caption{The expected value of the proportion of successes on trials that immediately follow $k$ consecutive successes, $E[\hat{\Pi}_k(\mathbf{X}) | I_k(\mathbf{X}) \neq \emptyset]$, for Bernoulli trial success $\pi = 0.5$ and streak lengths $k \in [2, 3, 4]$, as a function of the total number of trials $n.$}
 \end{figure}
 ```
 My context is fundamentally different from that of GVT and MS, both of whom focus on longitudinal data in controlled settings. GVT also perform statistical tests on shots from players in live games, i.e. "observational" data, but they note that their findings are likely affected player shot selection in the face of defensive strategy by the opposing team. The number of trials is fixed in their experimental designs, but in CoD SnD, the number of rounds played is determined as a function of the max number of possible rounds ($s$) and whether or not the team wins the series, as shown in Equation \ref{eq:pwr}. The Bernoulli trial success probability, i.e. a round win in CoD SnD, is not independent of the opponent.
 
-Consequently, a statistical test of the difference in $\hat{P}^{w|kr}$ and $\hat{P}^{l|kr}$, as performed by GVT and MS to evaluate their respective hypothesis regarding $E[\hat{P}_k(\mathbf{X}) | I_k(\mathbf{X}) \neq \emptyset]$ (Theorem 1), is not appropriate.
+Consequently, a statistical test of the difference in $\hat{P}^{w|kr}$ and $\hat{P}^{\ell|kr}$, as performed by GVT and MS to evaluate their respective hypothesis regarding $E[\hat{P}_k(\mathbf{X}) | I_k(\mathbf{X}) \neq \emptyset]$ (Theorem 1), is not appropriate.
 
 Let us consider another form of the expected proportion of rounds won immediately after a streak of $k$ round wins in a best-of-$s$ series given the length of the series ($r$ rounds), the "hindsight" proportion $\hat{P}^{w|kr}_0$. The Bernoulli round win probability underlying $\hat{P}^{w|kr}_0$ is
 
-~~When considering momentum in consecutive rounds wins, I use the descriptor "hindsight" because I account for the length of the series (~~$r$ rounds).
-
 ```{=tex}
 \begin{equation}\protect\hypertarget{eq:pwkr}{}{
-  p_0^{w|kr} = p_0(\text{win | k, r})=\{
-    \begin{array}{cl}
-    \frac{m - k}{i - k}, & \text{team wins series} \\
-    \frac{s - m - k}{i - k}, & \text{team loses series}
-    \end{array}.
-  }
+p_0^{w|kr} = p_0(\text{win | k, r})=\{
+\begin{array}{cl}
+\frac{m - k}{i - k}, & \text{team wins series} \\
+\frac{s - m - k}{i - k}, & \text{team loses series}
+\end{array}.
+}
 \label{eq:pwkr}
 \end{equation}
 ```
-A binomial test for the observed proportion of round wins following streaks of $k$ round wins in a series lasting $r$ rounds, $P^{w|kr}$, assuming $p_0^{w|kr}$ as the probability of success, can be used to verify that $p_0^{w|kr}$ is reasonable as a reference.
+A binomial test for the expected proportion of round wins following streaks of $k$ round wins in a series lasting $r$ rounds, $\hat{P}^{w|kr}_0$, assuming $p^{w|kr}_0$ as the probability of success, can be used to verify that $\hat{P}^{w|kr}_0$ is reasonable as to use as a baseline with which to compare $\hat{P}^{w|kr}_{MS}$. If the binomial test shows that we cannot reject the null hypothesis that the expected $\hat{P}^{w|kr}_0$ is different from the observed proportion $P^{w|kr}$.
 
 A proportion test of $\hat{P}^{w|kr}_0$ and $\hat{P}^{w|kr}_{MS}$ can tell us whether the momentum exists in CoD SnD. A null result means we cannot say that there is a difference between the hindsight expected proportion $\hat{P}^{w|kr}_0$ and the expected proportion adjusted for streak-selection bias, $\hat{P}^{w|kr}_0$.
 
@@ -827,7 +831,6 @@ postprocess_round_streaks <- function(k, probs_nx_k, ...) {
         prop = n / total
       ) |> 
       ungroup() |> 
-      # filter(win_round) |> 
       select(n_rounds, win_round, win_series, n, total, prop) |> 
       arrange(n_rounds, win_round) |> 
       inner_join(
@@ -835,25 +838,31 @@ postprocess_round_streaks <- function(k, probs_nx_k, ...) {
       )
   )
   
-  cod_round_win_prop_after_z_with_probs |> 
-    nest(data = -c(n_rounds, win_series, win_round)) |> 
-    mutate(
-      gt_p_value = map_dbl(
-        data, 
-        ~binom.test(.x$n, .x$total, .x$prior_p, alternative = 'greater') |> 
-          broom::tidy() |>
-          pull(p.value)
-      ),
-      gt_p_value_adj = map_dbl(
-        data, 
-        ~binom.test(.x$n, .x$total, .x$expected_poststreak_p, alternative = 'greater') |> 
-          broom::tidy() |>
-          pull(p.value)
-      ),
-      gt_is_signif = gt_p_value <= 0.05,
-      gt_is_signif_adj = gt_p_value_adj <= 0.05
-    ) |> 
-    unnest(data)
+  suppressMessages(
+    full_join(
+      cod_round_win_prop_after_z_with_probs |> 
+        nest(data = -c(n_rounds, win_series, win_round)) |> 
+        mutate(
+          ## TODO: Vectorize this.
+          binom_p_value = map_dbl(
+            data, 
+            ~binom.test(.x$n, .x$total, .x$notional_prop, alternative = 'greater') |> 
+              broom::tidy() |>
+              pull(p.value)
+          ),
+          binom_is_signif = binom_p_value <= 0.05
+        ) |> 
+        unnest(data),
+      cod_round_win_prop_after_z_with_probs |> 
+        select(n_rounds, win_round, win_series, n, total, prop, notional_prop) |> 
+        mutate(
+          notional_n = as.integer(n * notional_prop / prop),
+          notional_total = as.integer(total * notional_prop / prop), 
+          compared_p_value = vectorized_prop_test(n, total, notional_n, notional_total)$p.value,
+          compared_is_signif = compared_p_value <= 0.05
+        )
+    )
+  )
 }
 
 summarize_cod_win_prop_after_k_wins <- function(k) {
@@ -865,21 +874,23 @@ summarize_cod_win_prop_after_k_wins <- function(k) {
     mutate(
       is_valid = case_when(
         win_series ~ TRUE,
-        (n_rounds - !!k - 6L) > 0L ~ TRUE,
+        (n_rounds - !!k - 6L) >= 0L ~ TRUE,
         TRUE ~ FALSE
       )
     ) |> 
     filter(is_valid) |> 
     select(-is_valid) |> 
     mutate(
-      naive_p = ifelse(win_series, 6L / n_rounds, (n_rounds - 6L) / n_rounds),
-      prior_p = (ifelse(win_series, 6L, n_rounds - 6L) - k) / (n_rounds - k),
-      across(c(naive_p, prior_p), ~ifelse(win_round, .x, 1 - .x)),
-      expected_poststreak_p = map2_dbl(
-        n_rounds, naive_p, 
+      naive_prop = ifelse(win_series, 6L / n_rounds, (n_rounds - 6L) / n_rounds),
+      notional_prop = (ifelse(win_series, 6L, n_rounds - 6L) - k) / (n_rounds - k),
+      across(c(naive_prop, notional_prop), ~ifelse(win_round, .x, 1 - .x)),
+      ms_prop = map2_dbl(
+        n_rounds, naive_prop, 
         ~simulate_post_streak_prob(n = ..1, k = !!k, p = ..2)
-      )
-    )
+      ),
+      diff_prop = notional_prop - ms_prop
+    ) |> 
+    filter(notional_prop > 0, notional_prop < 1)
   
   postprocess_round_streaks(
     k = k,
@@ -887,7 +898,7 @@ summarize_cod_win_prop_after_k_wins <- function(k) {
   )
 }
 
-cod_round_win_prop_after_k_wins <- tibble(win_streak = 2L:4L) |>
+cod_round_win_prop_after_k_wins <- tibble(win_streak = 3L) |>
   mutate(
     data = map(win_streak, summarize_cod_win_prop_after_k_wins)
   ) |>
@@ -902,66 +913,98 @@ cod_round_win_prop_after_k_wins |>
       matches('p_value'), 
       ~case_when(
         .x <= 0.01 ~ '<=0.01', 
-        round(.x, 2) == 1 ~ '1',
+        round(.x, 2) == 1 ~ '1.00',
         TRUE ~ as.character(round(.x, 2))
       )
     ),
-    unadj_lab = sprintf('%.0f%%', round(100 * prior_p), gt_p_value),
-    adj_lab = sprintf('%.0f%%', round(100 * expected_poststreak_p), gt_p_value_adj)
+    prop_lab = scales::percent(prop, accuracy = 0.1),
+    binom_lab = sprintf('%.1f%% (%s)', round(100 * notional_prop, 1), binom_p_value),
+    compared_lab = scales::percent(ms_prop, accuracy = 0.1),
+    diff_lab = sprintf('%.1f%% (%s)', round(100 * diff_prop, 1), compared_p_value)
   ) |>
-  filter(win_streak == 3, !win_series) |> 
   arrange(win_streak, n_rounds, win_series) |> 
   transmute(
-    # win_streak,
+    win_series,
+    win_round,
     n_rounds,
-    # across(win_series, ~ifelse(.x, 'win', 'lose')),
     total,
-    prop,
-    unadj_lab,
-    adj_lab
-  ) |> 
-  gt::gt() |> 
-  gt::cols_label(
-    # win_streak = 'Streak',
-    n_rounds = 'r',
-    total = 'N',
-    prop = 'O',
-    unadj_lab = 'a',
-    adj_lab = 'b'
-  ) |> 
-  gt::tab_spanner(
-    label = 'x',
-    columns = c(prior_p, gt_p_value)
-  ) |> 
-  gt::tab_spanner(
-    label = 'y',
-    columns = c(expected_poststreak_p, gt_p_value_adj)
-  ) |> 
-  gt::as_latex()
+    prop_lab,
+    binom_lab,
+    compared_lab,
+    diff_lab
+  ) |>
+  group_split(win_series, win_round) |> 
+  walk(
+    function(df) {
+      message(sprintf('win_round=%s, win_series=%s', df$win_round[[1]], df$win_series[[1]]))
+      df <- df |> 
+        select(
+          -c(win_series, win_round)
+        ) |> 
+        gt::gt() |> 
+        gt::cols_label(
+          # win_streak = 'Streak',
+          n_rounds = 'r',
+          total = 'N',
+          prop_lab = 'O',
+          binom_lab = 'a',
+          compared_lab = 'b',
+          diff_lab = 'c'
+        ) |> 
+        gt::as_latex() |> 
+        cat()
+    }
+  )
+
 ```
 
-Given that people typically perceive streaks as beginning after the third success (or failure) at minimum [@carlson2007], I focus on streaks of three round wins.[^15] Table \ref{tbl:cod-round-win-prop-after-k-wins} shows $P^{w,kr}$ and $P^{l,kr}$ for round win rate and loss rate following $k = 3$ round win streaks respectively.
+Given that people typically perceive streaks as beginning after the third success (or failure) at minimum [@carlson2007], I focus on streaks of three round wins.[^15] Table \ref{tbl:cod-pw3r-pl3r} shows $P^{w,kr}$ and $P^{l,kr}$ for round win rate and loss rate following $k = 3$ round win streaks respectively.
 
 [^15]: Three happens to also be a reasonable number for series that lasts at maximum 11 rounds.
 
+First,
+
 ```{=tex}
 \begin{longtable}{rrrrrrr}
-\caption{First, observed proportion of wins ($\hat{P}^{kr,\text{win}}_O$) and expected proportion of wins, both un-adjusted ($\hat{P}^{kr,\text{win}}_{E,\text{unadj.}}$) and adjusted ($\hat{P}^{kr,\text{win}}_{E,\text{adj.}}$), after 3-round win streak, for a series lasting $r$ rounds. Second, observed proportion of losses ($\hat{P}^{kr,\text{loss}}_O$) and expected proportion of losses, both un-adjusted ($\hat{P}^{kr,\text{loss}}_{E,\text{unadj.}}$) and adjusted ($\hat{P}^{kr,\text{loss}}_{E,\text{adj.}}$), after 3-round loss streak}\label{tbl:cod-round-win-prop-after-k-wins} \\
+\caption{Observed count and proportion of round wins immediately following round win streak of $k=3$, $N^{w|kr}$ and $P^{w|kr}$ respectively, in series lasting $r$ rounds. Additionally, notional expected proportion, $\hat{P}^{w|kr}_0$ and binomial test p-value, assuming notional round probability $p^{w|kr}$ and using observed counts; MS expected proportion $\hat{P}^{w|kr}_{MS}$; and $\hat{D}^{w|kr} = \hat{P}^{w|kr}_{MS} - \hat{P}^{w|kr}_0$ and proportion test p-value. Fields presented in groups, split by whether the team won the round immediately following the 3-round win streak, and whether the team won the series. The post-streak loss analogues are presented as $N^{\ell|kr}$, $P^{\ell|kr}$, $\hat{P}^{\ell|kr}_0$, $\hat{P}^{\ell|kr}_{MS}$, and $\hat{D}^{\ell|kr}$.}
+\label{tbl:cod-pw3r-pl3r} \\
 \toprule
-\multicolumn{7}{c}{\text{3 round win streak}} \\
-$r$ & $N^{kr,\text{win}}_O$ & $\hat{P}^{kr,\text{win}}_O$ & $\hat{P}^{kr,\text{win}}_{E,\text{unadj.}}$ & $\hat{P}^{kr,\text{win}}_{E,\text{adj.}}$ \\ 
+\multicolumn{6}{c}{\text{win series, win after 3-round win streak}} \\
 \midrule
-7 & 209 & $75\%$ & $75\%$ (0.58) & $61\%$ (<=0.01) \\
-8 & 209 & $62\%$ & $60\%$ (0.28) & $45\%$ (<=0.01) \\
-9 & 193 & $52\%$ & $50\%$ (0.33) & $35\%$ (<=0.01) \\
-10 & 151 & $44\%$ & $43\%$ (0.45) & $29\%$ (<=0.01) \\
-11 & 150 & $40\%$ & $38\%$ (0.29) & $25\%$ (<=0.01) \\
+$r$ & $N^{w|kr}$ & $P^{w|kr}$ & $\hat{P}^{w|kr}_0$ ($p$-value) & $\hat{P}^{w|kr}_{MS}$ & $\hat{D}^{w|kr}$ ($p$-value) \\ 
+\midrule
+7 & 209 & 74.6\% & 75.0\% (0.58) & 75.7\% & -0.7\% (0.94) \\ 
+8 & 209 & 62.2\% & 60.0\% (0.28) & 61.9\% & -1.9\% (1.00) \\ 
+9 & 193 & 51.8\% & 50.0\% (0.33) & 52.7\% & -2.7\% (0.97) \\ 
+10 & 151 & 43.7\% & 42.9\% (0.45) & 44.7\% & -1.8\% (0.94) \\ 
+11 & 150 & 40.0\% & 37.5\% (0.29) & 38.8\% & -1.3\% (1.00) \\ 
 \toprule
-\multicolumn{7}{c}{\text{3 round loss streak}} \\
-$r$ & $N^{kr,\text{loss}}_O$ & $\hat{P}^{kr,\text{loss}}_O$ & $\hat{P}^{kr,\text{loss}}_{E,\text{unadj.}}$ & $\hat{P}^{kr,\text{loss}}_{E,\text{adj.}}$ \\ 
+\toprule
+\multicolumn{6}{c}{\text{lose series, win after 3-round win streak}} \\
 \midrule
-10 & 60 & $13\%$ & $14\%$ (0.64) & $10\%$ (0.26) \\ 
-11 & 129 & $24\%$ & $25\%$ (0.63) & $16\%$ (<=0.01) \\ 
+$r$ & $N^{w|kr}$ & $P^{w|kr}$ & $\hat{P}^{w|kr}_0$ ($p$-value) & $\hat{P}^{w|kr}_{MS}$ & $\hat{D}^{w|kr}$ ($p$-value) \\ 
+\midrule
+10 & 60 & 13.3\% & 14.3\% (0.64) & 26.7\% & -12.4\% (1.00) \\ 
+11 & 129 & 24.0\% & 25.0\% (0.63) & 30.8\% & -5.8\% (0.98) \\ 
+\toprule
+\toprule
+\multicolumn{6}{c}{\text{win series, lose after 3-round win streak}} \\
+\midrule
+$r$ & $N^{\ell|kr}$ & $P^{\ell|kr}$ & $\hat{P}^{\ell|kr}_0$ ($p$-value) & $\hat{P}^{\ell|kr}_{MS}$ & $\hat{D}^{\ell|kr}$ ($p$-value) \\ 
+\midrule
+7 & 209 & 25.4\% & 25.0\% (0.48) & 6.4\% & 18.6\% (0.98) \\ 
+8 & 209 & 37.8\% & 40.0\% (0.76) & 14.7\% & 25.3\% (0.96) \\ 
+9 & 193 & 48.2\% & 50.0\% (0.72) & 22.2\% & 27.8\% (0.97) \\ 
+10 & 151 & 56.3\% & 57.1\% (0.62) & 26.7\% & 30.5\% (0.99) \\ 
+11 & 150 & 60.0\% & 62.5\% (0.76) & 30.8\% & 31.7\% (0.95) \\ 
+\toprule
+\toprule
+\multicolumn{6}{c}{\text{lose series, lose after 3-round win streak}} \\
+\midrule
+$r$ & $N^{\ell|kr}$ & $P^{\ell|kr}$ & $\hat{P}^{\ell|kr}_0$ ($p$-value) & $\hat{P}^{\ell|kr}_{MS}$ & $\hat{D}^{\ell|kr}$ ($p$-value) \\ 
+\midrule
+10 & 60 & 86.7\% & 85.7\% (0.51) & 44.7\% & 41.1\% (1.00) \\ 
+11 & 129 & 76.0\% & 75.0\% (0.45) & 38.8\% & 36.2\% (0.95) \\ 
 \bottomrule
 \end{longtable}
 ```
@@ -969,5 +1012,3 @@ $r$ & $N^{kr,\text{loss}}_O$ & $\hat{P}^{kr,\text{loss}}_O$ & $\hat{P}^{kr,\text
 
 ::: {#refs}
 :::
-
-# Appendix {.unnumbered}
