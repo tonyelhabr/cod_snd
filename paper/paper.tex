@@ -13,7 +13,7 @@
 \usepackage{microtype}      % microtypography
 \usepackage{graphicx}
 
-\title{They're Clutching up! Team Momentum in Round-Based Esports}
+\title{They're Icing up! Team Momentum in Round-Based Esports}
 
 \author{
     Tony ElHabr
@@ -247,6 +247,17 @@ Defense round wins & 0 & 1 & 2 & 3 & 4 & 5 \\
 (202) \\ 
 \bottomrule
 \end{longtable}
+
+Anecdotally, observers swear by the existence of momentum in CoD SnD
+series, to the extent that vernacular has been developed to describe
+such phenomenon. People say that teams ``ice up'' when the team wins
+several consecutive rounds to come back to win a series, often
+culminating with a series-clinching round win.\footnote{This vernacular
+  is not specific to CoD SnD in specific, and is not only used in the
+  contexts of streaks.} Further, viewers have come to embrace the
+``5-3'' phenomenon, where teams win three consecutive rounds after
+facing a 5-3 deficit to win 6-5. There is even a term for the rare 0-5
+comeback---a ``full sail''.
 
 \hypertarget{literature-review}{%
 \section{Literature review}\label{literature-review}}
@@ -536,20 +547,31 @@ test}\label{wald-wolfowitz-runs-test}}
 Stepping back from the one-sided perspective of a single team's round
 win probability when streaking, one can attempt to detect the hot hand
 phenomenon with the Wald-Wolfowitz runs test. Under the null hypothesis,
-the number of runs in a sequence of \(r\) trials is a random variable,
-which can take on values \(r^+\) and \(r^-\) for success and failure
-respectively, with the following mean \(\mu\) and variance \(\sigma^2\).
+the number of runs in a sequence of \(r\) trials, \(\zeta(r)\), is a
+random variable that can take on values \(r^+\) and \(r^-\) for success
+and failure respectively, with the following mean \(\mu\) and variance
+\(\sigma^2\).
 
 \begin{equation}\protect\hypertarget{eq:ww}{}{
 \mu = \frac{2r^{+}r^{-}}{r} + 1, \sigma^2 = \frac{(\mu-1)(\mu-2)}{r-1}
 }\label{eq:ww}\end{equation}
 
-One might subset observed series sequences to those that violate the run
-test null hypothesis and perform a test of proportions, where the null
-is that the observed rate of such series is equal to the frequency that
-we should expect, given a choice for the constant round win probability
-\(\phi\). If we can reject the null, then we can argue in favor of the
-hot hand.
+To incorporate my findings regarding constant round win probability, I
+can specify that \(\Pr(r^+) = \phi\) (and, conversely, that
+\(\Pr(r^-) = 1 - \phi\)).
+
+One can subset the observed series sequences to those that violate the
+run test null hypothesis and perform a test of proportions, where the
+null is that the observed rate \(\psi^+\) of such series is equal to the
+frequency rate \(\psi_0\). The test statistic \(Z\)
+
+\begin{equation}\protect\hypertarget{eq:prop}{}{
+Z = \frac{\psi^+ - \psi^+_0}{\sqrt{\psi^+_d (1 - \psi^+_d) ( \frac{1}{N^+} + \frac{1}{\hat{N}^+})}}
+}\label{eq:prop}\end{equation}
+
+where \(\psi^+_d = \frac{r^+ - \hat{r}^+}{N^+ - \hat{N}^+}\). If we can
+reject the null hypothesis for many sequences, then there is implicit
+evidence in favor of the hot hand.
 
 \hypertarget{results}{%
 \section{Results}\label{results}}
@@ -558,18 +580,17 @@ First, I investigate the constant probability assumption and the
 distribution of rounds played in a series. Chance's (2020) work is
 closely related to mine, and, in fact, provides a guide for this
 investigation. Afterwards, I investigate post-streak win rates and the
-context of momentum, leveraging MS's (2018) framework for streak
-selection bias.
+context of momentum.
 
 \hypertarget{distribution-of-rounds-played-1}{%
 \subsection{Distribution of rounds
 played}\label{distribution-of-rounds-played-1}}
 
-Using Equation \ref{eq:chi-squ}, I find that \(\chi^2 = 16.0\) (p-value
-of 0.0068) for the naive constant round win probability
+Using Equation \ref{eq:chi-squ}, I find that \(\chi^2 = 16.0\)
+(\(p\)-value of 0.0068) for the naive constant round win probability
 \(\phi_0 = 0.5\). Thus, I can comfortably reject the constant
-probability null hypothesis for \(\phi_0 = 0.5\), even at a confidence
-level of \(\alpha = 0.01\).
+probability hypothesis for the null \(\phi_0 = 0.5\), even at a
+confidence level of \(\alpha = 0.01\).
 
 Table \ref{tbl:cod-prob-series-lasting-r-rounds} shows the expected
 series lasting \(r\) rounds, \(\hat{\Phi}_0(r)\) (under the assumption
