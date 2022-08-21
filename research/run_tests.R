@@ -1,8 +1,13 @@
 
-simulate_cod_round_arrangements <- function(n_sims = 10000, seed = 42) {
+library(tidyverse)
+library(qs)
+library(randtests)
+
+cod_rounds <- qs::qread('data/cod_rounds.qs')
+simulate_cod_round_arrangements <- function(p = 0.5, n_sims = 10000, seed = 42) {
   n_rounds_max <- 11
   set.seed(seed)
-  w <- sample(c(0, 1), size = n_rounds_max * n_sims, replace = TRUE)
+  w <- sample(c(0, 1), size = n_rounds_max * n_sims, replace = TRUE, prob = c(1 - p, p))
   m <- matrix(w, nrow = n_sims, ncol = n_rounds_max)
   # data.frame(x)
   df <- as_tibble(m)
@@ -96,7 +101,8 @@ simulate_cod_round_arrangements <- function(n_sims = 10000, seed = 42) {
     mutate(prop = n / sum(n))
 }
 
-cod_expected_round_arrangements <- simulate_cod_round_arrangements()
+cod_expected_round_arrangements_naive <- simulate_cod_round_arrangements(0.5)
+cod_expected_round_arrangements_mle <- simulate_cod_round_arrangements(0.575)
 
 cod_actual_round_arrangements <- cod_rounds |> 
   filter(win_series) |> 
@@ -114,48 +120,76 @@ cod_actual_round_arrangements <- cod_rounds |>
   count(record, ws, sort = TRUE) |> 
   mutate(prop = n / sum(n))
 
-suppressWarnings(
-  cod_run_tests <- cod_expected_round_arrangements |> 
-    select(record, ws) |> 
-    separate(ws, into = as.character(1:11), remove = FALSE) |> 
-    pivot_longer(
-      -c(record, ws),
-      names_to = 'round',
-      values_to = 'w',
-      values_drop_na = TRUE
+perform_run_tests <- function(cod_expected_round_arrangements) {
+  suppressWarnings(
+    cod_run_tests <- cod_expected_round_arrangements |> 
+      select(record, ws) |> 
+      separate(ws, into = as.character(1:11), remove = FALSE) |> 
+      pivot_longer(
+        -c(record, ws),
+        names_to = 'round',
+        values_to = 'w',
+        values_drop_na = TRUE
+      ) |> 
+      mutate(
+        across(c(round, w), as.integer)
+      ) |> 
+      # filter(record != '6-0') |> 
+      select(-round) |> 
+      group_by(record, ws) |> 
+      summarize(
+        w = list(w)
+      ) |> 
+      ungroup() |> 
+      mutate(
+        p_value = map_dbl(w, ~randtests::runs.test(.x, threshold = 0.5)$p.value),
+        is_significant = p_value <= 0.05
+      ) |> 
+      select(record, ws, p_value, is_significant)
+  )
+  
+  expected_total <- sum(cod_expected_round_arrangements$n)
+  actual_total <- sum(cod_actual_round_arrangements$n)
+  cod_round_arrangements <- cod_expected_round_arrangements |> 
+    rename(n_expected = n, prop_expected = prop) |>
+    mutate(
+      n_expected_adj = n_expected * (!!actual_total) / (!!expected_total)
+    ) |> 
+    left_join(
+      cod_actual_round_arrangements |> 
+        rename(n_actual = n, prop_actual = prop),
+      by = c('record', 'ws')
+    ) |> 
+    inner_join(
+      cod_run_tests,
+      by = c('record', 'ws')
     ) |> 
     mutate(
-      across(c(round, w), as.integer)
-    ) |> 
-    filter(record != '6-0') |> 
-    select(-round) |> 
-    group_by(record, ws) |> 
-    summarize(
-      w = list(w)
-    ) |> 
-    ungroup() |> 
-    mutate(
-      p_value = map_dbl(w, ~runs.test(.x, threshold = 0.5)$p.value),
-      is_significant = p_value <= 0.05
-    ) |> 
-    select(record, ws, p_value, is_significant)
-)
+      across(n_actual, replace_na, 0L),
+      across(prop_actual, replace_na, 0)
+    )
+}
 
-cod_expected_round_arrangements |> 
-  select(-n) |> 
-  rename(prop_expected = prop) |> 
-  left_join(
-    cod_actual_round_arrangements |> 
-      select(-n) |> 
-      rename(prop_actual = prop),
-    by = c('record', 'ws')
-  ) |> 
-  inner_join(
-    cod_run_tests,
-    by = c('record', 'ws')
-  ) |> 
+cod_round_arrangements_naive <- cod_expected_round_arrangements_naive |> perform_run_tests()
+cod_round_arrangements_mle <- cod_expected_round_arrangements_mle |> perform_run_tests()
+
+cod_round_arrangements_naive |> 
+  filter(is_significant) |> 
+  count(higher_actual_prop = prop_actual > prop_expected)
+
+cod_round_arrangements_mle |> 
+  filter(is_significant) |> 
+  count(higher_actual_prop = prop_actual > prop_expected)
+cod_round_arrangements |> 
+  filter(record == '6-5', is_significant) |> 
+  filter(prop_actual > prop_expected)
+
+cod_round_arrangements |> 
+  count(record, is_significant, prop_actual > prop_expected)
+
+cod_unexpected_actual_arrangements <- cod_round_arrangements |> 
   mutate(
-    across(prop_actual, replace_na, 0)
+    ratio = prop_actual / prop_expected
   ) |> 
-  count(is_significant, prop_actual > prop_expected)
-
+  arrange(desc(ratio)) |> 
+  filter(ratio > 3)
