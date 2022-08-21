@@ -161,20 +161,23 @@ League (CWL), initiated in 2016; and (3) the 12-franchise CoD League
   era, the games released have been Modern Warfare (2020), Cold War
   (2021) and Vanguard (2022).}
 
-The data set consists of all SnD matches played in tournanaments and
-qualifiers during the CDL era, totaling 7,792 rounds across 852 series.
-Data was collected in spreadsheets by community member
+The data set consists of all SnD matches played in major tournaments and
+qualifiers during the CDL era, totaling 7,792 rounds across 852
+series.\footnote{288 of the series occur in major tournaments, which are
+  considered to be more ``competitive'' than the qualifiers since they
+  are played in person (COVID-permitting), whereas the qualifiers are
+  played online.} Data was collected in spreadsheets by community member
 ``IOUTurtle''.\footnote{Data: \url{https://linktr.ee/CDLArchive}.
   Author: \url{https://twitter.com/IOUTurtle}}
 
 The empirical offensive round win percentage across all rounds is
-47.8\%.\footnote{Offensive round win percentage has been nearly constant
-  across the three games during the CDL era: 1. 47.2\% in MW (2020) 2.
-  47.9\% in Cold War (2021) 3. 48.1\% in Vanguard (2022)} Table
-\ref{tbl:cod-o-win-prop-by-series-state} shows round win percentages by
-series ``state'' (i.e.~the number of round wins by each team prior to an
-upcoming round). Offensive round win rate is not quite constant,
-although never veers more than 10\% from this global average.
+\(\phi_O\) = 47.8\%.\footnote{Offensive round win percentage has been
+  nearly constant across the three games during the CDL era: 1. 47.2\%
+  in MW (2020) 2. 47.9\% in Cold War (2021) 3. 48.1\% in Vanguard (2022)}
+Table \ref{tbl:cod-o-win-prop-by-series-state} shows round win
+percentages by series ``state'' (i.e.~the number of round wins by each
+team prior to an upcoming round). Offensive round win rate is not quite
+constant, although never veers more than 10\% from this global average.
 
 \begin{longtable}{crrrrrr}
 \caption{Offensive round win rates for the upcoming round, given both the offensive and defensive team's prior number of round wins}\label{tbl:cod-o-win-prop-by-series-state} \\
@@ -306,10 +309,10 @@ SnD rotate sides every round, analogous to a 1-1-1-1-1-1-1 format for
 home advantage in best-of-seven series for professional sports like the
 MLB, NBA, and NHL.\footnote{1-1-1-1-1-1-1 is not used today in these
   leagues, but it was at least one in each league.} While theoretically
-one might be able to account for any kind of balanced rotation, such as
-a ``blocky'' on like a 5-5-1, the rotation of team sides every round is
-convenient, particularly for convincing ourselves that rounds could
-reasonably be modeled as i.i.d. Bernoulli trials.
+one might be able to account for any kind of format, such as a 5-5-1,
+the rotation of team sides every round is convenient for convincing
+ourselves that rounds could reasonably be modeled as i.i.d. Bernoulli
+trials.
 
 \hypertarget{methodology}{%
 \section{Methodology}\label{methodology}}
@@ -329,17 +332,17 @@ m = \frac{s + 1}{2}
 }\label{eq:m}\end{equation}
 
 \begin{equation}\protect\hypertarget{eq:series-length}{}{
-\hat{\Phi}(r) = \frac{(r - 1)!}{(m - 1)!(r - s)!}(\phi^{m}(1 - \phi)^{r - m} + \phi^{r - m}(1 - \phi)^m)
+\hat{\Phi}(r) = \frac{(r - 1)!}{(m - 1)!(s - r)!}(\phi^{m}(1 - \phi)^{r - m} + \phi^{r - m}(1 - \phi)^m)
 }\label{eq:series-length}\end{equation}
 
 \(s = 11\) rounds for CoD SnD.\footnote{\(\phi\) and other symbols are
-  selected so as to avoid reserve symbols, like \(p\) for usage in other
-  contexts, without risking confusion. Upper-case symbol, e.g.~\(\Phi\),
-  are consistently used in this paper to represent proportions, while
-  lower-case symbols corresponding to proportions represent
-  probabilities. ``Hats'', e.g.~\(\hat{\Phi}\), are used to convey
-  expectations, while ``bare'' symbols mirroring hat-ed symbols convey
-  observational data.}
+  selected so as to reserve symbols like \(p\) for usage in other
+  contexts without causing confusion for the reader. Upper-case symbol,
+  e.g.~\(\Phi\), are consistently used in this paper to represent
+  proportions, while lower-case symbols corresponding to proportions
+  represent probabilities. ``Hats'', e.g.~\(\hat{\Phi}\), are used to
+  convey expectations, while ``bare'' symbols mirroring hat-ed symbols
+  convey observational data.}
 
 To evaluate the constant round win probability null hypothesis---that
 is, that the expected and observed round win rates, \(\hat{\Phi}(r)\)
@@ -362,75 +365,44 @@ probability as
 
 \begin{equation}\protect\hypertarget{eq:pwr}{}{
 p_0(\text{win} | r) = p^{w|r}_0 = \{
-\begin{array}{rcll}
-p^{w|r_W} & = & \frac{m}{r}, & \text{team wins series} \\
-p^{w|r_L} & = & \frac{r - m}{r}, & \text{team loses series}
+\begin{array}{rl}
+\frac{m}{r}, & \text{team wins series} \\
+\frac{r - m}{r}, & \text{team loses series}
 \end{array}
 }
 \label{eq:pwr}
 \end{equation}
 
-using \(m\) from Equation \ref{eq:m}. The Bernoulli round loss
-probability for a series lasting \(r\) rounds, \(p^{\ell|kr}_0\)
-(i.e.~\(\ell = 1 - w, w \in [0, 1]\)), can be formulated symmetrically.
+using \(m\) from Equation \ref{eq:m}.
 
-As shown by MS, we should expect the proportion of rounds wins
-immediately following a streak of \(k\) rounds wins for a series lasting
-\(r\) rounds, \(\hat{P}^{w|kr}_{MS}\), to be strictly less than
-\(p^{w|r}\).\footnote{See Appendix E.1 of MS for details on the proof
-  that follows.}\footnote{Here, I choose symbols, e.g.~\(\pi\), \(x\),
-  etc. that mostly do not conflict with syntax in other places. The
-  exceptions are \(k\) and \(r\), which are used to represent streak
-  length and number of trials globally.}
+As shown by MS with their Theorem 1, we should expect the proportion of
+rounds wins immediately following a streak of \(k\) rounds wins for a
+series lasting \(r\) rounds, \(\hat{P}^{w|kr}_{MS}\), to be strictly
+less than \(p^{w|r}\).\footnote{See Appendix E.1 of MS for details on
+  the proof that follows.} Unfortunately, there does not exist a closed
+form representation for the expectation for \(\hat{P}^{w|kr}_{MS}\) for
+\(k > 1\). Nonetheless, one may recursively build a collection of
+dictionaries to compute the expectation analytically, or, more
+conveniently, one may run simulations to estimate the expected
+value.\footnote{I've adapted the code from Vafa (2017), which implements
+  MS's framework (2018).}
 
-\begin{quote}
-Theorem 1: \emph{Let}
-\(\mathbf{X} = \{X_i\}^{r}_{i=1}, r \geq 3\)\emph{, be a sequence of
-independent Bernoulli trials, each with probability of success}
-\(0 < \pi < 1\)\emph{. Let} \(\hat{\Pi}_k(\mathbf{X})\) \emph{be the
-proportion of successes on the subset of trials} \(I_k(\mathbf{X})\)
-\emph{that immediately follow} \(k\) consecutive successes, that is,
-\(\hat{\Pi}_k(\mathbf{X}) := \sum_{i \in I_k(\mathbf{X})} X_i | I_k(\mathbf{X}) |. \hat{\Pi}_k\)
-\emph{is a biased estimate of}
-\(\mathbb{P}(X_t = 1 | \prod_{j=t-k}^{t-1} X_j = 1) \equiv \pi\)
-\emph{for all} \(k\) \emph{such that} \(1 \leq k \leq r - 2\)\emph{. In
-particular,}
-\(E[\hat{\Pi}_k(\mathbf{X}) | I_k(\mathbf{X}) \neq \emptyset] < \pi.\)
-\end{quote}
-
-MS notes that there does not exists a closed form representation for
-\(E[\hat{\Pi}_k(\mathbf{X}) | I_k(\mathbf{X}) \neq \emptyset]\),
-henceforth \(E^\Pi\), for \(k \> 1\). One may recursively build a
-collection of dictionaries to quantify \(E^\Pi\) analytically, or, more
-reasonably for large values of \(n\), one may run simulations to
-estimate the expected value. Indeed, Figure 1 uses simulation to
-estimate \(E^\Pi\) as a function of the total number of trials \(r\),
-given \(\pi\) and \(k\).\footnote{I've adapted the code from Vafa
-  (2017), which implements MS's framework (2018).}\footnote{Note that
-  \(\pi\) and \(\hat{\Pi}_k(\mathbf{X})\) are analogues for
-  \(p_0^{w|r}\) and \(\hat{P}^{w|kr}_{MS}\) in my notation for CoD SnD.}
-
-\begin{figure}
-\centering
-\includegraphics{images/pwkr_ms.png}
-\caption{The expected value of the proportion of successes on trials, $E^\Pi$, that immediately follow $k$ consecutive successes for Bernoulli trial success $\pi = 0.5$ and streak lengths $k \in [2, 3, 4]$, as a function of the total number of trials $r$.}
-\end{figure}
-
-My context is fundamentally different from that of GVT and MS, both of
-whom focus on longitudinal data in controlled settings. GVT also
-performs statistical tests on shots from players in live games,
-i.e.~``observational'' data, but they note that their findings are
-likely affected player shot selection in the face of defensive strategy
-by the opposing team. The number of trials is fixed in their
-experimental designs, but in CoD SnD, the number of rounds played is
-determined as a function of the max number of possible rounds (\(s\))
-and whether or not the team wins the series, as shown in Equation
-\ref{eq:pwr}. The Bernoulli trial success probability, i.e.~a round win
-in CoD SnD, is not independent of the opponent. Consequently, a
-statistical test of the difference in \(\hat{P}^{w|kr}\) and
-\(\hat{P}^{\ell|kr}\), as performed by GVT and MS to evaluate their
-respective hypothesis regarding post-streak success rates is not
-appropriate.
+Although it would be convenient to emulate the hypothesis testing for
+difference of proportions performed by MS (and GVT), my context is
+fundamentally different from that of MS, who focus on longitudinal data
+in controlled settings.\footnote{GVT also performs statistical tests on
+  shots from players in live games, i.e.~``observational'' data, but
+  they note that their findings are likely affected player shot
+  selection in the face of defensive strategy by the opposing team.} The
+number of trials is fixed in their experimental designs, but in CoD SnD,
+the number of rounds played is determined as a function of the max
+number of possible rounds (\(s\)) and whether or not the team wins the
+series, as shown in Equation \ref{eq:pwr}. The Bernoulli trial success
+probability, i.e.~a round win in CoD SnD, is not independent of the
+opponent. Consequently, a statistical test of the difference in
+\(\hat{P}^{w|kr}\) and \(\hat{P}^{\ell|kr}\), as performed by MS to
+evaluate their hypothesis regarding post-streak success rates is not
+completely appropriate, although useful as a reference.
 
 One might consider another form of the expected proportion of rounds won
 immediately after a streak of \(k\) round wins in a best-of-\(s\) series
@@ -440,9 +412,9 @@ underlying \(\hat{P}^{w|kr}_0\) is
 
 \begin{equation}\protect\hypertarget{eq:pwkr}{}{
 p_0(\text{win} | k, r) = p^{w|kr}_0 =\{
-\begin{array}{rcll}
-p_0^{w|kr_W} & = & \frac{m - k}{i - k}, & \text{team wins series} \\
-p_0^{w|kr_L} & = & \frac{s - m - k}{i - k}, & \text{team loses series}
+\begin{array}{rl}
+\frac{m - k}{i - k}, & \text{team wins series} \\
+\frac{s - m - k}{i - k}, & \text{team loses series}
 \end{array}
 }
 \label{eq:pwkr}
@@ -455,28 +427,38 @@ where \(0 \leq \omega_0 \leq 1\).\footnote{\(\omega\) and other symbols
   are chosen so as to not conflict with symbols already used elsewhere
   for in other equations, either generic or for CoD SnD specifically.}
 
-If there are \(\sigma\) observed successes in a sample of \(r\) trials
-and we expect that there should be \(r * \omega_0\), the probability of
-getting this expected number of successes is
+If there are \(r_+\) observed successes in a sample of \(r\) trials and
+we expect that there should be \(r * \omega_0\), the probability of
+arriving at this expected number of successes is
 
 \begin{equation}\protect\hypertarget{eq:binom}{}{
-\Pr(\sigma) = {\binom {r}{\sigma}} \omega^{\sigma}(1-\omega)^{r-\sigma}.
+\Pr(r_+) = {\binom {r}{r_+}} \omega^{r_+}(1-\omega)^{r-\sigma}.
 }\label{eq:binom}\end{equation}
 
 Plugging in the notional probability \(p^{w|kr}_0\) for the null
 \(\omega_0\) and the observed probability
-\(p^{w|kr} = N^{w|kr} \times P^{w|kr}\), where \(N^{w|kr}\) is the
-observed number of instances where a teams wins the round immediately
-following a \(k\)-round winning streak in a series lasting \(r\) rounds,
-for the observed \(\omega\), we can evaluate whether the observed
-probability is not significantly different from the notional
-probability. If we reject this hypothesis, then we might consider team
-momentum, represented by post-streak success, plausible.
+\(p^{w|kr} = N^{w|kr} \times P^{w|kr}\), for the observed \(\omega\),
+where \(N^{w|kr}\) is the observed number of instances where a teams
+wins the round immediately following a \(k\)-round winning streak in a
+series lasting \(r\) rounds, we can evaluate the null hypothesis that
+the observed probability is equal to the notional probability. If we
+reject this null hypothesis, then we might consider team momentum,
+represented by post-streak success, plausible.
 
-Returning to the streak-selection adjustment framework proposed by MS,
-one can perform the same binomial test, swapping out \(p^{w|kr}_0\) with
-\(p^{w|kr}_{MS}\). Of course, given the caveats mentioned before, the
-results should be heeded with caution.
+One can perform the same binomial test for the MS probability adjusting
+for streak-selection bias, \(p^{w|kr}_{MS}\). Given the caveats
+mentioned before, the results should be heeded with caution.
+
+Stepping back from the one-sided perspective of a single team's
+probability of winning and their streakiness, I can attempt to detect
+the ``hot hand'' more broadly with the Wald-Wolfowitz runs test, a
+common tool used in the field of quality control. Under the null
+hypothesis, the number of runs in a sequence of \(r\) trials is a random
+variable with the following mean \(\mu\) and variance \(\sigma^2\).
+
+\begin{equation}\protect\hypertarget{eq:ww}{}{
+\mu = \frac{2r_+r_-}{r} + 1, \sigma^2 = \frac{(\mu-1)(\mu-2)}{r-1}
+}\label{eq:ww}\end{equation}
 
 \hypertarget{results}{%
 \section{Results}\label{results}}
@@ -628,6 +610,36 @@ usefulness of \(p^{w|kr}_{MS}\) is questionable, as described before,
 and the sample sizes are smaller for these conditions (all under 20
 instances, with the exception of \(k = 4, r = [7, 8]\) with 70 and 39
 observations respectively).
+
+\hypertarget{discussion}{%
+\section{Discussion}\label{discussion}}
+
+For the sake of brevity, I did not delve into win rates and streaks
+split by offensive or defensive role. For example, it would be
+interesting to look at whether the round win rate is higher after a
+streaks of three round wins when the team starts the streak winning as
+the offensive team. This would mean that, in the round immediately
+following the streak, the streaking team would be playing defense, where
+teams are slightly more likely to win on average. On the other hand,
+streaks of three starting with an offensive round win---theoretically,
+given \(\phi_O\) = 47.7\% the expected frequency is
+\(\phi_O^2 \times (1 - \phi_O) \approx 0.119\)---are likely to occur
+less frequently than such streaks starting with a defensive
+win---\(\phi_O \times (1 - \phi_O)^2 \approx 0.130\)---so I would want
+to account for sample size differences.
+
+Regarding future work, I've reached out to the Twitter user
+``R11stats'', who privately tracks in-round player
+engagements.\footnote{\url{https://twitter.com/R11stats}} R11stats
+expressed intent on making the data public, which would allow for
+research into player-specific momentum.
+
+\hypertarget{acknowledgements}{%
+\section*{Acknowledgements}\label{acknowledgements}}
+\addcontentsline{toc}{section}{Acknowledgements}
+
+I would like to thank my brother Andrew for giving me feedback on early
+iterations of this paper, and for requiring me to mention him.
 
 \hypertarget{references}{%
 \section*{References}\label{references}}
