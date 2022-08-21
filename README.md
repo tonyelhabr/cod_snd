@@ -1,5 +1,5 @@
--   `paper/`: CMSAC paper about team momentum in CoD SnD.
+-   `paper/`: arXiv formatted paper about team momentum in CoD SnD.
 -   `presentation/`: My initial work prior to the `paper/`. Some of the ideas were carried over the paper. Valorant data was explored in addition to CoD SnD data.
 -   `plots/`: Plots for the presentation.
 -   `scripts/`: Data retrieval and cleaning for CoD SnD and Valorant.
--   `data/`: Data retrieved by scripts.
+-   `data/`: Data retrieved by scripts. Main data is `cod_rounds.csv`.
