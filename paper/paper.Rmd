@@ -929,7 +929,7 @@ Given that people typically perceive streaks as beginning after the third succes
 [^20]: Three happens to also be a reasonable number for series that lasts at maximum 11 rounds.
 
 ```{=tex}
-\begin{longtable}{rlrrrr}
+\begin{longtable}{rcrrrr}
 \caption{Observed count and proportion of round wins immediately following round win streak of $k=3$, $N^{w|kr}$ and $P^{w|kr}$ respectively, given the length of the series ($r$ rounds) and the series winner. Additionally, the notional and MS expected proportions, $\hat{P}^{w|kr}_0$ and $\hat{P}^{w|kr}_{MS}$ respectively, and the $p$-values of binomial tests comparing the underlying notional and MS round win probabilities, $p^{w|kr}_0$ and $p^{w|kr}_{MS}$, to the probability implied by the observed proportion $p^{w|kr} = N^{w|kr} \times P^{w|kr}$.}
 \label{tbl:cod-pw3r-pl3r} \\
 \toprule
@@ -987,6 +987,10 @@ cod_round_win_prop_after_k_wins_i_rounds <- tibble(win_streak = 1L:3L) |>
     notional_p_value = vectorized_binom_test(n, total, p = notional_prop)$p.value |> round(2)
   )
 
+cod_round_win_prop_after_k_wins_i_rounds |> 
+  filter(win_streak == 3, n_rounds == round) |> 
+  filter(!win_series)
+
 ## 5-3?
 cod_round_win_prop_after_k_wins_i_rounds |> 
   filter(win_streak == 2) |> 
@@ -1011,12 +1015,10 @@ cod_round_win_prop_after_k_wins_i_rounds |>
     p2 = notional_p_value |> p.adjust()
   ) |> 
   filter(win_streak == 3) |> 
-  filter(win_round) |> 
-  # filter(notional_p_value < 0.05) |> 
-  filter(n_rounds <= (round + 2)) |> 
+  filter(!win_round) |> 
+  # filter(n_rounds <= (round + 2)) |> 
+  filter(n_rounds == round) |> 
   filter(n_rounds >= 9) |> 
-  # filter(n_rounds == round) |> 
-  # filter(notional_prop < prop) |> 
   mutate(
     across(
       matches('p_value'), 
@@ -1053,37 +1055,36 @@ cod_round_win_prop_after_k_wins_i_rounds |>
 
 ```
 
-Now let us explicitly consider the round, $i$. As shown in Table \ref{tbl:cod-pw3ri-pl3ri}, the notional win rate in the round $i$ immediately following a streak of $k$ round wins in a series lasting $r$ rounds, $\hat{P}{w|kri}_0$, is statistically different than the observed $P^{w|kri}$ in several cases, notably when $r = i$ for each of $r \in [9, 10, 11]$.[^22] Interestingly, the observed rate is greater than the expected rate in each case where we can reject the null hypothesis, whereas the observed rate is less than the expected rate in all other cases (as well in a strong majority of cases not shown).
+Now let us explicitly consider the round, $i$. As shown in Table \ref{tbl:cod-pw3ri-pl3ri}, the notional win rate in the round $i$ immediately following a streak of $k$ round wins in a series lasting $r$ rounds, $\hat{P}{w|kri}_0$, is statistically different than the observed $P^{w|kri}$ in several cases, notably when $r = i$ for each of $r \in [9, 10, 11]$.[^22] Interestingly, the observed rate is greater than the expected rate in each case where we can reject the null hypothesis, whereas the observed rate is less than the expected rate in all other cases, as well in a strong majority of cases not shown. Since
 
 [^22]: The null can also be rejected for $r \in [7, 8]$, although these are not shown, and the sample sizes are smaller.
 
 ```{=tex}
-\begin{longtable}{rrlrrrl}
+\begin{longtable}{rrcrrrc}
 \caption{Given the round $i$, the round win streak $k=3$, the length of the series ($r$ rounds), and the series winner, the observed count and proportion of round wins immediately following the streak, $N^{w|kri}$ and $P^{w|kri}$ respectively. Additionally, the notional proportion, $\hat{P}^{w|kri}_0$, and the $p$-value of a binomial test comparing the underlying notional $p^{w|kri}_0$ to the probability implied by the observed proportion $p^{w|kri} = N^{w|kri} \times P^{w|kri}$. Table restricted to $r \in [9, 10, 11]$ and $r - 2 \leq i \leq r$ for brevity.}
 \label{tbl:cod-pw3ri-pl3ri} \\
 \toprule
-$r$ & $i$ & \text{Win series?} & $N^{w|kri}$ & $P^{w|kri}$ & $\hat{P}^{w|kri}_0$ ($p$-value) & $\hat{P}^{w|kri}_0 > P^{w|kri}$ \\ 
-
+$r$ & $i$ & \text{Win series?} & $N^{w|kri}$ & $P^{w|kri}$ & $\hat{P}^{w|kri}_0$ ($p$-value) & $\hat{P}^{w|kri}_0 < P^{w|kri}$ \\ 
+\midrule
 9 & 7 & yes & 36 & 41.7\% & 50.0\% (0.41) & no \\ 
 9 & 8 & yes & 40 & 45.0\% & 50.0\% (0.64) & no \\ 
-9 & 9 & yes & 37 & 89.2\% & 50.0\% (<=0.01) & yes \\ 
+9 & 9 & yes & 37 & 89.2\% & 50.0\% (\textless=0.01) & yes \\ 
 10 & 8 & no & 37 & 2.7\% & 14.3\% (0.06) & no \\ 
 10 & 8 & yes & 37 & 24.3\% & 42.9\% (0.03) & no \\ 
 10 & 9 & no & 32 & 6.2\% & 14.3\% (0.31) & no \\ 
-10 & 9 & yes & 32 & 12.5\% & 42.9\% (<=0.01) & no \\ 
-10 & 10 & yes & 29 & 72.4\% & 42.9\% (<=0.01) & yes \\ 
+10 & 9 & yes & 32 & 12.5\% & 42.9\% (\textless=0.01) & no \\ 
+10 & 10 & yes & 29 & 72.4\% & 42.9\% (\textless=0.01) & yes \\ 
 11 & 9 & no & 32 & 15.6\% & 25.0\% (0.31) & no \\ 
 11 & 9 & yes & 32 & 31.2\% & 37.5\% (0.58) & no \\ 
 11 & 10 & no & 36 & 13.9\% & 25.0\% (0.18) & no \\ 
-11 & 10 & yes & 36 & 13.9\% & 37.5\% (<=0.01) & no \\ 
+11 & 10 & yes & 36 & 13.9\% & 37.5\% (\textless=0.01) & no \\ 
 11 & 11 & yes & 32 & 53.1\% & 37.5\% (0.10) & yes \\ 
-
 \bottomrule
 \end{longtable}
 ```
 # Discussion
 
-For the sake of brevity, I did not delve into win rates and streaks split by offensive or defensive role. For example, it would be interesting to look at whether the round win rate is higher after a streaks of three round wins when the team starts the streak winning as the offensive team. This would mean that, in the round immediately following the streak, the streaking team would be playing defense, where teams are slightly more likely to win on average. On the other hand, streaks of three starting with an offensive round win---theoretically, given $\tau_O$ = 47.7% the expected frequency is $\tau_O^2 \times (1 - \tau_O) \approx 0.119$---are likely to occur less frequently than such streaks starting with a defensive win---$\tau_O \times (1 - \tau_O)^2 \approx 0.130$---so I would want to account for sample size differences.
+For the sake of brevity, I did not delve into win rates and streaks split by offensive or defensive role. For example, it would be interesting to look at whether the round win rate is higher after a streaks of three round wins when the team starts the streak winning as the offensive team. This would mean that, in the round immediately following the streak, the streaking team would be playing defense, where teams are slightly more likely to win on average. On the other hand, streaks of three starting with an offensive round win---theoretically, given $\tau_O$ = 47.7% the expected frequency is $\tau_O^2 \times (1 - \tau_O) \approx$ 11.9%---are likely to occur less frequently than such streaks starting with a defensive win---$\tau_O \times (1 - \tau_O)^2 \approx$ 13.0%---so I would want to account for sample size differences.
 
 Further regarding future work, I've reached out to the Twitter user "R11stats", who privately tracks in-round player engagements.[^23] R11stats expressed intent on making the data public, which would allow for research into player-specific momentum.
 
