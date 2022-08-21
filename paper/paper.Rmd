@@ -57,6 +57,8 @@ cod_o_win_prop <- cod_rounds |>
   mutate(prop = n / sum(n)) |> 
   filter(win_round) |> 
   pull(prop)
+cod_o_win_prop^2 * (1 - cod_o_win_prop)
+cod_o_win_prop * (1 - cod_o_win_prop)^2
 
 cod_o_win_prop_by_game <- cod_rounds |> 
   filter(is_offense) |> 
@@ -114,7 +116,7 @@ The data set consists of all SnD matches played in tournanaments and qualifiers 
 
 [^6]: Data: <https://linktr.ee/CDLArchive>. Author: <https://twitter.com/IOUTurtle>
 
-The empirical offensive round win percentage across all rounds is 47.8%.[^7] Table \ref{tbl:cod-o-win-prop-by-series-state} shows round win percentages by series "state" (i.e. the number of round wins by each team prior to an upcoming round). Offensive round win rate is not quite constant, although never veers more than 10% from this global average.
+The empirical offensive round win percentage across all rounds is $\phi_O$ = 47.8%.[^7] Table \ref{tbl:cod-o-win-prop-by-series-state} shows round win percentages by series "state" (i.e. the number of round wins by each team prior to an upcoming round). Offensive round win rate is not quite constant, although never veers more than 10% from this global average.
 
 [^7]: Offensive round win percentage has been nearly constant across the three games during the CDL era: 1. 47.2% in MW (2020) 2. 47.9% in Cold War (2021) 3. 48.1% in Vanguard (2022)
 
@@ -956,12 +958,27 @@ cod_round_win_prop_after_k_wins <- tibble(win_streak = 2L:5L) |>
 cod_round_win_prop_after_k_wins |> filter(win_round, notional_p_value < 0.05)
 cod_round_win_prop_after_k_wins |> filter(win_round, ms_p_value < 0.05)
 
-cod_round_win_prop_after_k_wins_i_rounds <- tibble(win_streak = 2L:3L) |>
+tibble(win_streak = 1L) |>
+  mutate(
+    data = map(win_streak, summarize_cod_win_prop_after_k_wins_i_rounds)
+  ) |>
+  unnest(data) |> 
+  filter(win_round, notional_p_value < 0.05)
+
+cod_round_win_prop_after_k_wins_i_rounds <- tibble(win_streak = 1L:3L) |>
   mutate(
     data = map(win_streak, summarize_cod_win_prop_after_k_wins_i_rounds)
   ) |>
   unnest(data)
-cod_round_win_prop_after_k_wins_i_rounds |> filter(win_round, notional_p_value < 0.05)
+cod_round_win_prop_after_k_wins_i_rounds |> 
+  filter(notional_prop < prop, notional_p_value < 0.05) |> 
+  filter(n_rounds == round) |> 
+  filter(win_streak == 1) |> 
+  group_by(n_rounds, round) |> 
+  mutate(
+    total = sum(n),
+    prop = n / total
+  )
 ```
 
 ```{r}
@@ -1041,6 +1058,14 @@ We observe that, with the exception of $\hat{P}^{w|kr}_{MS}$ when $r = 10$ and t
 [^20]: This implies that the opponent, th eventual series winner, goes on to win the series 6-4 after going down 0-4. This is the only scenario in which one team wins four rounds consecutively but loses a best-of-11 series in 10 rounds.
 
 When performing the same tests for streaks of two, four, and five, there is no case in which I can reject the binomial null hypothesis for the expected notional probability $p^{w|kr}_0$. The null hypothesis can be rejected for expected MS probability $p^{w|kr}_{MS}$ when $k = 4, r = [7, 8, 10]$ and $k = 5, r = [7, 8]$. Nonetheless, the usefulness of $p^{w|kr}_{MS}$ is questionable, as described before, and the sample sizes are smaller for these conditions (all under 20 instances, with the exception of $k = 4, r = [7, 8]$ with 70 and 39 observations respectively).
+
+# Discussion
+
+For the sake of brevity, I did not delve into win rates and streaks split by offensive or defensive role. For example, it would be interesting to look at whether the round win rate is higher after a streaks of three round wins when the team starts the streak winning as the offensive team. This would mean that, in the round immediately following the streak, the streaking team would be playing defense, where teams are slightly more likely to win on average. On the other hand, streaks of three starting with an offensive round win---theoretically, given $\phi_O$ = 47.7% the expected frequency is $\phi_O^2 \times (1 - \phi_O) \approx 0.119$---are likely to occur less frequently than such streaks starting with a defensive win---$\phi_O \times (1 - \phi_O)^2 \approx 0.130$---so I would want to account for sample size differences.
+
+# Acknowledgements {.unnumbered}
+
+I would like to thank my brother Andrew for giving me feedback on early iterations of this paper, and for requiring me to mention him.
 
 # References {.unnumbered}
 
