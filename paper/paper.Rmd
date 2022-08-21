@@ -5,7 +5,7 @@ authors:
     email: anthonyelhabr@gmail.com
     url: https://tonyelhabr.rbind.io
 abstract: |
-  My research investigates patterns in round win percentages in professional Search and Destroy (SnD) matches of the popular first-person shooter game Call of Duty (CoD). First, I find evidence supprting the hypothesis that round win probability can be modeled as a constant across the series, although not at the naive 50%. Second, I examine post-streak round win probability, given the series outcome. I find no evidence that post-streak win rate is significantly different than expected for combinations of streak length, series length, and series winner, suggesting that the perception of momentum at the team level is deceiving.
+  My research investigates patterns in round win percentages in professional Search and Destroy (SnD) matches of the popular first-person shooter game Call of Duty (CoD). First, I find evidence supprting the hypothesis that round win probability can be modeled as a constant across the series, although not at the naive 50%. Second, I examine post-streak round win probability, given the series outcome. I find no evidence that post-streak win rate is significantly different than expected for combinations of streak length, series length, and series winner, suggesting that the perception of momentum at the team level is just that, perception.
 bibliography: references.bib  
 output:
   rticles::arxiv_article:
@@ -106,7 +106,7 @@ In professional CoD SnD, a team take turns playing offense and defense every rou
 
 [^4]: Often the defensive team will try to eliminate all team members prior to making the defuse, but in some cases, they may try to "ninja" defuse.
 
-I adopt the terminology "series" to refer to what CoD SnD players typically call a "match", so as to emulate the terminology of playoff series in professional leagues like the National Basketball Association, National Hockey League, and Major League Baseball. A "game" or a "match" in such leagues is analogous to a "round" of CoD SnD.
+I adopt the terminology "series" to refer to what CoD SnD players typically call a "match", so as to emulate the terminology of playoff series in professional leagues like the National Basketball Association, National Hockey League, and Major League Baseball. A "game" or a "match" in such leagues is analogous to a "round" of CoD SnD. Further, it is analogous to a trial in statistical analysis of Bernoulli events.
 
 ## Data
 
@@ -118,7 +118,7 @@ The data set consists of all SnD matches played in major tournaments and qualifi
 
 [^6]: 288 of the series occur in major tournaments, which are considered to be more "competitive" than the qualifiers since they are played in person (COVID-permitting), whereas the qualifiers are played online.
 
-[^7]: Data: <https://linktr.ee/CDLArchive>. Author: <https://twitter.com/IOUTurtle>
+[^7]: Raw data: <https://linktr.ee/CDLArchive>. Author: <https://twitter.com/IOUTurtle>. Processed data can be found at <https://github.com/tonyelhabr/fps_round_games/blob/master/data/cod_rounds.csv>.
 
 The empirical offensive round win percentage across all rounds is $\tau_O$ = 47.8%.[^8] Table \ref{tbl:cod-o-win-prop-by-series-state} shows round win percentages by series "state" (i.e. the number of round wins by each team prior to an upcoming round). Offensive round win rate is not quite constant, although never veers more than 10% from this global average.[^9]
 
@@ -219,11 +219,11 @@ Defense round wins & 0 & 1 & 2 & 3 & 4 & 5 \\
 ```
 # Literature review
 
-There have been a handful of studies of the distribution of games played in a series of a professional sport. Most assume a constant probability $\phi$ of a given team winning a game in the series, regardless of the series state. Mosteller [-@mosteller1952] observed that the American League had dominated the National League in Major League Baseball's (MLB) World Series matchups, implying that matchups should not modeled with $\phi = 0.5$. Mosteller proposed three approaches for identifying the optimal constant probability value of the stronger team in the World Series, finding $\phi \approx 0.65$. in each case: (1) solving for $p$ from the empirical average number of games won by the loser of the series, which he called the "method of moments" approach; (2) maximizing the likelihood that the sample would have been drawn from a population in which the probability of a team winning a game is constant across the series (i.e. maximum likelihood), and (3) minimizing the chi-square goodness of fit statistic for $\phi$.
+There have been a handful of studies of the distribution of games played in a series of a professional sport. Most assume a constant probability $\phi$ of a given team winning a game in the series, regardless of the series state. Mosteller [-@mosteller1952] observed that the American League had dominated the National League in Major League Baseball's (MLB) World Series matchups, implying that games should not be modeled with a constant (null) $\phi_0 = 0.5$. Mosteller proposed three approaches for identifying the optimal constant probability value of the stronger team in the World Series, finding $\phi \approx 0.65$ in each case: (1) solving for $p$ from the empirical average number of games won by the loser of the series, which he called the "method of moments" approach; (2) maximizing the likelihood that the sample would have been drawn from a population in which the probability of a team winning a game is constant across the series (i.e. maximum likelihood), and (3) minimizing the chi-square goodness of fit statistic $\chi^2$ for $\phi$.
 
-Chance [-@chance2020] re-examines the constant probability notion in Major League Baseball's (MLB) World Series (1923--2018), the National Basketball Association's (NBA) Finals (1951--2018), and the National Hockey League's (NHL) Stanley Cup (1939--2018). Chance finds strong evidence against the null hypothesis of $\phi = 0.5$ in the MLB and NHL championship series when applying Mosteller's first and second methods. Chance goes on to outline a conditional probability framework (likelihood of winning a game given the series state) which can exactly explain the distribution of the number of games played.
+Chance [-@chance2020] re-examines the constant probability notion in Major League Baseball's (MLB) World Series (1923--2018), the National Basketball Association's (NBA) Finals (1951--2018), and the National Hockey League's (NHL) Stanley Cup (1939--2018). Chance finds strong evidence against the null hypothesis of $\phi_0 = 0.5$ in the MLB and NHL championship series when applying Mosteller's first and second methods. Chance goes on to outline a conditional probability framework (likelihood of winning a game given the series state) which can exactly explain the distribution of the number of games played.
 
-Momentum, one of most discussed topics in sports analytics, goes hand-in-hand with a discussion of the nature of series outcomes.[^10] Two opposing fallacies are observed in the context of momentum: the "gambler's fallacy" (negative recency) and "hot hand fallacy" (positive recency). Per Ayton et al. [-@ayton2004], negative recency is "the belief that, for random events, runs of a particular outcome ... will be balanced by a tendency for the opposite outcome", while positive recency is the expectation of observing future results that match recent results.
+Momentum, one of most discussed topics in sports analytics, goes hand-in-hand with a discussion of the nature of series outcomes.[^10] Two opposing fallacies are observed in the context of momentum: the "gambler's fallacy" (negative recency) and the "hot hand fallacy" (positive recency). Per Ayton et al. [-@ayton2004], negative recency is "the belief that, for random events, runs of a particular outcome ... will be balanced by a tendency for the opposite outcome", while positive recency is the expectation of observing future results that match recent results.
 
 [^10]: We often use use "streaks" and momentum interchangeably, but as [@steeger2021] note, momentum implies dependence between events, whereas streaking does not.
 
@@ -231,15 +231,23 @@ Studying both player streaks and team streaks in basketball, in both observation
 
 [^11]: Streak selection bias, "in conjunction with a quasi-Bayesian model of decision making under sample size neglect... provides a novel structural candidate explanation for the persistence of gambler's fallacy beliefs", per MS.
 
-Despite the plethora of existing research on games played in a series and momentum in sports, these topics have yet to be investigated heavily in esports. Work has been done to examine in-round win probability in other FPS titles such as Counter-Strike [@xenopoulos2022] and Valorant [@derover2021], both of which are round-based like CoD SnD. However, research on round-level trends is sparse, perhaps because games like Counter-Strike and Valorant both have economic aspects that can create clear advantages on side in a given round, given how prior rounds played out.
+Other research has borrowed a common approach from the field of quality control, looking at unlikely sequences of events with the Wald-Wolfowitz runs test [@peel2015], [@steeger2021]. Peel and Clauset find no evidence for unlikely sequences of scoring events in the NHL, College Football (CFB), and National Football League (NFL), but do in the NBA. As a check on their entropy approach to momentum identification, Steeger et al. found three NHL teams who sequence of wins in the 2018-2019 regular season violated the Wald-Wolfowitz null hypothesis, although these teams did not match the teams identified with their primary approach.
 
-Additionally, both Counter-Strike and Valorant have overtime rules and blocked offensive/defensive roles (i.e. playing either offense or defense for many consecutive rounds). On the other hand, teams in CoD SnD rotate sides every round, analogous to a 1-1-1-1-1-1-1 format for home advantage in best-of-seven series for professional sports like the MLB, NBA, and NHL.[^12] While theoretically one might be able to account for any kind of format, such as a 5-5-1, the rotation of team sides every round is convenient for convincing ourselves that rounds could reasonably be modeled as i.i.d. Bernoulli trials.
+## My contribution
+
+Despite the plethora of existing research on games played in a series and momentum in sports, these topics have yet to be investigated heavily, if at all, in esports. Work has been done to examine intra-round win probability in other FPS titles such as Counter-Strike [@xenopoulos2022] and Valorant [@derover2021], both of which are round-based like CoD SnD. However, considering Counter-Strike and Valorant specifically, research on round-level trends seems non-existant, perhaps for one of many reasons:
+
+1.  Both have economic aspects that can create clear advantages for one side in a given round, given how prior rounds played out. CoD has no such equivalent, except for perhaps "kill streaks", which infrequently play a role.
+2.  Teams play either offense or defense for many consecutive rounds. (The former has a 14-14-1 format and the latter uses a 12-12-1 format.) On the other hand, teams in CoD SnD rotate roles every round, analogous to a 1-1-1-1-1-1-1 format for home advantage in best-of-seven series for professional sports like the MLB, NBA, and NHL.[^12] While theoretically one might be able to account for any kind of format, such as a 5-5-1, the rotation of team sides every round is convenient for convincing ourselves that rounds could reasonably be modeled as i.i.d. Bernoulli trials.
+3.  Both Counter-Strike and Valorant have overtime rules---team must win by two rounds---which can make end-of-series sequences difficult to model. CoD SnD does not have overtime rules.
 
 [^12]: 1-1-1-1-1-1-1 is not used today in these leagues, but it was at least one in each league.
 
+To my knowledge, there is no existing public statistical research on CoD SnD format, beyond descriptive analysis on social media. While intra-round trends may be more directly applicable to teams looking for an advantage on their competition, broader investigation on a common concept like the hot-hand phenomenon in a new field---particularly one that is less subjected to factors that may be difficult to control for, e.g. weather---should hopefully be useful as a precedent or supplement for future researchers.
+
 # Methodology
 
-## Distribution of rounds played {#sec:method-rounds-played}
+## Distribution of rounds played
 
 The formula for the expected proportion of series a best-of-$s$ format ending in $r$ rounds ($r \leq s$), $\hat{\Phi}(r)$, for a constant round win probability $\phi$ ($0 \leq \phi \leq 1$) for one team[^13] is
 
@@ -268,14 +276,16 @@ To evaluate the constant round win probability null hypothesis---that is, that t
 ```
 $r \in R = [6, 7, 8, 9, 10, 11]$ for CoD SnD.
 
-## Momentum {#sec:method-momentum}
+## Momentum
+
+### MS post-streak probability
 
 Let us now consider round win rate immediately following a streak of $k$ wins, given that the series lasts $r$ rounds. Removing our knowledge of a streak, we might model the Bernoulli round win probability as
 
 ```{=tex}
 \begin{equation}\protect\hypertarget{eq:pwr}{}{
-p_0(\text{win} | r) = p^{w|r}_0 = \{
-\begin{array}{rl}
+p_0(\text{win} | r) = p^{+|r}_0 = \{
+\begin{array}{cl}
 \frac{m}{r}, & \text{team wins series} \\
 \frac{r - m}{r}, & \text{team loses series}
 \end{array}
@@ -285,58 +295,79 @@ p_0(\text{win} | r) = p^{w|r}_0 = \{
 ```
 using $m$ from Equation \ref{eq:m}.
 
-As shown by MS with their Theorem 1, we should expect the proportion of rounds wins immediately following a streak of $k$ rounds wins for a series lasting $r$ rounds, $\hat{P}^{w|kr}_{MS}$, to be strictly less than $p^{w|r}$.[^15] Unfortunately, there does not exist a closed form representation for the expectation for $\hat{P}^{w|kr}_{MS}$ for $k > 1$. Nonetheless, one may recursively build a collection of dictionaries to compute the expectation analytically, or, more conveniently, one may run simulations to estimate the expected value.[^16]
+As shown by MS with their Theorem 1, we should expect the proportion of rounds wins immediately following a streak of $k$ rounds wins for a series lasting $r$ rounds, $\hat{P}^{+|kr}_{MS}$, to be strictly less than $p^{+|r}$.[^15] Unfortunately, there does not exist a closed form representation for the expected value of $\hat{P}^{+|kr}_{MS}$ for $k > 1$. Nonetheless, one may recursively build a collection of dictionaries to compute the expectation analytically, or, more conveniently, one may run simulations to estimate the expected value, as I choose to do.[^16]
 
-[^15]: See Appendix E.1 of MS for details on the proof that follows.
+[^15]: See Appendix E.1 of MS for the proof.
 
-[^16]: I've adapted the code from Vafa [-@vafa2017], which implements MS's framework [-@miller2018].
+[^16]: I have adapted the code from Vafa [-@vafa2017], which implements MS's framework [-@miller2018].
 
-Although it would be convenient to emulate the hypothesis testing for difference of proportions performed by MS (and GVT), my context is fundamentally different from that of MS, who focus on longitudinal data in controlled settings.[^17] The number of trials is fixed in their experimental designs, but in CoD SnD, the number of rounds played is determined as a function of the max number of possible rounds ($s$) and whether or not the team wins the series, as shown in Equation \ref{eq:pwr}. The Bernoulli trial success probability, i.e. a round win in CoD SnD, is not independent of the opponent. Consequently, a statistical test of the difference in $\hat{P}^{w|kr}$ and $\hat{P}^{\ell|kr}$, as performed by MS to evaluate their hypothesis regarding post-streak success rates is not completely appropriate, although useful as a reference.
+Although it would be convenient to emulate the hypothesis testing for difference of proportions performed by MS (and GVT), my context is fundamentally different from that of MS, who focus on longitudinal data in controlled settings.[^17] The number of trials is fixed in their experimental designs, but in CoD SnD, the number of rounds played is determined as a function of the max number of possible rounds ($s$) and whether or not the team wins the series. The Bernoulli trial success probability, i.e. a round win in CoD SnD, is not independent of the opponent. Consequently, a statistical test of the difference in $\hat{P}^{+|kr}$ and $\hat{P}^{-|kr}$, as performed by MS to evaluate their hypothesis regarding post-streak success rates, is not completely appropriate, although useful as a reference.
 
 [^17]: GVT also performs statistical tests on shots from players in live games, i.e. "observational" data, but they note that their findings are likely affected player shot selection in the face of defensive strategy by the opposing team.
 
-One might consider another form of the expected proportion of rounds won immediately after a streak of $k$ round wins in a best-of-$s$ series given the length of the series ($r$ rounds), the "notional" proportion $\hat{P}^{w|kr}_0$. The Bernoulli round win probability underlying $\hat{P}^{w|kr}_0$ is
+### "Notional" post-streak probability
+
+One might consider another form of the expected proportion of rounds won immediately after a streak of $k$ round wins in a best-of-$s$ series given the length of the series ($r$ rounds), the "notional" proportion $\hat{P}^{+|kr}_0$. The Bernoulli round win probability underlying $\hat{P}^{+|kr}_0$ is
 
 ```{=tex}
 \begin{equation}\protect\hypertarget{eq:pwkr}{}{
-p_0(\text{win} | k, r) = p^{w|kr}_0 =\{
-\begin{array}{rl}
-\frac{m - k}{i - k}, & \text{team wins series} \\
-\frac{s - m - k}{i - k}, & \text{team loses series}
+p_0(\text{win} | k, r) = p^{+|kr}_0 =\{
+\begin{array}{cl}
+\frac{m - k}{r - k}, & \text{team wins series} \\
+\frac{s - m - k}{r - k}, & \text{team loses series}
 \end{array}
 }
 \label{eq:pwkr}
 \end{equation}
 ```
-using $m$ from Equation \ref{eq:m}. We can perform a binomial test to test the null hypothesis $H_0 : \omega = \omega_0$ for the observed probability of success $\omega$ and a user-specified $\omega_0$, where $0 \leq \omega_0 \leq 1$.[^18]
+using $m$ from Equation \ref{eq:m}.
+
+We can perform a binomial test to evaluate the null hypothesis $\omega = \omega_0$ for the observed probability of success $\omega$ and a user-specified $\omega_0$, where $0 \leq \omega_0 \leq 1$.[^18] If there are $r^+$ observed successes in a sample of $r$ trials and we expect that there should be $r * \omega_0$, the probability of arriving at this expected number of successes is
 
 [^18]: $\omega$ and other symbols are chosen so as to not conflict with symbols already used elsewhere for in other equations, either generic or for CoD SnD specifically.
 
-If there are $r_+$ observed successes in a sample of $r$ trials and we expect that there should be $r * \omega_0$, the probability of arriving at this expected number of successes is
-
 ```{=tex}
 \begin{equation}\protect\hypertarget{eq:binom}{}{
-\Pr(r_+) = {\binom {r}{r_+}} \omega^{r_+}(1-\omega)^{r-r+}.
+\Pr(r^w) = {\binom {r}{r^+}} \omega^{r^+}(1-\omega)^{r-r^+}.
 }\label{eq:binom}\end{equation}
 ```
-Plugging in the notional probability $p^{w|kr}_0$ for the null $\omega_0$ and the observed probability $p^{w|kr} = N^{w|kr} \times P^{w|kr}$, for the observed $\omega$, where $N^{w|kr}$ is the observed number of instances where a teams wins the round immediately following a $k$-round winning streak in a series lasting $r$ rounds, we can evaluate the null hypothesis that the observed probability is equal to the notional probability. If we reject this null hypothesis, then we might consider team momentum, represented by post-streak success, plausible.
+Plugging in the notional proportion $\hat{p}^{+|kr}_0$ for the null $\omega_0$ and the observed proportion $P^{+|kr}$ for $\omega$ (treating proportions as probabilities), we can evaluate the null hypothesis that the observed probability is equal to the notional probability. If we can reject this null hypothesis, then we might consider team momentum, represented by post-streak success, plausible.
 
-One can perform the same binomial test for the MS probability adjusting for streak-selection bias, $p^{w|kr}_{MS}$. Given the caveats mentioned before, the results should be heeded with caution.
+One can perform the same binomial test for the MS's streak-selection-adjusted proportion, $\hat{P}^{+|kr}_{MS}$. FOOTY: Given the caveats mentioned before, the results should be heeded with caution.
 
-Stepping back from the one-sided perspective of a single team's probability of winning and their streakiness, one can attempt to detect the "hot hand" more broadly with the Wald-Wolfowitz runs test, a common tool used in the field of quality control. Under the null hypothesis, the number of runs in a sequence of $r$ trials is a random variable with the following mean $\mu$ and variance $\sigma^2$.
+We can further decompose Equation \ref{eq:pwkr} by the round $i$ ($i \leq r$) in which the streak of length $k$ carries into.
+
+```{=tex}
+\begin{equation}\protect\hypertarget{eq:pwkri}{}{
+p_0(\text{win} | k, r, i) = p^{+|kri}_0 =\{
+\begin{array}{cl}
+\frac{m - k}{r - k}, & \text{team wins series}, i \neq r \\
+1, & \text{team wins series}, i = r \\
+\frac{s - m - k}{r - k}, & \text{team loses series}, i \neq r \\
+0, & \text{team loses series}, i = r
+\end{array}
+}
+\label{eq:pwkri}
+\end{equation}
+```
+Again, one might apply a binomial test to evaluate the hypothesis that the expected proportions, both $\hat{P}^{+|kri}_0$ and $\hat{P}^{+|kri}_{MS}$, are equal to the observed proportion $P^{+|kr}$.
+
+### Wald-Wolfowitz runs test
+
+Stepping back from the one-sided perspective of a single team's round win probability when streaking, one can attempt to detect the hot hand phenomenon with the Wald-Wolfowitz runs test. Under the null hypothesis, the number of runs in a sequence of $r$ trials is a random variable, which can take on values $r^+$ and $r^-$ for success and failure respectively, with the following mean $\mu$ and variance $\sigma^2$.
 
 ```{=tex}
 \begin{equation}\protect\hypertarget{eq:ww}{}{
-\mu = \frac{2r_+r_-}{r} + 1, \sigma^2 = \frac{(\mu-1)(\mu-2)}{r-1}
+\mu = \frac{2r^{+}r^{-}}{r} + 1, \sigma^2 = \frac{(\mu-1)(\mu-2)}{r-1}
 }\label{eq:ww}\end{equation}
 ```
-One might subset observed series sequences to those that violate the run test null hypothesis and perform a proportions test where the null is that the observe rate of such series is equal to the frequency that we should expect, given a choice for the constant round win probability $\phi$. If the
+One might subset observed series sequences to those that violate the run test null hypothesis and perform a test of proportions, where the null is that the observed rate of such series is equal to the frequency that we should expect, given a choice for the constant round win probability $\phi$. If we can reject the null, then we can argue in favor of the hot hand.
 
 # Results
 
 First, I investigate the constant probability assumption and the distribution of rounds played in a series. Chance's [-@chance2020] work is closely related to mine, and, in fact, provides a guide for this investigation. Afterwards, I investigate post-streak win rates and the context of momentum, leveraging MS's [-@miller2018] framework for streak selection bias.
 
-## Distribution of rounds played {#sec:results-rounds-played}
+## Distribution of rounds played
 
 Using Equation \ref{eq:chi-squ}, I find that $\chi^2 = 16.0$ (p-value of 0.0068) for the naive constant round win probability $\phi_0 = 0.5$. Thus, I can comfortably reject the constant probability null hypothesis for $\phi_0 = 0.5$, even at a confidence level of $\alpha = 0.01$.
 
@@ -714,7 +745,7 @@ $r$ & $\hat{\Phi}_0(r)$ = 0.5 & $\hat{\Phi}_2(r)$ = 0.575 & $\Phi(r)$ \\
 ```
 Observing that $\hat{\Phi}_2(r)$ reasonably matches $\Phi(r)$ (especially in comparison to $\hat{\Phi}_0(r)$), along with the null hypothesis rejection shown in Table \ref{tbl:mosteller-methods-results}, it is fair to conclude that the constant round win probability assumption can be valid in CoD SnD series with the appropriate choice of $\phi$ ($\approx 0.575$).
 
-## Momentum {#sec:results-momentum}
+## Momentum
 
 ```{r}
 #| label: cod_round_win_prop_after_k_wins
@@ -864,93 +895,85 @@ cod_round_win_prop_after_k_wins <- tibble(win_streak = 2L:5L) |>
   unnest(data)
 cod_round_win_prop_after_k_wins |> filter(win_round, notional_p_value < 0.05)
 cod_round_win_prop_after_k_wins |> filter(win_round, ms_p_value < 0.05)
-# bonferroni correction?
-cod_round_win_prop_after_k_wins |> 
-  mutate(
-    n = n(),
-    p2 = notional_p_value |> p.adjust(),
-    p3 = ms_p_value |> p.adjust()
-  ) |> 
-  filter(win_streak == 3, win_round)
 ```
 
 ```{r}
 #| label: cod_round_win_prop_after_k_wins-table
 cod_round_win_prop_after_k_wins |> 
-  filter(win_streak == 2L) |> 
   mutate(
-    across(
-      matches('p_value'), 
-      ~case_when(
-        .x <= 0.01 ~ '<=0.01', 
-        TRUE ~ sprintf('%.2f', .x)
-      )
-    ),
+    orig_notional_p_value = notional_p_value,
+    orig_ms_p_value = ms_p_value
+  ) |> 
+  # group_by(win_streak) |> 
+  mutate(
+    across(c(notional_p_value, ms_p_value), ~p.adjust(.x, method = 'BY'))
+  ) |> 
+  # ungroup() |>
+  filter(win_streak == 3L) |> 
+  # filter(ms_p_value < 0.05)
+  mutate(
     prop_lab = scales::percent(prop, accuracy = 0.1),
-    notional_lab = sprintf('%.1f%% (%s)', round(100 * notional_prop, 1), notional_p_value),
-    ms_lab = sprintf('%.1f%% (%s)', round(100 * ms_prop, 1), ms_p_value)
+    notional_lab = sprintf('%.1f%%', 100 * notional_prop),
+    ms_lab = sprintf('%.1f%%', 100 * ms_prop)
   ) |>
   arrange(n_rounds, win_series, win_round) |> 
+  filter(win_round) |> 
   transmute(
     n_rounds,
     across(win_series, ~ifelse(.x, 'yes', 'no')),
-    win_round,
+    n,
     total,
     prop_lab,
     notional_lab,
     ms_lab
-  ) |>
-  group_split(win_round) |> 
-  walk(
-    function(df) {
-      message(sprintf('win_round=%s, win_series=%s', df$win_round[[1]], df$win_series[[1]]))
-      df <- df |> 
-        select(
-          -c(win_round)
-        ) |> 
-        gt::gt() |> 
-        gt::cols_label(
-          n_rounds = 'r',
-          win_series = 'Win series?',
-          total = 'N',
-          prop_lab = 'O',
-          notional_lab = 'a',
-          ms_lab = 'b'
-        ) |> 
-        gt::as_latex() |> 
-        cat()
-    }
-  )
-
+  ) |> 
+  gt::gt() |> 
+  gt::cols_label(
+    n_rounds = 'r',
+    win_series = 'Win series?',
+    n = 'r+',
+    total = 'N',
+    prop_lab = 'O',
+    notional_lab = 'a',
+    ms_lab = 'b'
+  ) |> 
+  gt::as_latex() |> 
+  cat()
 ```
 
-Given that people typically perceive streaks as beginning after the third success (or failure) at minimum [@carlson2007], I focus on streaks of three round wins.[^20] Table \ref{tbl:cod-pw3r-pl3r} compares the observed round win rate $P^{w,kr}$ following streaks of $k=3$ round wins given the series outcome ($r$ rounds and winner) with the notional and MS expected proportions, $\hat{P}^{w|kr}_0$ and $\hat{P}^{w|kr}_{MS}$ respectively.
+Given that people typically perceive streaks as beginning after the third success (or failure) at minimum [@carlson2007], I focus on streaks of three round wins.[^20] Table \ref{tbl:cod-pw3r-pl3r} compares the observed round win rate $P^{w,kr}$ following streaks of $k=3$ round wins given the series outcome ($r$ rounds and winner) with the notional and MS expected proportions, $\hat{P}^{+|kr}_0$ and $\hat{P}^{+|kr}_{MS}$ respectively.
 
 [^20]: Three happens to also be a reasonable number for series that lasts at maximum 11 rounds.
 
 ```{=tex}
-\begin{longtable}{rcrrrr}
-\caption{Observed count and proportion of round wins immediately following round win streak of $k=3$, $N^{w|kr}$ and $P^{w|kr}$ respectively, given the length of the series ($r$ rounds) and the series winner. Additionally, the notional and MS expected proportions, $\hat{P}^{w|kr}_0$ and $\hat{P}^{w|kr}_{MS}$ respectively, and the $p$-values of binomial tests comparing the underlying notional and MS round win probabilities, $p^{w|kr}_0$ and $p^{w|kr}_{MS}$, to the probability implied by the observed proportion $p^{w|kr} = N^{w|kr} \times P^{w|kr}$.}
+\begin{longtable}{rcrrrrr}
+\caption{Given the round win streak $k$, the length of the series ($r$ rounds), and the series winner, the observed count of rounds wins, $r^{+|kr}$, and proportion of round wins, $P^{+|kr}$, among $N^{kr}$ instances where a team could win after the streak $k=3$ ($P^{+|kr} = \frac{r^{+|kr}}{N^{kr}}$). Additionally, the notional and MS expected proportions, $\hat{P}^{+|kr}_0$ and $\hat{P}^{+|kr}_{MS}$ respectively.}
 \label{tbl:cod-pw3r-pl3r} \\
+
 \toprule
-$r$ & \text{Win series?} & $N^{w|kr}$ & $P^{w|kr}$ & $\hat{P}^{w|kr}_0$ ($p$-value) & $\hat{P}^{w|kr}_{MS}$ ($p$-value) \\ 
+$r$ & \text{Win series?} & $r^{+|kr}$ & $N^{kr}$ & $P^{+|kr}$ & $\hat{P}^{+|kr}_0$ & $\hat{P}^{+|kr}_{MS}$ \\ 
 \midrule
-7 & yes & 209 & 74.6\% & 75.0\% (0.94) & 75.7\% (0.69) \\ 
-8 & yes & 209 & 62.2\% & 60.0\% (0.53) & 61.9\% (0.94) \\ 
-9 & yes & 193 & 51.8\% & 50.0\% (0.67) & 52.7\% (0.83) \\ 
-10 & no & 60 & 13.3\% & 14.3\% (1.00) & 26.7\% (0.02) \\ 
-10 & yes & 151 & 43.7\% & 42.9\% (0.87) & 44.7\% (0.87) \\ 
-11 & no & 129 & 24.0\% & 25.0\% (0.84) & 30.8\% (0.11) \\ 
-11 & yes & 150 & 40.0\% & 37.5\% (0.56) & 38.8\% (0.80) \\ 
+
+7 & yes & 156 & 209 & 74.6\% & 75.0\% & 75.7\% \\ 
+8 & yes & 130 & 209 & 62.2\% & 60.0\% & 61.9\% \\ 
+9 & yes & 100 & 193 & 51.8\% & 50.0\% & 52.7\% \\ 
+10 & no & 8 & 60 & 13.3\% & 14.3\% & 26.7\% \\ 
+10 & yes & 66 & 151 & 43.7\% & 42.9\% & 44.7\% \\ 
+11 & no & 31 & 129 & 24.0\% & 25.0\% & 30.8\% \\ 
+11 & yes & 60 & 150 & 40.0\% & 37.5\% & 38.8\% \\ 
 
 \bottomrule
 \end{longtable}
 ```
-We observe that, with the exception of $\hat{P}^{w|kr}_{MS}$ when $r = 10$ and the eventual series loser is the team that wins after a streak of three round wins[^21], all binomial test $p$-values are greater than the typical $\alpha = 0.05$ threshold, implying that we cannot reject the null hypothesis that the expected notional and MS post-streak round win rates are different than the observed proportion. As noted before, the MS expectations may be unreliable for CoD SnD, so one is inclined to prefer the results of the notional binomial tests.
+With the exception of $\hat{P}^{+|kr}_{MS}$ when $r = 10$ and the eventual series loser is the team that wins after a streak of three round wins[^21], all un-adjusted binomial test $p$-values are greater than the typical $\alpha = 0.05$ threshold, implying that we cannot reject the null hypothesis that the expected notional and MS post-streak round win rates are different than the observed proportion. Adjusting the $p$-values with the Benjamini & Yekutieli (BY) correction [-@benjamini2001], the null hypothesis cannot be rejected for any case.[^22]
 
-[^21]: This implies that the opponent, th eventual series winner, goes on to win the series 6-4 after going down 0-4. This is the only scenario in which one team wins four rounds consecutively but loses a best-of-11 series in 10 rounds.
+[^21]: This implies that the opponent, the eventual series winner, goes on to win the series 6-4 after going down 0-4. This is the only scenario in which one team wins four rounds consecutively but loses a best-of-11 series in 10 rounds.
 
-When performing the same tests for streaks of two, four, and five, there is no case in which I can reject the binomial null hypothesis for the expected notional probability $p^{w|kr}_0$. The null hypothesis can be rejected for expected MS probability $p^{w|kr}_{MS}$ when $k = 4, r = [7, 8, 10]$ and $k = 5, r = [7, 8]$. Nonetheless, the usefulness of $p^{w|kr}_{MS}$ is questionable, as described before, and the sample sizes are smaller for these conditions (all under 20 instances, with the exception of $k = 4, r = [7, 8]$ with 70 and 39 observations respectively).
+[^22]: As noted before, the MS expectations may be unreliable for CoD SnD, so one is inclined to prefer the results of the notional binomial tests.
+
+When performing the same tests for streaks of two, four, and five, there is no case in which I can reject the binomial null hypothesis for the expected notional probability $p^{+|kr}_0$. The null hypothesis can only be rejected for the expected MS probability $p^{+|kr}_{MS}$ when $k = 5, r = 7$ after applying the BY p-value correction.[^23]
+
+[^23]: At 36, the sample size for \$k = 5, r = 7\$ is not as large as most other combinations of \$k\$ and \$r\$.
 
 ```{r}
 #| label: cod_round_win_prop_after_k_wins_i_rounds
@@ -961,7 +984,7 @@ summarize_cod_win_prop_after_k_wins_i_rounds <- function(k) {
     win_series = c(TRUE, FALSE),
     win_round = c(TRUE, FALSE)
   ) |> 
-    filter(round >= (!!k + 1L)) |> 
+    filter(round >= (!!k + 1L), n_rounds > round) |> 
     compute_probs_nx_k(k)
   
   postprocess_round_streaks(
@@ -971,13 +994,15 @@ summarize_cod_win_prop_after_k_wins_i_rounds <- function(k) {
   )
 }
 
-cod_round_win_prop_after_k_wins_i_rounds <- tibble(win_streak = 1L:3L) |>
+init_cod_round_win_prop_after_k_wins_i_rounds <- tibble(win_streak = 3L) |>
   mutate(
     data = map(win_streak, summarize_cod_win_prop_after_k_wins_i_rounds)
   ) |>
   unnest(data) |> 
-  select(-starts_with('ms')) |> 
-  group_by(win_streak, n_rounds, round) |> 
+  select(-starts_with('ms'))
+
+cod_round_win_prop_after_k_wins_i_rounds <- init_cod_round_win_prop_after_k_wins_i_rounds |>
+  group_by(win_streak, win_round, n_rounds, round) |> 
   mutate(
     total = sum(n),
     prop = n / total
@@ -987,38 +1012,30 @@ cod_round_win_prop_after_k_wins_i_rounds <- tibble(win_streak = 1L:3L) |>
     notional_p_value = vectorized_binom_test(n, total, p = notional_prop)$p.value |> round(2)
   )
 
-cod_round_win_prop_after_k_wins_i_rounds |> 
-  filter(win_streak == 3, n_rounds == round) |> 
-  filter(!win_series)
-
-## 5-3?
-cod_round_win_prop_after_k_wins_i_rounds |> 
-  filter(win_streak == 2) |> 
-  filter(n_rounds == 11, round == 11)
+# ## example of why we needed to recalculate prop... prop and notional_prop should sum to 1, grouped by win_streak and win_round
+# cod_round_win_prop_after_k_wins_i_rounds |> 
+#   filter(win_streak == 3, n_rounds == 11, round == 10)
+# 
+# ## 5-3?
+# cod_round_win_prop_after_k_wins_i_rounds |> 
+#   filter(win_streak == 2) |> 
+#   filter(n_rounds == 11, round == 11)
 ```
 
 ```{r}
 #| label: cod_round_win_prop_after_k_wins_i_rounds-table
-# cod_round_win_prop_after_k_wins_i_rounds |> 
-#   filter(win_streak == 3) |> 
-#   mutate(
-#     n = n(),
-#     p2 = notional_p_value |> p.adjust()
-#   ) |> 
-#   filter(!win_round) |> 
-#   # filter(notional_p_value < 0.05) |> 
-#   filter(n_rounds <= (round + 2)) |> 
-#   filter(n_rounds >= 9)
 
 cod_round_win_prop_after_k_wins_i_rounds |> 
   mutate(
-    p2 = notional_p_value |> p.adjust()
-  ) |> 
-  filter(win_streak == 3) |> 
-  filter(!win_round) |> 
-  # filter(n_rounds <= (round + 2)) |> 
-  filter(n_rounds == round) |> 
-  filter(n_rounds >= 9) |> 
+    across(notional_p_value, p.adjust)
+  ) |>
+  filter(
+    win_round,
+    # round >= (n_rounds - 3)
+    n_rounds >= 10,
+    win_streak == 3
+  ) |>  
+  filter(total >= 10) |> 
   mutate(
     across(
       matches('p_value'), 
@@ -1028,57 +1045,295 @@ cod_round_win_prop_after_k_wins_i_rounds |>
       )
     ),
     prop_lab = scales::percent(prop, accuracy = 0.1),
-    notional_lab = sprintf('%.1f%% (%s)', round(100 * notional_prop, 1), notional_p_value)
+    notional_lab = scales::percent(notional_prop, accuracy = 0.1)
   ) |>
   arrange(n_rounds, round, win_series, win_round) |> 
   transmute(
     n_rounds,
     round,
     across(win_series, ~ifelse(.x, 'yes', 'no')),
+    n,
     total,
     prop_lab,
-    notional_lab,
-    prop_is_gt = ifelse(prop > notional_prop, 'yes', 'no')
+    notional_lab
   ) |> 
   gt::gt() |> 
   gt::cols_label(
     n_rounds = 'r',
     round = 'i',
     win_series = 'Win series?',
+    n = 'r+',
     total = 'N',
     prop_lab = 'O',
-    notional_lab = 'a',
-    prop_is_gt = 'b'
+    notional_lab = 'a'
   ) |> 
   gt::as_latex() |> 
   cat()
 
 ```
 
-Now let us explicitly consider the round, $i$. As shown in Table \ref{tbl:cod-pw3ri-pl3ri}, the notional win rate in the round $i$ immediately following a streak of $k$ round wins in a series lasting $r$ rounds, $\hat{P}{w|kri}_0$, is statistically different than the observed $P^{w|kri}$ in several cases, notably when $r = i$ for each of $r \in [9, 10, 11]$.[^22] Interestingly, the observed rate is greater than the expected rate in each case where we can reject the null hypothesis, whereas the observed rate is less than the expected rate in all other cases, as well in a strong majority of cases not shown. Since
+Now let us explicitly consider the round, $i$. As shown in Table \ref{tbl:cod-pw3ri-pl3ri}, the notional win rate in the round $i$ immediately following a streak of $k$ round wins in a series lasting $r$ rounds, $\hat{P}{+|kri}_0$, is statistically different than the observed $P^{+|kri}$ in several cases, notably when $r = i$ for each of $r \in [9, 10, 11]$.[^24] Interestingly, the observed rate is greater than the expected rate in each case where we can reject the null hypothesis, whereas the observed rate is less than the expected rate in all other cases, as well in a strong majority of cases not shown.
 
-[^22]: The null can also be rejected for $r \in [7, 8]$, although these are not shown, and the sample sizes are smaller.
+[^24]: The null can also be rejected for $r \in [7, 8]$, although these are not shown, and the sample sizes are smaller.
 
 ```{=tex}
-\begin{longtable}{rrcrrrc}
-\caption{Given the round $i$, the round win streak $k=3$, the length of the series ($r$ rounds), and the series winner, the observed count and proportion of round wins immediately following the streak, $N^{w|kri}$ and $P^{w|kri}$ respectively. Additionally, the notional proportion, $\hat{P}^{w|kri}_0$, and the $p$-value of a binomial test comparing the underlying notional $p^{w|kri}_0$ to the probability implied by the observed proportion $p^{w|kri} = N^{w|kri} \times P^{w|kri}$. Table restricted to $r \in [9, 10, 11]$ and $r - 2 \leq i \leq r$ for brevity.}
+\begin{longtable}{rrcrrrr}
+\caption{Given the round $i$, the round win streak $k$, the length of the series ($r$ rounds), and the series winner, the observed count of rounds wins, $r^{+|kri}$, and proportion of round wins, $P^{+|kri}$, among $N^{kri}$ instances where a team could win after the streak $k=3$ ($P^{+|kri} = \frac{r^{+|kri}}{N^{kri}}$). Additionally, the notional proportion, $\hat{P}^{+|kri}_0$, and the $p$-value of a binomial test comparing $\hat{P}^{+|kri}_0$ to the observed proportion $P^{+|kri}$. Table restricted to $r \in [10, 11]$ and $i < r$ and $N^{kri} > 10$ for brevity.}
 \label{tbl:cod-pw3ri-pl3ri} \\
 \toprule
-$r$ & $i$ & \text{Win series?} & $N^{w|kri}$ & $P^{w|kri}$ & $\hat{P}^{w|kri}_0$ ($p$-value) & $\hat{P}^{w|kri}_0 < P^{w|kri}$ \\ 
+$r$ & $i$ & \text{Win series?} & $r^{+|kri}$ & $N^{kri}$ & $P^{+|kri}$ & $\hat{P}^{+|kri}_0$\\ 
 \midrule
-9 & 7 & yes & 36 & 41.7\% & 50.0\% (0.41) & no \\ 
-9 & 8 & yes & 40 & 45.0\% & 50.0\% (0.64) & no \\ 
-9 & 9 & yes & 37 & 89.2\% & 50.0\% (\textless=0.01) & yes \\ 
-10 & 8 & no & 37 & 2.7\% & 14.3\% (0.06) & no \\ 
-10 & 8 & yes & 37 & 24.3\% & 42.9\% (0.03) & no \\ 
-10 & 9 & no & 32 & 6.2\% & 14.3\% (0.31) & no \\ 
-10 & 9 & yes & 32 & 12.5\% & 42.9\% (\textless=0.01) & no \\ 
-10 & 10 & yes & 29 & 72.4\% & 42.9\% (\textless=0.01) & yes \\ 
-11 & 9 & no & 32 & 15.6\% & 25.0\% (0.31) & no \\ 
-11 & 9 & yes & 32 & 31.2\% & 37.5\% (0.58) & no \\ 
-11 & 10 & no & 36 & 13.9\% & 25.0\% (0.18) & no \\ 
-11 & 10 & yes & 36 & 13.9\% & 37.5\% (\textless=0.01) & no \\ 
-11 & 11 & yes & 32 & 53.1\% & 37.5\% (0.10) & yes \\ 
+
+10 & 7 & no & 2 & 13 & 15.4\% & 14.3\% \\ 
+10 & 7 & yes & 11 & 13 & 84.6\% & 42.9\% \\ 
+10 & 8 & no & 1 & 10 & 10.0\% & 14.3\% \\ 
+10 & 8 & yes & 9 & 10 & 90.0\% & 42.9\% \\ 
+11 & 5 & no & 9 & 13 & 69.2\% & 25.0\% \\ 
+11 & 5 & yes & 4 & 13 & 30.8\% & 37.5\% \\ 
+11 & 6 & no & 4 & 13 & 30.8\% & 25.0\% \\ 
+11 & 6 & yes & 9 & 13 & 69.2\% & 37.5\% \\ 
+11 & 7 & no & 3 & 10 & 30.0\% & 25.0\% \\ 
+11 & 7 & yes & 7 & 10 & 70.0\% & 37.5\% \\ 
+11 & 9 & no & 5 & 15 & 33.3\% & 25.0\% \\ 
+11 & 9 & yes & 10 & 15 & 66.7\% & 37.5\% \\ 
+11 & 10 & no & 5 & 10 & 50.0\% & 25.0\% \\ 
+11 & 10 & yes & 5 & 10 & 50.0\% & 37.5\% \\ 
+
+\bottomrule
+\end{longtable}
+```
+```{r}
+#| label: cod_round_arrangements
+library(randtests)
+simulate_cod_round_arrangements <- function(p = 0.5, n_sims = 10000, seed = 42) {
+  n_rounds_max <- 11
+  set.seed(seed)
+  w <- sample(c(0, 1), size = n_rounds_max * n_sims, replace = TRUE, prob = c(1 - p, p))
+  m <- matrix(w, nrow = n_sims, ncol = n_rounds_max)
+  # data.frame(x)
+  df <- as_tibble(m)
+  names(df) <- sprintf('%d', 1:n_rounds_max)
+  df$i <- 1:nrow(df)
+  
+  sim_rounds <- tibble(
+    i = rep(1:n_sims, each = n_rounds_max),
+    r = rep(1:n_sims, times = n_rounds_max),
+    w = w
+  ) |> 
+    group_by(i) |> 
+    mutate(
+      cumu_w = cumsum(w),
+      cumu_l = cumsum(w == 0)
+    ) |> 
+    ungroup() |> 
+    mutate(
+      cumu_wl_max = ifelse(cumu_w > cumu_l, cumu_w, cumu_l)
+    ) |> 
+    filter(cumu_wl_max <= 6)
+  
+  sim_rounds <- df |> 
+    pivot_longer(
+      -i,
+      names_to = 'r',
+      values_to = 'w'
+    ) |> 
+    mutate(
+      across(r, as.integer)
+    ) |> 
+    group_by(i) |> 
+    mutate(
+      cumu_w = cumsum(w),
+      cumu_l = cumsum(w == 0)
+    ) |> 
+    ungroup() |> 
+    mutate(
+      cumu_wl_max = ifelse(cumu_w > cumu_l, cumu_w, cumu_l)
+    ) |> 
+    filter(cumu_wl_max <= 6)
+  
+  sim_rounds_to_drop <- anti_join(
+    sim_rounds |> 
+      filter(cumu_wl_max == 6L),
+    sim_rounds |> 
+      filter(cumu_wl_max == 6L) |> 
+      group_by(i) |> 
+      slice_min(r, n = 1) |> 
+      ungroup(), 
+    by = c('i', 'r', 'w', 'cumu_w', 'cumu_l', 'cumu_wl_max')
+  )
+  
+  sim_rounds <- sim_rounds |> 
+    anti_join(
+      sim_rounds_to_drop, 
+      by = c('i', 'r', 'w', 'cumu_w', 'cumu_l', 'cumu_wl_max')
+    )
+  
+  ## always from offensive perspective
+  pre_expected_records <- sim_rounds |> 
+    inner_join(
+      sim_rounds |> 
+        filter(cumu_wl_max == 6) |> 
+        mutate(
+          zeros_win = cumu_l == cumu_wl_max
+        ) |> 
+        select(i, zeros_win),
+      by = 'i'
+    ) |> 
+    mutate(
+      across(w, ~ifelse(zeros_win, abs(1 - .x), .x))
+    )
+  
+  pre_expected_records |> 
+    group_by(i) |> 
+    summarize(
+      cumu_w = max(cumu_w),
+      cumu_l = max(cumu_l),
+      ws = paste0(w, collapse = '-')
+    ) |> 
+    ungroup() |> 
+    mutate(
+      wins = ifelse(cumu_w == 6, cumu_w, cumu_l),
+      losses = ifelse(cumu_w == 6, cumu_l, cumu_w),
+      n_rounds = wins + losses
+    ) |> 
+    count(n_rounds, ws, sort = TRUE) |> 
+    mutate(prop = n / sum(n))
+}
+
+cod_expected_round_arrangements_mle <- simulate_cod_round_arrangements(0.575)
+
+cod_actual_round_arrangements <- cod_rounds |> 
+  filter(win_series) |> 
+  mutate(across(win_round, as.integer)) |> 
+  group_by(year, event, series) |> 
+  summarize(
+    wins = max(cumu_w),
+    losses = max(cumu_l),
+    ws = paste0(win_round, collapse = '-')
+  ) |> 
+  ungroup() |> 
+  mutate(
+    n_rounds = wins + losses
+  ) |> 
+  count(n_rounds,  ws, sort = TRUE) |> 
+  mutate(prop = n / sum(n))
+
+perform_run_tests <- function(cod_expected_round_arrangements) {
+  suppressWarnings(
+    cod_run_tests <- cod_expected_round_arrangements |> 
+      select(n_rounds, ws) |> 
+      separate(ws, into = as.character(1:11), remove = FALSE) |> 
+      pivot_longer(
+        -c(n_rounds, ws),
+        names_to = 'round',
+        values_to = 'w',
+        values_drop_na = TRUE
+      ) |> 
+      mutate(
+        across(c(round, w), as.integer)
+      ) |> 
+      # filter(record != '6-0') |> 
+      select(-round) |> 
+      group_by(n_rounds, ws) |> 
+      summarize(
+        w = list(w)
+      ) |> 
+      ungroup() |> 
+      mutate(
+        p_value = map_dbl(w, ~randtests::runs.test(.x, threshold = 0.5)$p.value),
+        is_significant = p_value <= 0.05
+      ) |> 
+      select(n_rounds, ws, p_value, is_significant)
+  )
+  
+  expected_total <- sum(cod_expected_round_arrangements$n)
+  actual_total <- sum(cod_actual_round_arrangements$n)
+  cod_round_arrangements <- cod_expected_round_arrangements |> 
+    rename(n_expected = n, prop_expected = prop) |>
+    mutate(
+      n_expected_adj = n_expected * (!!actual_total) / (!!expected_total)
+    ) |> 
+    left_join(
+      cod_actual_round_arrangements |> 
+        rename(n_actual = n, prop_actual = prop),
+      by = c('n_rounds', 'ws')
+    ) |> 
+    inner_join(
+      cod_run_tests,
+      by = c('n_rounds', 'ws')
+    ) |> 
+    mutate(
+      across(n_actual, replace_na, 0L),
+      across(prop_actual, replace_na, 0)
+    )
+}
+
+cod_round_arrangements_mle |> 
+  # mutate(
+  #   total_actual = sum(n_actual),
+  #   total_expected = sum(n_expected)
+  # ) |> 
+  filter(!is.na(p_value)) |> 
+  filter(is_significant) |> 
+  mutate(
+    total_actual = sum(n_actual),
+    total_expected_adj = sum(n_expected_adj)
+  ) |> 
+  mutate(
+    prop_p_value = vectorized_prop_test(n_actual, total_actual, round(n_expected_adj), round(total_expected_adj))$p.value,
+    orig_prop_p_value = prop_p_value,
+    across(prop_p_value, ~p.adjust(.x, method = 'BY') |> round(3))
+  )
+
+cod_round_arrangements_mle <- cod_expected_round_arrangements_mle |> perform_run_tests()
+cod_round_arrangements_mle |> 
+  filter(is_significant) |> 
+  filter(n_rounds < 11) |> 
+  transmute(
+    n_rounds,
+    ws,
+    n_actual,
+    across(prop_actual, ~sprintf('%.2f%%', 100 * .x)),
+    across(n_expected_adj, round, 2),
+    across(prop_expected, ~sprintf('%.2f%%', 100 * .x))
+  ) |> 
+  gt::gt() |> 
+  gt::cols_label(
+    n_rounds = 'r',
+    ws = 'Sequence',
+    n_actual = 'a',
+    prop_actual = 'b',
+    n_expected_adj = 'c',
+    prop_expected = 'd'
+  ) |> 
+  gt::as_latex() |> 
+  cat()
+```
+
+In Table \ref{tbl:cod-runs}, the observed and expected count of sequences, $N^{\zeta r}$ and $\hat{N}^{\zeta r}$ respectively, are shown for sequences, $\zeta(r)$, for which one can reject the Wald-Wolfowitz null hypothesis at a confidence level of $\alpha = 0.05$, for $r \in [8, 9, 10]$. (In addition to these 13, there are 12 additional sequences for $r = 11$.) The relative frequency of the expected proportions are based on 10,000 simulations using the constant round probability $\phi_2 = 0.575$. A test for difference between the actual and expected proportions of all sequences indicates that the null hypothesis---that the two proportions are equal---cannot be rejected for any of the 25 significant sequences.
+
+```{=tex}
+\begin{longtable}{rlrrrr}
+
+\caption{Given the length of the series ($r$ rounds), the sequence of round wins by the series winner $^\zeta(r)$, where round wins $r^w$ and losses $r^-$ are indicated by 1 and 0 respectively, among sequences that reject the Wald-Wolfowitz null hypothesis for $r \in [8, 9, 10]$. The observed count, $N^{\zeta r}$, and proportion, $P^{\zeta r}$, of all possible sequences, as well as the expected count, $\hat{N}^{\zeta r}$, and proportion, $\hat{P}^{\zeta r}$. $\hat{N}^{\zeta r}$ is scaled to the observed number of series played, hence its non-integer value.}
+\label{tbl:cod-runs} \\
+
+\toprule
+r & $\zeta(r)$ & $N^{\zeta r}$ & $P^{\zeta r}$ & $\hat{N}^{\zeta r}$ & $\hat{P}^{\zeta r}$ \\ 
+\midrule
+8 & 0-0-1-1-1-1-1-1 & 4 & 0.47\% & 7.67 & 0.90\% \\ 
+9 & 0-0-0-1-1-1-1-1-1 & 4 & 0.47\% & 3.75 & 0.44\% \\ 
+10 & 1-1-1-1-0-0-0-0-1-1 & 1 & 0.12\% & 2.39 & 0.28\% \\ 
+10 & 1-0-0-0-0-1-1-1-1-1 & 0 & 0.00\% & 2.04 & 0.24\% \\ 
+10 & 1-0-1-0-1-1-0-1-0-1 & 3 & 0.35\% & 2.04 & 0.24\% \\ 
+10 & 1-1-1-0-0-0-0-1-1-1 & 2 & 0.23\% & 2.04 & 0.24\% \\ 
+10 & 0-0-0-0-1-1-1-1-1-1 & 2 & 0.23\% & 1.79 & 0.21\% \\ 
+10 & 1-0-1-0-1-0-1-1-0-1 & 3 & 0.35\% & 1.70 & 0.20\% \\ 
+10 & 1-0-1-1-0-1-0-1-0-1 & 0 & 0.00\% & 1.70 & 0.20\% \\ 
+10 & 1-1-0-0-0-0-1-1-1-1 & 1 & 0.12\% & 1.19 & 0.14\% \\ 
+10 & 1-0-1-0-1-0-1-0-1-1 & 3 & 0.35\% & 1.11 & 0.13\% \\ 
+10 & 1-1-0-1-0-1-0-1-0-1 & 0 & 0.00\% & 1.11 & 0.13\% \\ 
+10 & 1-1-1-1-1-0-0-0-0-1 & 2 & 0.23\% & 1.02 & 0.12\% \\ 
 \bottomrule
 \end{longtable}
 ```
@@ -1086,13 +1341,13 @@ $r$ & $i$ & \text{Win series?} & $N^{w|kri}$ & $P^{w|kri}$ & $\hat{P}^{w|kri}_0$
 
 For the sake of brevity, I did not delve into win rates and streaks split by offensive or defensive role. For example, it would be interesting to look at whether the round win rate is higher after a streaks of three round wins when the team starts the streak winning as the offensive team. This would mean that, in the round immediately following the streak, the streaking team would be playing defense, where teams are slightly more likely to win on average. On the other hand, streaks of three starting with an offensive round win---theoretically, given $\tau_O$ = 47.7% the expected frequency is $\tau_O^2 \times (1 - \tau_O) \approx$ 11.9%---are likely to occur less frequently than such streaks starting with a defensive win---$\tau_O \times (1 - \tau_O)^2 \approx$ 13.0%---so I would want to account for sample size differences.
 
-Further regarding future work, I've reached out to the Twitter user "R11stats", who privately tracks in-round player engagements.[^23] R11stats expressed intent on making the data public, which would allow for research into player-specific momentum.
+Further regarding future work, I've reached out to the Twitter user "R11stats", who privately tracks in-round player engagements.[^25] R11stats expressed intent on making the data public, which would allow for research into player-specific momentum.
 
-[^23]: <https://twitter.com/R11stats>
+[^25]: <https://twitter.com/R11stats>
 
 # Acknowledgements {.unnumbered}
 
-I would like to thank my brother Andrew for giving me feedback on early iterations of this paper.
+Thank my brother Andrew for giving me feedback on drafts of this paper.
 
 # References {.unnumbered}
 
