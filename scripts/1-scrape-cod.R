@@ -2,8 +2,8 @@
 ## Data from https://twitter.com/IOUTurtle
 library(tidyverse)
 library(googlesheets4)
-library(magrittr)
 library(qs)
+library(readr)
 
 dir_data <- 'data'
 dir.create(dir_data, showWarnings = FALSE)
@@ -244,6 +244,8 @@ cod_rounds <- cod_series |>
     map = sprintf('%s - %s', map, game)
   ) |> 
   relocate(series_id, .after = 'game')
-filename <- 'cod_rounds.qs'
+
+filename <- 'cod_rounds.csv'
+## multiple directories in case knitting doesn't handle subdirectories well
 sprintf('%s/%s', c('data', 'paper', 'presentation'), filename) |> 
-  walk(~qs::qsave(cod_rounds, .x))
+  walk(~write_csv(cod_rounds, .x))

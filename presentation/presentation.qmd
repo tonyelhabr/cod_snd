@@ -17,10 +17,9 @@ execute:
 #| eval: true
 library(dplyr)
 library(dplyr)
-library(qs)
 library(scales)
 
-cod_rounds <- qs::qread('data/cod_rounds.qs')
+cod_rounds <- read_csv('data/cod_rounds.csv')
 ```
 
 ```{r}
