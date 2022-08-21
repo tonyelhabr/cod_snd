@@ -245,7 +245,8 @@ cod_rounds <- cod_series |>
   ) |> 
   relocate(series_id, .after = 'game')
 
-filename <- 'cod_rounds.csv'
 ## multiple directories in case knitting doesn't handle subdirectories well
-sprintf('%s/%s', c('data', 'paper', 'presentation'), filename) |> 
-  walk(~write_csv(cod_rounds, .x))
+# filename <- 'cod_rounds.csv'
+# sprintf('%s/%s', c('data', 'paper', 'presentation'), filename) |> 
+#   walk(~write_csv(cod_rounds, .x, na = ''))
+write_csv(cod_rounds, 'data/cod_rounds.csv', na = '')
