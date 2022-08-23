@@ -39,6 +39,7 @@ knitr::opts_chunk$set(
 
 ```{r}
 #| label: setup-code
+library(readr)
 library(dplyr)
 library(tidyr)
 library(purrr)
@@ -261,7 +262,7 @@ Other research has borrowed a common approach from the field of quality control,
 
 Despite the plethora of existing research on games played in a series and momentum in sports, these topics have yet to be investigated heavily, if at all, in esports. Work has been done to examine intra-round win probability in other FPS titles such as Counter-Strike [@xenopoulos2022] and Valorant [@derover2021], both of which are round-based like CoD SnD. However, considering Counter-Strike and Valorant specifically, research on round-level trends seems non-existent, perhaps for one of several reasons:
 
-1.  Both have economic aspects that can create clear advantages for one team in a round, given how prior rounds played out. CoD has no such equivalent, except for perhaps "kill streaks", which infrequently occur.
+1.  Both have economic aspects that can create clear advantages for one team in a round, given how prior rounds played out. CoD has no such equivalent, except for perhaps "score streaks", which infrequently occur.
 2.  Teams play either offense or defense for many consecutive rounds. (The former has a 15-15-1 format and the latter uses a 12-12-1 format.) On the other hand, teams in CoD SnD rotate roles every round, analogous to a 1-1-1-1-1-1-1 format for home advantage in best-of-seven series for professional sports like the MLB, NBA, and NHL.[^14] While theoretically one might be able to account for any kind of format, such as a 5-5-1, the rotation of team sides every round is convenient for convincing ourselves that rounds could reasonably be modeled as i.i.d. Bernoulli trials.
 3.  Both Counter-Strike and Valorant have overtime rules---team must win by two rounds---which can make end-of-series sequences difficult to model. CoD SnD does not have overtime rules.
 
@@ -373,27 +374,33 @@ Again, we caapply a binomial test to evaluate the hypothesis that the expected p
 
 ### Wald-Wolfowitz runs test
 
-Stepping back from the one-sided perspective of a single team's round win probability when streaking, one can attempt to detect the hot hand phenomenon with a Wald-Wolfowitz runs test. Under the null hypothesis, the number of runs in a sequence of $r$ trials, $\zeta(r)$, is a random variable that can take on values $r^+$ and $r^-$ for success and failure respectively, with the following mean $\mu$ and variance $\sigma^2$.
+Stepping back from the one-sided perspective of a single team's round win probability when streaking, one can attempt to detect the hot hand phenomenon with a Wald-Wolfowitz runs test. Under the null hypothesis, the number of runs in a sequence of $r$ trials, $\zeta(r)$, is a random variable that can take on values $r^+$ and $r^- = r - r^+$ for the number of success and failure respectively, with the following mean $\mu$ and variance $\sigma^2$:
 
 ```{=tex}
 \begin{equation}\label{eq:ww}
-\mu = \frac{2r^{+}r^{-}}{r} + 1, \sigma^2 = \frac{(\mu-1)(\mu-2)}{r-1}
+\mu = \frac{2r^{+}r^{-}}{r} + 1, \sigma^2 = \frac{(\mu-1)(\mu-2)}{r-1}.
 \end{equation}
 ```
 To incorporate our findings regarding constant round win probability, We can specify that $\Pr(r^+) = \phi$ (and, conversely, that $\Pr(r^-) = 1 - \phi$).
 
-One can subset the observed series sequences to those that violate the null hypothesis for the run test and perform a test of equal proportions, where the null is that the observed rate of a sequence, $\psi$, is equal to the expected rate of the sequence, $\hat{psi}$. The test statistic is
+One can subset the observed series sequences to those that violate the null hypothesis for the run test and perform a test of equal proportions, where the null is that the observed proportion of a sequence relative to all possible sequences, $P(\zeta) = P^\zeta$, is equal to the expected proportion of the sequence relative to all possible sequences, $\hat{P}^\zeta$. The test statistic is
 
 ```{=tex}
 \begin{equation}\label{eq:prop}
-Z = \frac{\hat{\psi} - \psi}{\sqrt{\psi_d (1 - \psi_d) ( \frac{1}{\hat{N}} + \frac{1}{N})}}
+Z = \frac{P^\zeta - \hat{P}^\zeta}{\sqrt{P^\zeta_{\delta} (1 - P^\zeta_{\delta}) (1 / N^\zeta + 1 / \hat{N}^\zeta)  } }
 \end{equation}
 ```
-where $N$ is the observed number of sequences, $\hat{N}$ is the expected number, and $\psi_d = \frac{\psi - \hat{psi}}{N - \hat{N}}$. If we can reject the null hypothesis for such sequences, then there is implicit evidence in favor of the hot hand.
+where
+
+$$
+P^\zeta_{\delta} = \frac{P^\zeta - \hat{P}^\zeta}{N^\zeta - \hat{N}^\zeta}
+$$
+
+and where $N^\zeta$ is the observed number of sequences, $\hat{N}^\zeta$ is the expected number of sequences. If we can reject the null hypothesis for such sequences, then there is implicit evidence in favor of the hot hand.
 
 # Results
 
-First, we investigate the constant probability assumption and the distribution of rounds played in a series. Chance's [-@chance2020] work is closely related to our, and, in fact, provides a guide for this investigation. Afterwards, We investigate post-streak win rates, referring to work from MS. We finish with a brief look at sequences of round wins violating the Wald-Wolfowitz runs test, and whether such observed sequences occur more frequently than expected.
+First, we investigate the constant probability assumption and the distribution of rounds played in a series. Chance's work is closely related to our, and, in fact, provides a guide for this investigation. Afterwards, We investigate post-streak win rates, referring to work from MS. We finish with a brief look at sequences of round wins violating the Wald-Wolfowitz runs test, and whether such observed sequences occur more frequently than expected.
 
 ## Distribution of rounds played
 
@@ -1047,7 +1054,6 @@ cod_round_win_prop_after_k_wins_i_rounds <- init_cod_round_win_prop_after_k_wins
 
 ```{r}
 #| label: cod_round_win_prop_after_k_wins_i_rounds-table
-
 cod_round_win_prop_after_k_wins_i_rounds |> 
   mutate(
     across(notional_p_value, p.adjust)
@@ -1223,6 +1229,7 @@ simulate_cod_round_arrangements <- function(p = 0.5, n_sims = 10000, seed = 42) 
     mutate(prop = n / sum(n))
 }
 
+cod_expected_round_arrangements_naive <- simulate_cod_round_arrangements(0.5)
 cod_expected_round_arrangements_mle <- simulate_cod_round_arrangements(0.575)
 
 cod_actual_round_arrangements <- cod_rounds |> 
@@ -1301,14 +1308,16 @@ cod_round_arrangements_mle |>
   mutate(
     total_actual = sum(n_actual),
     total_expected_adj = sum(n_expected_adj)
-  ) |> 
+  ) |>
   mutate(
     prop_p_value = vectorized_prop_test(n_actual, total_actual, round(n_expected_adj), round(total_expected_adj))$p.value,
     orig_prop_p_value = prop_p_value,
     across(prop_p_value, ~p.adjust(.x, method = 'BY') |> round(3))
   )
 
+cod_round_arrangements_naive <- cod_expected_round_arrangements_naive |> perform_run_tests()
 cod_round_arrangements_mle <- cod_expected_round_arrangements_mle |> perform_run_tests()
+
 cod_round_arrangements_mle |> 
   filter(is_significant) |> 
   filter(n_rounds < 11) |> 
@@ -1340,25 +1349,25 @@ In Table \ref{tbl:cod-runs}, the observed and expected count of sequences, $N^{\
 ```{=tex}
 \begin{longtable}{rlrrrr}
 
-\caption{Sequences ($\zeta(r)$) for which we can reject Wald-Wolfowitz null hypothesis for $r \in [8, 9, 10]$, where round wins $r^+$ and losses $r^-$ are denoted by $+$ and $-$ respectively. The observed count, $N^{\zeta r}$, and proportion, $P^{\zeta r}$, of all possible sequences, as well as the expected count, $\hat{N}^{\zeta r}$, and proportion, $\hat{P}^{\zeta r}$. $\hat{N}^{\zeta r}$ is scaled to the observed number of series played, hence its non-integer value.}
+\caption{Sequences ($\zeta(r)$) for which we can reject Wald-Wolfowitz null hypothesis for $r \in [8, 9, 10]$, where round wins and losses are denoted with $+$ and $-$ respectively. The observed count, $N^{\zeta r}$, and proportion, $P^{\zeta r}$, of all possible sequences, as well as the expected count, $\hat{N}^{\zeta r}$, and proportion, $\hat{P}^{\zeta r}$. $\hat{N}^{\zeta r}$ is scaled to the observed number of series played, hence its non-integer value.}
 \label{tbl:cod-runs} \\
 
 \toprule
 r & $\zeta(r)$ & $N^{\zeta r}$ & $P^{\zeta r}$ & $\hat{N}^{\zeta r}$ & $\hat{P}^{\zeta r}$ \\ 
 \midrule
-8 & --++++++ & 4 & 0.47\% & 7.67 & 0.90\% \\ 
-9 & ---++++++ & 4 & 0.47\% & 3.75 & 0.44\% \\ 
-10 & ++++----++ & 1 & 0.12\% & 2.39 & 0.28\% \\ 
-10 & +----+++++ & 0 & 0.00\% & 2.04 & 0.24\% \\ 
-10 & +-+-++-+-+ & 3 & 0.35\% & 2.04 & 0.24\% \\ 
-10 & +++----+++ & 2 & 0.23\% & 2.04 & 0.24\% \\ 
-10 & ----++++++ & 2 & 0.23\% & 1.79 & 0.21\% \\ 
-10 & +-+-+-++-+ & 3 & 0.35\% & 1.70 & 0.20\% \\ 
-10 & +-++-+-+-+ & 0 & 0.00\% & 1.70 & 0.20\% \\ 
-10 & ++----++++ & 1 & 0.12\% & 1.19 & 0.14\% \\ 
-10 & +-+-+-+-++ & 3 & 0.35\% & 1.11 & 0.13\% \\ 
-10 & ++-+-+-+-+ & 0 & 0.00\% & 1.11 & 0.13\% \\ 
-10 & +++++----+ & 2 & 0.23\% & 1.02 & 0.12\% \\ 
+8 & - - + + + + + + & 4 & 0.47\% & 7.67 & 0.90\% \\ 
+9 & - - - + + + + + + & 4 & 0.47\% & 3.75 & 0.44\% \\ 
+10 & + + + + - - - - + + & 1 & 0.12\% & 2.39 & 0.28\% \\ 
+10 & + - - - - + + + + + & 0 & 0.00\% & 2.04 & 0.24\% \\ 
+10 & + - + - + + - + - + & 3 & 0.35\% & 2.04 & 0.24\% \\ 
+10 & + + + - - - - + + + & 2 & 0.23\% & 2.04 & 0.24\% \\ 
+10 & - - - - + + + + + + & 2 & 0.23\% & 1.79 & 0.21\% \\ 
+10 & + - + - + - + + - + & 3 & 0.35\% & 1.70 & 0.20\% \\ 
+10 & + - + + - + - + - + & 0 & 0.00\% & 1.70 & 0.20\% \\ 
+10 & + + - - - - + + + + & 1 & 0.12\% & 1.19 & 0.14\% \\ 
+10 & + - + - + - + - + + & 3 & 0.35\% & 1.11 & 0.13\% \\ 
+10 & + + - + - + - + - + & 0 & 0.00\% & 1.11 & 0.13\% \\ 
+10 & + + + + + - - - - + & 2 & 0.23\% & 1.02 & 0.12\% \\ 
 \bottomrule
 \end{longtable}
 ```
@@ -1374,15 +1383,11 @@ Perhaps it is not surprising that we did not find evidence in favor of the hot h
 
 For the sake of brevity, we did not delve into win rates and streaks split by offensive or defensive role. For example, it would be interesting to look at whether the round win rate is higher after a streaks of three round wins when the team starts the streak as the offensive team. This would mean that, in the round immediately following the latest streak win, the streaking team would be playing defense, where teams are slightly more likely to win on average. On the other hand, streaks of three starting with an offensive round win---theoretically, knowing that $\tau_O$ = 47.7%, the expected frequency is $\tau_O^2 (1 - \tau_O) \approx$ 11.9%---are likely to occur less frequently than such streaks starting with a defensive win---$\tau_O (1 - \tau_O)^2 \approx$ 13.0%---so we would want to account for sample size differences.
 
-In the future, we could have account for prior team strengths, both in general and on specific maps. Even if doing so does not change the results, we could gain additional insight into why we do not observe statistically significant streakiness.
+In the future, we could account for the quality of the teams, both in general and on specific maps. Even if doing so does not change the results, we could gain additional insight into why we do not observe statistically significant streakiness.
 
-Further regarding future work, we've reached out to the Twitter user "R11stats", who privately tracks in-round player engagements.[^26] R11stats expressed intent on making the data public, which would allow for research into player-specific momentum.
+Further regarding future work, we have contacted the Twitter user "R11stats", who privately tracks in-round player engagements.[^26] R11stats expressed intent on making the data public, which would allow for research into player-specific momentum. While it seems there is no team-level hot hand effect in CoD SnD, perhaps there is with eliminations performed by individual players.
 
 [^26]: <https://twitter.com/R11stats>
-
-Other talking points
-
--   
 
 # References {.unnumbered}
 

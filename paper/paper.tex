@@ -550,12 +550,12 @@ Stepping back from the one-sided perspective of a single team's round
 win probability when streaking, one can attempt to detect the hot hand
 phenomenon with a Wald-Wolfowitz runs test. Under the null hypothesis,
 the number of runs in a sequence of \(r\) trials, \(\zeta(r)\), is a
-random variable that can take on values \(r^+\) and \(r^-\) for success
-and failure respectively, with the following mean \(\mu\) and variance
-\(\sigma^2\).
+random variable that can take on values \(r^+\) and \(r^- = r - r^+\)
+for the number of success and failure respectively, with the following
+mean \(\mu\) and variance \(\sigma^2\):
 
 \begin{equation}\label{eq:ww}
-\mu = \frac{2r^{+}r^{-}}{r} + 1, \sigma^2 = \frac{(\mu-1)(\mu-2)}{r-1}
+\mu = \frac{2r^{+}r^{-}}{r} + 1, \sigma^2 = \frac{(\mu-1)(\mu-2)}{r-1}.
 \end{equation}
 
 To incorporate our findings regarding constant round win probability, We
@@ -564,29 +564,36 @@ can specify that \(\Pr(r^+) = \phi\) (and, conversely, that
 
 One can subset the observed series sequences to those that violate the
 null hypothesis for the run test and perform a test of equal
-proportions, where the null is that the observed rate of a sequence,
-\(\psi\), is equal to the expected rate of the sequence, \(\hat{psi}\).
-The test statistic is
+proportions, where the null is that the observed proportion of a
+sequence relative to all possible sequences, \(P(\zeta) = P^\zeta\), is
+equal to the expected proportion of the sequence relative to all
+possible sequences, \(\hat{P}^\zeta\). The test statistic is
 
 \begin{equation}\label{eq:prop}
-Z = \frac{\hat{\psi} - \psi}{\sqrt{\psi_d (1 - \psi_d) ( \frac{1}{\hat{N}} + \frac{1}{N})}}
+Z = \frac{P^\zeta - \hat{P}^\zeta}{\sqrt{P^\zeta_{\delta} (1 - P^\zeta_{\delta}) (1 / N^\zeta + 1 / \hat{N}^\zeta)  } }
 \end{equation}
 
-where \(N\) is the observed number of sequences, \(\hat{N}\) is the
-expected number, and \(\psi_d = \frac{\psi - \hat{psi}}{N - \hat{N}}\).
-If we can reject the null hypothesis for such sequences, then there is
-implicit evidence in favor of the hot hand.
+where
+
+\[
+P^\zeta_{\delta} = \frac{P^\zeta - \hat{P}^\zeta}{N^\zeta - \hat{N}^\zeta}
+\]
+
+and where \(N^\zeta\) is the observed number of sequences,
+\(\hat{N}^\zeta\) is the expected number of sequences. If we can reject
+the null hypothesis for such sequences, then there is implicit evidence
+in favor of the hot hand.
 
 \hypertarget{results}{%
 \section{Results}\label{results}}
 
 First, we investigate the constant probability assumption and the
-distribution of rounds played in a series. Chance's (2020) work is
-closely related to our, and, in fact, provides a guide for this
-investigation. Afterwards, We investigate post-streak win rates,
-referring to work from MS. We finish with a brief look at sequences of
-round wins violating the Wald-Wolfowitz runs test, and whether such
-observed sequences occur more frequently than expected.
+distribution of rounds played in a series. Chance's work is closely
+related to our, and, in fact, provides a guide for this investigation.
+Afterwards, We investigate post-streak win rates, referring to work from
+MS. We finish with a brief look at sequences of round wins violating the
+Wald-Wolfowitz runs test, and whether such observed sequences occur more
+frequently than expected.
 
 \hypertarget{distribution-of-rounds-played-1}{%
 \subsection{Distribution of rounds
@@ -775,25 +782,25 @@ sequences shown, there are 12 additional sequences for \(r = 11\).
 
 \begin{longtable}{rlrrrr}
 
-\caption{Sequences ($\zeta(r)$) for which we can reject Wald-Wolfowitz null hypothesis for $r \in [8, 9, 10]$, where round wins $r^+$ and losses $r^-$ are denoted by $+$ and $-$ respectively. The observed count, $N^{\zeta r}$, and proportion, $P^{\zeta r}$, of all possible sequences, as well as the expected count, $\hat{N}^{\zeta r}$, and proportion, $\hat{P}^{\zeta r}$. $\hat{N}^{\zeta r}$ is scaled to the observed number of series played, hence its non-integer value.}
+\caption{Sequences ($\zeta(r)$) for which we can reject Wald-Wolfowitz null hypothesis for $r \in [8, 9, 10]$, where round wins and losses are denoted with $+$ and $-$ respectively. The observed count, $N^{\zeta r}$, and proportion, $P^{\zeta r}$, of all possible sequences, as well as the expected count, $\hat{N}^{\zeta r}$, and proportion, $\hat{P}^{\zeta r}$. $\hat{N}^{\zeta r}$ is scaled to the observed number of series played, hence its non-integer value.}
 \label{tbl:cod-runs} \\
 
 \toprule
 r & $\zeta(r)$ & $N^{\zeta r}$ & $P^{\zeta r}$ & $\hat{N}^{\zeta r}$ & $\hat{P}^{\zeta r}$ \\ 
 \midrule
-8 & --++++++ & 4 & 0.47\% & 7.67 & 0.90\% \\ 
-9 & ---++++++ & 4 & 0.47\% & 3.75 & 0.44\% \\ 
-10 & ++++----++ & 1 & 0.12\% & 2.39 & 0.28\% \\ 
-10 & +----+++++ & 0 & 0.00\% & 2.04 & 0.24\% \\ 
-10 & +-+-++-+-+ & 3 & 0.35\% & 2.04 & 0.24\% \\ 
-10 & +++----+++ & 2 & 0.23\% & 2.04 & 0.24\% \\ 
-10 & ----++++++ & 2 & 0.23\% & 1.79 & 0.21\% \\ 
-10 & +-+-+-++-+ & 3 & 0.35\% & 1.70 & 0.20\% \\ 
-10 & +-++-+-+-+ & 0 & 0.00\% & 1.70 & 0.20\% \\ 
-10 & ++----++++ & 1 & 0.12\% & 1.19 & 0.14\% \\ 
-10 & +-+-+-+-++ & 3 & 0.35\% & 1.11 & 0.13\% \\ 
-10 & ++-+-+-+-+ & 0 & 0.00\% & 1.11 & 0.13\% \\ 
-10 & +++++----+ & 2 & 0.23\% & 1.02 & 0.12\% \\ 
+8 & - - + + + + + + & 4 & 0.47\% & 7.67 & 0.90\% \\ 
+9 & - - - + + + + + + & 4 & 0.47\% & 3.75 & 0.44\% \\ 
+10 & + + + + - - - - + + & 1 & 0.12\% & 2.39 & 0.28\% \\ 
+10 & + - - - - + + + + + & 0 & 0.00\% & 2.04 & 0.24\% \\ 
+10 & + - + - + + - + - + & 3 & 0.35\% & 2.04 & 0.24\% \\ 
+10 & + + + - - - - + + + & 2 & 0.23\% & 2.04 & 0.24\% \\ 
+10 & - - - - + + + + + + & 2 & 0.23\% & 1.79 & 0.21\% \\ 
+10 & + - + - + - + + - + & 3 & 0.35\% & 1.70 & 0.20\% \\ 
+10 & + - + + - + - + - + & 0 & 0.00\% & 1.70 & 0.20\% \\ 
+10 & + + - - - - + + + + & 1 & 0.12\% & 1.19 & 0.14\% \\ 
+10 & + - + - + - + - + + & 3 & 0.35\% & 1.11 & 0.13\% \\ 
+10 & + + - + - + - + - + & 0 & 0.00\% & 1.11 & 0.13\% \\ 
+10 & + + + + + - - - - + & 2 & 0.23\% & 1.02 & 0.12\% \\ 
 \bottomrule
 \end{longtable}
 
@@ -842,23 +849,16 @@ occur less frequently than such streaks starting with a defensive
 win---\(\tau_O (1 - \tau_O)^2 \approx\) 13.0\%---so we would want to
 account for sample size differences.
 
-In the future, we could have account for prior team strengths, both in
+In the future, we could account for the quality of the teams, both in
 general and on specific maps. Even if doing so does not change the
 results, we could gain additional insight into why we do not observe
 statistically significant streakiness.
 
-Further regarding future work, we've reached out to the Twitter user
+Further regarding future work, we have contacted the Twitter user
 ``R11stats'', who privately tracks in-round player
 engagements.\footnote{\url{https://twitter.com/R11stats}} R11stats
 expressed intent on making the data public, which would allow for
 research into player-specific momentum.
-
-Other talking points
-
-\begin{itemize}
-\tightlist
-\item
-\end{itemize}
 
 \hypertarget{references}{%
 \section*{References}\label{references}}
