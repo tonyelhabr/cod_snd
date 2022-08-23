@@ -1298,6 +1298,20 @@ perform_run_tests <- function(cod_expected_round_arrangements) {
     )
 }
 
+cod_round_arrangements_naive <- cod_expected_round_arrangements_naive |> perform_run_tests()
+cod_round_arrangements_mle <- cod_expected_round_arrangements_mle |> perform_run_tests()
+
+# bind_rows(
+#   cod_round_arrangements_naive |> 
+#     filter(is_significant) |> 
+#     transmute(ws, is_naive = TRUE),
+#   cod_round_arrangements_naive |> 
+#     filter(is_significant) |> 
+#     transmute(ws, is_naive = FALSE)
+# ) |> 
+#   count(ws) |> 
+#   filter(n == 1L)
+
 cod_round_arrangements_mle |> 
   # mutate(
   #   total_actual = sum(n_actual),
@@ -1315,8 +1329,6 @@ cod_round_arrangements_mle |>
     across(prop_p_value, ~p.adjust(.x, method = 'BY') |> round(3))
   )
 
-cod_round_arrangements_naive <- cod_expected_round_arrangements_naive |> perform_run_tests()
-cod_round_arrangements_mle <- cod_expected_round_arrangements_mle |> perform_run_tests()
 
 cod_round_arrangements_mle |> 
   filter(is_significant) |> 
@@ -1344,7 +1356,9 @@ cod_round_arrangements_mle |>
 
 ### Wald-Wolfowitz runs test
 
-In Table \ref{tbl:cod-runs}, the observed and expected count of sequences, $N^{\zeta r}$ and $\hat{N}^{\zeta r}$ respectively, are shown for sequences, $\zeta(r)$, for which one can reject the Wald-Wolfowitz null hypothesis at a confidence level of $\alpha = 0.05$, for $r \in [8, 9, 10]$. In addition to the 13 sequences shown, there are 12 additional sequences for $r = 11$.
+In Table \ref{tbl:cod-runs}, the observed and expected count of sequences, $N^{\zeta r}$ and $\hat{N}^{\zeta r}$ respectively, are shown for sequences, $\zeta(r)$, for which one can reject the Wald-Wolfowitz null hypothesis, given probability of Bernoulli trial success $\phi = 0.575$,[^26] at a confidence level of $\alpha = 0.05$, for $r \in [8, 9, 10]$. In addition to the 13 sequences shown, there are 12 additional sequences for $r = 11$.
+
+[^26]: If we used $\phi = 0.5$, we would get the same exact seqeunces.
 
 ```{=tex}
 \begin{longtable}{rlrrrr}
@@ -1385,9 +1399,9 @@ For the sake of brevity, we did not delve into win rates and streaks split by of
 
 In the future, we could account for the quality of the teams, both in general and on specific maps. Even if doing so does not change the results, we could gain additional insight into why we do not observe statistically significant streakiness.
 
-Further regarding future work, we have contacted the Twitter user "R11stats", who privately tracks in-round player engagements.[^26] R11stats expressed intent on making the data public, which would allow for research into player-specific momentum. While it seems there is no team-level hot hand effect in CoD SnD, perhaps there is with eliminations performed by individual players.
+Further regarding future work, we have contacted the Twitter user "R11stats", who privately tracks in-round player engagements.[^27] R11stats expressed intent on making the data public, which would allow for research into player-specific momentum. While it seems there is no team-level hot hand effect in CoD SnD, perhaps there is with eliminations performed by individual players.
 
-[^26]: <https://twitter.com/R11stats>
+[^27]: <https://twitter.com/R11stats>
 
 # References {.unnumbered}
 
