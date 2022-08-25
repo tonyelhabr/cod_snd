@@ -1,5 +1,5 @@
 ---
-title: "The Hot Hand Fallacy in Call of Duty"
+title: "The Hot Hand Fallacy in Call of Duty Search and Destroy"
 authors:
   - name: Tony ElHabr
     email: anthonyelhabr@gmail.com
@@ -143,7 +143,7 @@ The data set consists of all SnD matches played in major tournaments and qualifi
 
 [^9]: Raw data: <https://linktr.ee/CDLArchive>. Author: <https://twitter.com/IOUTurtle>. Processed data can be found at <https://github.com/tonyelhabr/fps_round_games/blob/master/data/cod_rounds.csv>.
 
-6-0 sweeps make up 4.7% of all series, while 6-5 series make up 23.7% of series. The observed offensive round win percentage across all rounds is $\tau_O$ = 47.8%.[^10] Table \ref{tbl:cod-o-win-prop-by-series-state} shows round win percentages by series "state" (i.e. the number of round wins by each team prior to an upcoming round). Offensive round win rate is not quite constant, although never veers more than 10% from $\tau_O$.
+6-0 sweeps make up 4.7% of all series, while 6-5 series make up 23.7% of series. The observed offensive round win percentage across all rounds is $\bar{\tau}_O$ = 47.8%.[^10] Table \ref{tbl:o-win-prop-by-series-state} shows round win percentages by series "state" (i.e. the number of round wins by each team prior to an upcoming round). Offensive round win rate is not quite constant, although never veers more than 10% from $\bar{\tau}_O$.
 
 [^10]: Offensive round win percentage has been nearly constant across the three games during the CDL era: 1. 47.2% in MW (2020) 2. 47.9% in Cold War (2021) 3. 48.1% in Vanguard (2022)
 
@@ -186,57 +186,31 @@ cod_round_and_series_win_prop_by_side |>
 ```
 
 ```{=tex}
-\begin{longtable}{crrrrrr}
-\caption{Offensive round win rates for the upcoming round, given both the offensive and defensive team's prior number of round wins. Numbers in parentheses are sample sizes.}\label{tbl:cod-o-win-prop-by-series-state} \\
+\begin{table}
+
+\caption{Offensive round win rates for the upcoming round, given both the offensive and defensive team's prior number of round wins. Numbers in parentheses are sample sizes.}
+
+\centering
+\begin{tabular}{crrrrrr}
 \toprule
 & \multicolumn{6}{c}{Offense round wins} \\ 
 \cmidrule(lr){2-7}
 Defense round wins & 0 & 1 & 2 & 3 & 4 & 5 \\ 
 \midrule
-0 & 47.8\%
-(852) & 46.6\%
-(408) & 43.1\%
-(216) & 43.5\%
-(115) & 43.3\%
-(67) & 40.5\%
-(37) \\ 
-1 & 48.6\%
-(444) & 49.3\%
-(418) & 51.5\%
-(309) & 43.4\%
-(205) & 43.3\%
-(120) & 39.4\%
-(99) \\ 
-2 & 52.8\%
-(218) & 48.9\%
-(305) & 48.9\%
-(315) & 46.6\%
-(262) & 48.7\%
-(189) & 42.1\%
-(133) \\ 
-3 & 54.5\%
-(123) & 46.0\%
-(200) & 49.6\%
-(250) & 45.6\%
-(248) & 44.4\%
-(214) & 44.8\%
-(174) \\ 
-4 & 56.9\%
-(65) & 54.5\%
-(145) & 47.2\%
-(193) & 44.7\%
-(228) & 55.2\%
-(221) & 50.5\%
-(208) \\ 
-5 & 47.4\%
-(38) & 49.4\%
-(83) & 47.1\%
-(136) & 50.9\%
-(175) & 45.2\%
-(177) & 46.0\%
-(202) \\ 
+
+0 & 47.8\%(852) & 46.6\%(408) & 43.1\%(216) & 43.5\%(115) & 43.3\%(67)  & 40.5\%(37)  \\
+1 & 48.6\%(444) & 49.3\%(418) & 51.5\%(309) & 43.4\%(205) & 43.3\%(120) & 39.4\%(99)  \\
+2 & 52.8\%(218) & 48.9\%(305) & 48.9\%(315) & 46.6\%(262) & 48.7\%(189) & 42.1\%(133) \\
+3 & 54.5\%(123) & 46.0\%(200) & 49.6\%(250) & 45.6\%(248) & 44.4\%(214) & 44.8\%(174) \\
+4 & 56.9\%(65)  & 54.5\%(145) & 47.2\%(193) & 44.7\%(228) & 55.2\%(221) & 50.5\%(208) \\
+5 & 47.4\%(38)  & 49.4\%(83)  & 47.1\%(136) & 50.9\%(175) & 45.2\%(177) & 46.0\%(202) \\
+
 \bottomrule
-\end{longtable}
+\end{tabular}
+
+\label{tbl:o-win-prop-by-series-state}
+
+\end{table}
 ```
 At tournaments, higher-seeded ("better") teams choose whether they want to start on offense in the SnD series played as the second or fifth map, and their opponent is assigned to start on offense in the SnD map not chosen.[^11][^12] Outside of tournaments, teams all play each other twice throughout the season, constituting qualifiers. Each team gets to play the higher-seeded role once in their head-to-head matchups with a given team, despite their win-loss records. Overall, we can argue that potential bias due to stronger teams playing defense---or, if offense, if offense happens to be generally advantageous for a given map---is very minimal.
 
@@ -300,7 +274,7 @@ To evaluate the constant round win probability null hypothesis---that is, that t
 
 ```{=tex}
 \begin{equation}\label{eq:chi-squ}
-\chi^2 = \sum^{r \in R} \frac{(\Phi(r) - \hat{\Phi}(r))^2}{\hat{\Phi}(r)},
+\chi^2 = \sum_{r \in R} \frac{(\Phi(r) - \hat{\Phi}(r))^2}{\hat{\Phi}(r)},
 \end{equation}
 ```
 in which $R = [6, 7, 8, 9, 10, 11]$ for CoD SnD.
@@ -573,22 +547,31 @@ summarize_cod_streaks <- function(p = 0.5) {
 cod_streaks_naive_res <- summarize_cod_streaks(p = 0.5)
 ```
 
-Table \ref{tbl:cod-prob-series-lasting-r-rounds} shows the expected series lasting $r$ rounds, the expected proportion of series given $\phi_0 = 0.5$, $\hat{\Phi}_0(r)$, and the observed proportions, $\Phi(r)$.
+Table \ref{tbl:prob-series-lasts-r-rounds} shows the expected series lasting $r$ rounds, the expected proportion of series given $\phi_0 = 0.5$, $\hat{\Phi}_0(r)$, and the observed proportions, $\Phi(r)$.
 
 ```{=tex}
-\begin{longtable}{rrrr}
-\caption{The expected proportion of CoD SnD series lasting $r$ rounds, $\hat{\Phi}_0(r)$, under the assumption that each team has a constant round win probability $\phi_0 = 0.5$. Additionally, the observed frequencies for CoD SnD shown as a count $N(r)$ and as a proportion $\Phi(r)$ of all series ($\sum^{r \in R} N(r)$, where $r \in R = [6, 7, 8, 9, 10, 11]$).}\label{tbl:cod-prob-series-lasting-r-rounds} \\
+\begin{table}
+\caption{The expected proportion of CoD SnD series lasting $r$ rounds, $\hat{\Phi}_0(r)$, under the assumption that each team has a constant round win probability $\phi_0 = 0.5$. Additionally, the observed frequencies for CoD SnD shown as a count $N(r)$ and as a proportion $\Phi(r)$ of all series ($\sum_{r \in R} N(r)$, where $r \in R = [6, 7, 8, 9, 10, 11]$).}
+
+\centering
+\begin{tabular}{rrrr}
 \toprule
 $r$ & $N(r)$ & $\Phi(r)$ & $\hat{\Phi}_0(r)$ \\ 
 \midrule
+
 6 & 40 & $4.7\%$ & $3.1\%$ \\ 
 7 & 101 & $11.9\%$ & $9.4\%$ \\ 
 8 & 141 & $16.5\%$ & $16.4\%$ \\ 
 9 & 185 & $21.7\%$ & $21.9\%$ \\ 
 10 & 183 & $21.5\%$ & $24.6\%$ \\ 
 11 & 202 & $23.7\%$ & $24.6\%$ \\ 
+
 \bottomrule
-\end{longtable}
+\end{tabular}
+
+\label{tbl:prob-series-lasts-r-rounds}
+
+\end{table}
 ```
 ```{r}
 #| label: cod_series_outcomes_naive_chi
@@ -741,37 +724,55 @@ cod_streaks_other_res <- tibble(
 Table \ref{tbl:mosteller-methods-results} shows the alternate values for the constant round win probability that we find when applying the three methods suggested by Mosteller [-@mosteller1952]. Each is approximately equal to 0.575. When applying Equation \ref{eq:chi-squ}, each results in a $\chi^2$ value for which we cannot reject the constant probability null hypothesis.
 
 ```{=tex}
-\begin{longtable}{lrr}
-\caption{Alternate estimates of the constant probability ($\phi$) for winning a given round in a CoD SnD, applying the three methods suggested by Mosteller (1952), in addition to the naive ($\phi_0 = 0.5$).}\label{tbl:mosteller-methods-results} \\
+\begin{table}
+
+\caption{Alternate estimates of the constant probability ($\phi$) for winning a given round in a CoD SnD, applying the three methods suggested by Mosteller (1952), in addition to the naive ($\phi_0 = 0.5$).}
+
+\centering
+\begin{tabular}{lrr}
 \toprule
 Method & $\phi$ & $\chi^2$ ($p$-value) \\
 \midrule
+
 0. Naive & 0.5000 & 16.0 ($\leq$ 0.01) \\
 1. Method of moments & 0.5725 & 3.6 (0.6) \\
 2. Maximum likelihood & 0.5750 & 3.5 (0.62) \\
 3. Minimum ($\chi^2$) & 0.5775 & 3.5 (0.62) \\
+
 \bottomrule
-\end{longtable}
+\end{tabular}
+
+\label{tbl:mosteller-methods-results}
+
+\end{table}
 ```
-Table \ref{tbl:expected-series-lengths-alternative-ps} shows the new $\hat{\Phi}(r)$ when re-applying Equation \ref{eq:series-length} for the maximum likelihood estimate $\phi_2 = 0.575$, resulting in a new set of expected proportions of series lasting $r$ rounds $\hat{\Phi}_2(r)$.[^21] We observe that $\hat{\Phi}_2(r)$ is larger than $\hat{\Phi}_0(r)$ for $r \in [6, 7]$, more closely matching $\Phi(r)$. $\hat{\Phi}_2(r)$ is also closer to the observed $\Phi(r)$ for $r \in [9, 10]$, although not for $r \in [8, 11]$.
+Table \ref{tbl:alternative-constant-ps} shows the new $\hat{\Phi}(r)$ when re-applying Equation \ref{eq:series-length} for the maximum likelihood estimate $\phi_2 = 0.575$, resulting in a new set of expected proportions of series lasting $r$ rounds $\hat{\Phi}_2(r)$.[^21] We observe that $\hat{\Phi}_2(r)$ is larger than $\hat{\Phi}_0(r)$ for $r \in [6, 7]$, more closely matching $\Phi(r)$. $\hat{\Phi}_2(r)$ is also closer to the observed $\Phi(r)$ for $r \in [9, 10]$, although not for $r \in [8, 11]$.
 
 [^21]: The method of moments and minimum $\chi^2$ estimates for $\phi$ are omitted simply because the results would be nearly identical to those for the maximum likelihood estimate of $\phi$ (since they are all $\approx 0.575$).
 
 ```{=tex}
-\begin{longtable}{rrrr}
-\caption{The observed proportion of CoD SnD series, $\Phi(r)$, ending in $r$ rounds, compared to the expected proportion, $\hat{\Phi}_0(r)$, under the naive assumption $\phi_0 = 0.5$ and the expected proportion, $\hat{\Phi}_2(r)$, under the maximum likelihood estimate, $\phi_2 = 0.575$, for constant round win probability.}\label{tbl:expected-series-lengths-alternative-ps} \\
-\toprule()
+\begin{table}
+\caption{The observed proportion of CoD SnD series, $\Phi(r)$, ending in $r$ rounds, compared to the expected proportion, $\hat{\Phi}_0(r)$, under the naive assumption $\phi_0 = 0.5$ and the expected proportion, $\hat{\Phi}_2(r)$, under the maximum likelihood estimate, $\phi_2 = 0.575$, for constant round win probability.}
+
+\centering
+\begin{tabular}{rrrrrr}
+\toprule
 $r$ & $\Phi(r)$ & $\hat{\Phi}_0(r)$ = 0.5 & $\hat{\Phi}_2(r)$ = 0.575 \\
-\midrule()
-\endhead
+\midrule
+
 6 & 4.7\% & 3.1\% & 4.2\% \\
 7 & 11.9\% & 9.4\% & 11.2\% \\
 8 & 16.5\% & 16.4\% & 17.8\% \\
 9 & 21.7\% & 21.9\% & 21.8\% \\
 10 & 21.5\% & 24.6\% & 23.0\% \\
 11 & 23.7\% & 24.6\% & 22.0\% \\
-\bottomrule()
-\end{longtable}
+
+\bottomrule
+\end{tabular}
+
+\label{tbl:alternative-constant-ps}
+
+\end{table}
 ```
 Observing that $\hat{\Phi}_2(r)$ reasonably matches $\Phi(r)$ (especially in comparison to $\hat{\Phi}_0(r)$), along with the null hypothesis rejection shown in Table \ref{tbl:mosteller-methods-results}, we can say that the constant round win probability assumption is valid in CoD SnD series with the appropriate choice of $\phi$ ($\approx 0.575$).
 
@@ -973,15 +974,17 @@ cod_round_win_prop_after_k_wins |>
   cat()
 ```
 
-Given that people typically perceive streaks as beginning after the third success (or failure) at minimum [@carlson2007], we focus on streaks of three round wins.[^22] Table \ref{tbl:cod-pw3r-pl3r} compares the notional and MS expected proportions, $\hat{P}^{+|k,r}_0$ and $\hat{P}^{+|k,r}_{MS}$ respectively, with the observed round win rate, $P^{+|kr}$, following streaks of $k=3$ round wins given the series outcome.
+Given that people typically perceive streaks as beginning after the third success (or failure) at minimum [@carlson2007], we focus on streaks of three round wins.[^22] Table \ref{tbl:pwkr} compares the notional and MS expected proportions, $\hat{P}^{+|k,r}_0$ and $\hat{P}^{+|k,r}_{MS}$ respectively, with the observed round win rate, $P^{+|kr}$, following streaks of $k=3$ round wins given the series outcome.
 
 [^22]: Three happens to also be a reasonable number for series that last at maximum 11 rounds.
 
 ```{=tex}
-\begin{longtable}{rcrrrrr}
-\caption{Given the round win streak $k=3$, the length of the series ($r$ rounds), and the series winner, the observed count of rounds wins, $r^{+|k=3,r}$, and proportion of round wins, $P^{+|k=3,r}$, among $N^{k=3,r}$ instances where a team could win after the streak ($P^{+|k=3,r} = \frac{r^{+|k=3,r}}{N^{k=3,r}}$). Additionally, the notional and MS expected proportions, $\hat{P}^{+|k=3,r}_0$ and $\hat{P}^{+|k=3,r}_{MS}$ respectively.}
-\label{tbl:cod-pw3r-pl3r} \\
+\begin{table}
 
+\caption{Given the round win streak $k=3$, the length of the series ($r$ rounds), and the series winner, the observed count of rounds wins, $r^{+|k=3,r}$, and proportion of round wins, $P^{+|k=3,r}$, among $N^{k=3,r}$ instances where a team could win after the streak ($P^{+|k=3,r} = \frac{r^{+|k=3,r}}{N^{k=3,r}}$). Additionally, the notional and MS expected proportions, $\hat{P}^{+|k=3,r}_0$ and $\hat{P}^{+|k=3,r}_{MS}$ respectively.}
+
+\centering
+\begin{tabular}{rcrrrrr}
 \toprule
 $r$ & \text{Win series?} & $r^{+|k=3,r}$ & $N^{k=3,r}$ & $P^{+|k=3,r}$ & $\hat{P}^{+|k=3,r}_0$ & $\hat{P}^{+|=k=3,r}_{MS}$ \\ 
 \midrule
@@ -995,7 +998,11 @@ $r$ & \text{Win series?} & $r^{+|k=3,r}$ & $N^{k=3,r}$ & $P^{+|k=3,r}$ & $\hat{P
 11 & yes & 60 & 150 & 40.0\% & 37.5\% & 38.8\% \\ 
 
 \bottomrule
-\end{longtable}
+\end{tabular}
+
+\label{tbl:pwkr}
+
+\end{table}
 ```
 With the exception of $\hat{P}^{+|k,r}_{MS}$ when $r = 10$ and the eventual series loser is the team that wins after a streak of three round wins, all un-adjusted binomial test $p$-values are greater than the $\alpha = 0.05$ confidence level, implying that we cannot reject the null hypothesis that the expected notional and MS post-streak round win rates are different than the observed proportion. However, after adjusting the $p$-values with the Benjamini and Yekutieli (BY) correction [-@benjamini2001], the null hypothesis cannot be rejected for any case.[^23]
 
@@ -1101,14 +1108,17 @@ cod_round_win_prop_after_k_wins_i_rounds |>
 
 ```
 
-Now let us explicitly consider the round, $i$. As shown in Table \ref{tbl:cod-pw3ri-pl3ri}, the notional win rate in the round $i$ immediately following a streak of $k$ round wins in a series lasting $r$ rounds, $\hat{P}{+|k,r,i}_0$, is statistically different than the observed $P^{+|k,r,i}$ in several cases, notably when $r = i$ for each of $r \in [9, 10, 11]$.[^25] Interestingly, the observed rate is greater than the expected rate in each case where we can reject the null hypothesis, whereas the observed rate is less than the expected rate in all other cases, as well in a strong majority of cases not shown.
+Now let us explicitly consider the round, $i$. As shown in Table \ref{tbl:pw3ri}, the notional win rate in the round $i$ immediately following a streak of $k$ round wins in a series lasting $r$ rounds, $\hat{P}{+|k,r,i}_0$, is statistically different than the observed $P^{+|k,r,i}$ in several cases, notably when $r = i$ for each of $r \in [9, 10, 11]$.[^25] Interestingly, the observed rate is greater than the expected rate in each case where we can reject the null hypothesis, whereas the observed rate is less than the expected rate in all other cases, as well in a strong majority of cases not shown.
 
 [^25]: The null can also be rejected for $r \in [7, 8]$, although these are not shown, and the sample sizes are smaller.
 
 ```{=tex}
-\begin{longtable}{rrcrrrr}
+\begin{table}
+
 \caption{Given the round win streak $k=3$, the index of the round immediately following the streak $i$, the length of the series ($r$ rounds), and the series winner, the observed count of rounds wins, $r^{+|k=3,r,i}$, and proportion of round wins, $P^{+|k=3,r,i}$, among $N^{k=3,r,i}$ instances where a team could win after the streak. Additionally, the notional proportion, $\hat{P}^{+|k=3,r,i}_0$. Table restricted to $r \in [10, 11]$, $i < r$, and $N^{k=3,r,i} \geq 10$ for brevity.}
-\label{tbl:cod-pw3ri-pl3ri} \\
+
+\centering
+\begin{tabular}{rrcrrrr}
 \toprule
 $r$ & $i$ & \text{Win series?} & $r^{+|k=3,r,i}$ & $N^{k=3,r,i}$ & $P^{+|k=3,r,i}$ & $\hat{P}^{+|k=3,r,i}_0$\\ 
 \midrule
@@ -1129,7 +1139,11 @@ $r$ & $i$ & \text{Win series?} & $r^{+|k=3,r,i}$ & $N^{k=3,r,i}$ & $P^{+|k=3,r,i
 11 & 10 & yes & 5 & 10 & 50.0\% & 37.5\% \\ 
 
 \bottomrule
-\end{longtable}
+\end{tabular}
+
+\label{tbl:pw3ri}
+
+\end{table}
 ```
 ```{r}
 #| label: cod_round_arrangements
@@ -1356,18 +1370,19 @@ cod_round_arrangements_mle |>
 
 ### Wald-Wolfowitz runs test
 
-In Table \ref{tbl:cod-runs}, the observed and expected count of sequences, $N^{\zeta r}$ and $\hat{N}^{\zeta r}$ respectively, are shown for sequences, $\zeta(r)$, for which one can reject the Wald-Wolfowitz null hypothesis, given probability of Bernoulli trial success $\phi = 0.575$,[^26] at a confidence level of $\alpha = 0.05$, for $r \in [8, 9, 10]$. In addition to the 13 sequences shown, there are 12 additional sequences for $r = 11$.
+In Table \ref{tbl:ww-sequences}, the observed and expected count of sequences, $N^{\zeta r}$ and $\hat{N}^{\zeta r}$ respectively, are shown for sequences, $\zeta(r)$, for which one can reject the Wald-Wolfowitz null hypothesis, given probability of Bernoulli trial success $\phi = 0.575$,[^26] at a confidence level of $\alpha = 0.05$, for $r \in [8, 9, 10]$. In addition to the 13 sequences shown, there are 12 additional sequences for $r = 11$.
 
 [^26]: If we used $\phi = 0.5$, we would get the same exact seqeunces.
 
 ```{=tex}
-\begin{longtable}{rlrrrr}
+\begin{table}
 
 \caption{Sequences ($\zeta(r)$) for which we can reject Wald-Wolfowitz null hypothesis for $r \in [8, 9, 10]$, where round wins and losses are denoted with $+$ and $-$ respectively. The observed count, $N^{\zeta r}$, and proportion, $P^{\zeta r}$, of all possible sequences, as well as the expected count, $\hat{N}^{\zeta r}$, and proportion, $\hat{P}^{\zeta r}$. $\hat{N}^{\zeta r}$ is scaled to the observed number of series played, hence its non-integer value.}
-\label{tbl:cod-runs} \\
 
+\centering
+\begin{tabular}{rlrrrr}
 \toprule
-r & $\zeta(r)$ & $N^{\zeta r}$ & $P^{\zeta r}$ & $\hat{N}^{\zeta r}$ & $\hat{P}^{\zeta r}$ \\ 
+$r$ & $\zeta(r)$ & $N^{\zeta r}$ & $P^{\zeta r}$ & $\hat{N}^{\zeta r}$ & $\hat{P}^{\zeta r}$ \\ 
 \midrule
 8 & - - + + + + + + & 4 & 0.47\% & 7.67 & 0.90\% \\ 
 9 & - - - + + + + + + & 4 & 0.47\% & 3.75 & 0.44\% \\ 
@@ -1382,8 +1397,12 @@ r & $\zeta(r)$ & $N^{\zeta r}$ & $P^{\zeta r}$ & $\hat{N}^{\zeta r}$ & $\hat{P}^
 10 & + - + - + - + - + + & 3 & 0.35\% & 1.11 & 0.13\% \\ 
 10 & + + - + - + - + - + & 0 & 0.00\% & 1.11 & 0.13\% \\ 
 10 & + + + + + - - - - + & 2 & 0.23\% & 1.02 & 0.12\% \\ 
+
 \bottomrule
-\end{longtable}
+\end{tabular}
+
+\label{tbl:ww-sequences}
+\end{table}
 ```
 The relative frequency of the expected proportions are based on 10,000 simulations using the constant round probability $\phi_2 = 0.575$. A test for the difference between the observed and expected proportions of all sequences, $P^{\zeta r}$ and $\hat{P}^{\zeta r}$ respectively, indicates that the null hypothesis---that the two proportions are equal---cannot be rejected for any of the 25 significant sequences.
 
@@ -1395,7 +1414,7 @@ However, our results do not provide evidence for momentum on several fronts: (1)
 
 Perhaps it is not surprising that we did not find evidence in favor of the hot hand effect given the small "skill gap" in the CoD relative to other esports. (Most professional esports players who have played CoD, including CoD players themselves, would not hesitate to state this.) A small skill gap fosters randomness in outcomes, implying that a given team is less likely to enjoy streaks of success in SnD.
 
-For the sake of brevity, we did not delve into win rates and streaks split by offensive or defensive role. For example, it would be interesting to look at whether the round win rate is higher after a streaks of three round wins when the team starts the streak as the offensive team. This would mean that, in the round immediately following the latest streak win, the streaking team would be playing defense, where teams are slightly more likely to win on average. On the other hand, streaks of three starting with an offensive round win---theoretically, knowing that $\tau_O$ = 47.7%, the expected frequency is $\tau_O^2 (1 - \tau_O) \approx$ 11.9%---are likely to occur less frequently than such streaks starting with a defensive win---$\tau_O (1 - \tau_O)^2 \approx$ 13.0%---so we would want to account for sample size differences.
+For the sake of brevity, we did not delve into win rates and streaks split by offensive or defensive role. For example, it would be interesting to look at whether the round win rate is higher after a streaks of three round wins when the team starts the streak as the offensive team. This would mean that, in the round immediately following the latest streak win, the streaking team would be playing defense, where teams are slightly more likely to win on average. On the other hand, streaks of three starting with an offensive round win---theoretically, knowing that $\bar{\tau}_O$ = 47.7%, the expected frequency is $\bar{\tau}_O^2 (1 - \bar{\tau}_O) \approx$ 11.9%---are likely to occur less frequently than such streaks starting with a defensive win---$\bar{\tau}_O (1 - \bar{\tau}_O)^2 \approx$ 13.0%---so we would want to account for sample size differences.
 
 In the future, we could account for the quality of the teams, both in general and on specific maps. Even if doing so does not change the results, we could gain additional insight into why we do not observe statistically significant streakiness.
 
