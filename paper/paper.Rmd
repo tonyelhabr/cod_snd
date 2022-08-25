@@ -1,14 +1,10 @@
 ---
 title: "The Hot Hand Fallacy in Call of Duty Search and Destroy"
 authors:
-  - name: Tony ElHabr
-    email: anthonyelhabr@gmail.com
-    url: https://tonyelhabr.rbind.io
-  - name: Andrew ElHabr
-    email: andrewelhabr@gatech.edu
-    affiliation: Georgia Institute of Technology
-    department: School of Industrial and Systems Engineering (ISyE)
-    location: Atlanta, Georgia, USA
+  - name: Person One
+    email: personone@domain.com
+  - name: Person two
+    email: persontwo@domain.com
 abstract: |
   Our research investigates patterns in round win percentages in professional Search and Destroy (SnD) matches of the popular first-person shooter game Call of Duty (CoD). First, we find evidence supporting the hypothesis that round win probability can be modeled as a constant across rounds in the series, although not at the naive 50%. Second, we examine the proportion of round wins immediately following a win streak. Given streak length, series length, and series winner, we find no evidence that post-streak win proportion is significantly different than expected, suggesting that the perception of momentum at the team level is deceiving. Wald-Wolfowitz run tests also fail to provide evidence for the hot hand phenomenon.
 bibliography: references.bib
