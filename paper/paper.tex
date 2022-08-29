@@ -152,16 +152,14 @@ matchup, so as to mirror the terminology of playoff series in
 professional leagues like the National Basketball Association (NBA),
 National Hockey League (NHL), and Major League Baseball (MLB). A
 ``game'' or a ``match'' in such leagues is analogous to a ``round'' of
-CoD SnD for the purposes of this paper.
-
-We note that SnD is not the only game mode played in competitive
-CoD.\footnote{Hardpoint has been played as the first and fourth game
-  modes in a matchup. The third game mode was Domination in the 2020
-  season, and Control in the 2021 and 2022 seasons.} Teams play in a
-head-to-head, best-of-five format, where SnD is always played as the
-second and fifth game modes. The best-of-five matchup could also be
-called a ``series'', but since we analyze only the SnD games, we refer
-to the SnD games as series.
+CoD SnD for the purposes of this paper. Note that SnD is not the only
+game mode played in competitive CoD.\footnote{Hardpoint has been played
+  as the first and fourth game modes in a matchup. The third game mode
+  was Domination in the 2020 season, and Control in the 2021 and 2022
+  seasons.} Teams play in a head-to-head, best-of-five format, where SnD
+is always played as the second and fifth game modes. The best-of-five
+matchup could also be called a ``series'', but since we analyze only the
+SnD games, we refer to the SnD games as series.
 
 \hypertarget{data}{%
 \subsection{Data}\label{data}}
@@ -241,10 +239,16 @@ frequently.\footnote{At tournaments, higher-seeded (``better'') teams
   best-of-five matchup, although this choice is not consistent across
   teams, or even with the same team over time.
 
-  Outside of tournaments, teams all play each other twice throughout the
+  Outside of tournaments, teams play each other twice throughout the
   season, constituting qualifiers. Each team gets to play the
   higher-seeded role once in their head-to-head matchups with a given
-  team, despite their win-loss records.}
+  team.
+
+  This format has minimized the range of rates at which teams start
+  series playing offense. The highest rate at which a team has started
+  their series playing defense across all tournament and qualifier SnD
+  series in a single season is 66\% (31 of 47). The lowest is 38\% (16
+  of 42).}
 
 \hypertarget{literature-review}{%
 \section{Literature review}\label{literature-review}}
@@ -428,18 +432,19 @@ for \(r \in R\) and \(m\) from Equation \ref{eq:m}.
 As implied by MS's Theorem 1, we should expect the proportion of round
 wins immediately following a streak of \(k\) rounds wins for a series
 lasting \(r\) rounds, \(\hat{P}^{+|k,r}_{MS}\), to be strictly less than
-\(p^{+|r}\). Although one might be tempted to mirror the equal
-proportions hypothesis testing performed by MS, our context is
-fundamentally different from that of MS, who focus on longitudinal data
-in controlled settings, unaffected by opposition.\footnote{GVT also
-  perform statistical tests on shots from players in live games,
-  i.e.~``observational'' data, but they note that their findings are
-  likely affected by player shot selection in the face of defensive
-  strategy by the opposing team.} The number of trials is fixed in their
-experimental designs, but in CoD SnD, the number of rounds played is
-determined as a function of the max number of possible rounds (\(s\))
-and whether or not the team wins the series. The Bernoulli trial success
-probability, i.e.~single round win percentage in CoD SnD, is not
+\(p^{+|r}\). However, we should not mirror the equal proportions
+hypothesis testing performed by MS.
+
+Our context is fundamentally different from that of MS, who focus on
+longitudinal data in controlled settings, unaffected by
+opposition.\footnote{GVT also perform statistical tests on shots from
+  players in live games, i.e.~``observational'' data, but they note that
+  their findings are likely affected by player shot selection in the
+  face of tactics by the opposing team.} The number of trials is fixed
+in their experimental designs, but in CoD SnD, the number of rounds
+played is determined as a function of the max number of possible rounds
+(\(s\)) and whether or not the team wins the series. The Bernoulli trial
+success probability, i.e.~single round win percentage in CoD SnD, is not
 independent of the opponent. Consequently, a statistical test of the
 difference in \(\hat{P}^{+|k,r}\) and \(\hat{P}^{-|kr}\), as performed
 by MS to evaluate their hypothesis regarding post-streak success rate,
@@ -451,30 +456,33 @@ probability}\label{notional-post-streak-probability}}
 
 One can consider another form of the expected proportion of rounds won
 immediately after a streak of \(k\) round wins in a best-of-\(s\) series
-given the length of the series (\(r\) rounds), the ``notional''
+given the final length of the series (\(r\) rounds), the ``notional''
 proportion \(\hat{P}^{+|k,r}_0\). The Bernoulli round win probability
 underlying \(\hat{P}^{+|k,r}_0\) is
 
 \begin{equation}\label{eq:pwkr}
 p_0(\text{win} | k, r) = p^{+|k,r}_0 := \begin{cases}
-  \frac{m - k}{r - k} & \text{team wins series}, \\
-  \frac{s - m - k}{r - k} & \text{team loses series},
+  \frac{m - k}{r - k} & \text{team wins series}, r > m; \\
+  1 & \text{team wins series}, r = m; \\
+  \frac{s - m - k}{r - k} & \text{team loses series}, r > m + k; \\
+  0 & \text{team loses series}, r = m + k,
 \end{cases}
 \end{equation}
 
-for \(r \in R\) and \(m\) from Equation \ref{eq:m}.
+where \(r \in R\) for \(m\) from Equation \ref{eq:m}.
 
 We can perform a two-tailed binomial test to evaluate the null
 hypothesis \(\omega = \omega_0\) for the observed probability of success
 \(\omega\) and a user-specified \(\omega_0\) (where
 \(0 \leq \omega_0 \leq 1\)). If there are \(r^+\) observed successes in
-a sample of \(r\) trials and we expect that there should be
-\(r * \omega_0\), the probability of arriving at this expected number of
-successes is
+a sample of \(r\) trials, the probability of arriving at this expected
+number of successes is
 
 \begin{equation}\label{eq:binom}
 \binom {r}{r^+} \omega^{r^+}(1-\omega)^{r-r^+}.
 \end{equation}
+
+We should expect that there should be \(r * \omega_0\) successes.
 
 Treating the notional proportion \(\hat{P}^{+|k,r}_0\) as the null
 \(\omega_0\) and plugging in the observed proportion \(P^{+|k,r}\) for
@@ -492,28 +500,29 @@ our setting, the results of such binomial tests should be heeded with
 caution.
 
 We can further decompose Equation \ref{eq:pwkr} by the round \(i\)
-(where \(i \leq r\)) in which the streak of length \(k\) carries into.
+(where \(k < i \leq r\)) in which the streak of length \(k\) carries
+into.
 
 \begin{equation}\label{eq:pwkri}
 p_0(\text{win} | k, r, i) = p^{+|k,r,i}_0 = \begin{cases}
-  \frac{m - k}{r - k}, & \text{team wins series}, i \neq r, \\
-  1, & \text{team wins series}, i = r, \\
-  \frac{s - m - k}{r - k}, & \text{team loses series}, i \neq r, \\
-  0, & \text{team loses series}, i = r.
+  \frac{m - k}{r - k} & \text{team wins series}, i \neq r; \\
+  1 & \text{team wins series}, i = r; \\
+  \frac{s - m - k}{r - k} & \text{team loses series}, i \neq r, r > m + k; \\
+  0 & \text{team loses series}, i = r \text{ or } r = m + k.
 \end{cases}
 \end{equation}
 
 Again, we can apply a binomial test to evaluate the hypothesis that the
-expected proportions, \(\hat{P}^{+|k,r,i}_0\) and
-\(\hat{P}^{+|k,r,i}_{MS}\) separately, are equal to the observed
-proportion \(P^{+|k,r}\).
+expected proportion--\(\hat{P}^{+|k,r,i}_0\) and
+\(\hat{P}^{+|k,r,i}_{MS}\) separately--is equal to the observed
+proportion \(P^{+|k,r,i}\).
 
 \hypertarget{wald-wolfowitz-runs-test}{%
 \subsubsection{Wald-Wolfowitz runs
 test}\label{wald-wolfowitz-runs-test}}
 
-Stepping back from the (one-sided) perspective of a single team's round
-win probability when streaking, one can attempt to detect the hot hand
+Stepping back from the perspective of a single team's round win
+probability when streaking, one can attempt to detect the hot hand
 phenomenon more broadly with a Wald-Wolfowitz runs test. Under the null
 hypothesis, the number of runs in a sequence of \(r\) trials is a random
 variable that can take on values \(+\) or \(-\) and arrive at \(r^+\)
