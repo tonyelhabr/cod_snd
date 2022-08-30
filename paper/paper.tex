@@ -502,10 +502,10 @@ into.
 
 \begin{equation}\label{eq:pwkri}
 \hat{P}_0(\text{win} | k, r, i) = \hat{P}^{+|k,r,i}_0 := \begin{cases}
-\frac{m - k}{r - k} & \text{team wins series}, i \neq r; \\
+\frac{m-k-1}{r-k-1} & i < r-1; \\
+\frac{1}{2} & i = r-1; \\
 1 & \text{team wins series}, i = r; \\
-\frac{s - m - k}{r - k} & \text{team loses series}, i \neq r, r > m + k; \\
-0 & \text{team loses series}, i = r.
+0 & \text{team loses series}, i = r. \\
 \end{cases}
 \end{equation}
 
@@ -728,15 +728,24 @@ extreme cases for \(\hat{P}^{+|k,r}_{MS}\).\footnote{These cases are:
   case, the team won the series.}
 
 Table \ref{tbl:pw3ri} shows the observed and notional proportions of
-round wins immediately following streaks of three round wins when
-explicitly accounting for the round index, \(i\).\footnote{We omit the
-  MS proportions \(\hat{P}^{+|k=3,r,i}_{MS}\) since sample sizes are
-  small and results may or may not be valid due to the questionable
-  i.i.d assumption.}
+round wins---\(P^{+|k=3,r,i}\) and \(\hat{P}^{+|k=3,r,i}_0\)
+respectively---immediately following streaks of three round wins when
+explicitly accounting for the post-streak round index,
+\(i\).\footnote{We omit the MS proportions \(\hat{P}^{+|k=3,r,i}_{MS}\)
+  since sample sizes are small and results may or may not be valid due
+  to the questionable i.i.d assumption.}\footnote{Some combinations of
+  \(r\) and \(i\) are not shown in the table for brevity.} While some of
+the observed and notional proportions differ strongly, the BY-corrected
+\(p\)-values indicate that the null hypothesis cannot be rejected for
+any combination of \(i\) and \(r\) (including those not
+shown).\footnote{There are combinations for which we could reject the
+  null hypothesis if we did apply the BY correction, such as for
+  \(r = 10\) and \(i = 9\).} The same is true for streaks of two, four,
+and five.
 
 \begin{table}
 
-\caption{For streaks of $k=3$ round wins in CoD SnD series ending in $r$ rounds, the observed count of rounds wins, $r^{+|k=3,r,i}$, and proportion of round wins, $P^{+|k=3,r,i}$, among $N^{k=3,r,i}$ chances, given the index of the round, $i$, immediately following the streak. Additionally, the notional proportion, $\hat{P}^{+|k=3,r,i}_0$. Table restricted to $r \in [10, 11]$, $i < r$, and $N^{k=3,r,i} \geq 10$.}
+\caption{For streaks of $k=3$ round wins in CoD SnD series ending in $r$ rounds, the observed count of rounds wins, $r^{+|k=3,r,i}$, and proportion of round wins, $P^{+|k=3,r,i}$, among $N^{k=3,r,i}$ chances, given the index of the round, $i$, immediately following the streak. Additionally, the notional proportion, $\hat{P}^{+|k=3,r,i}_0$. Table restricted to $r \in [10, 11]$ and $r - 3 \leq i \leq r - 1$.}
 
 \centering
 \begin{tabular}{rrcrrrr}
@@ -744,20 +753,18 @@ explicitly accounting for the round index, \(i\).\footnote{We omit the
 $r$ & $i$ & \text{Win series?} & $r^{+|k=3,r,i}$ & $N^{k=3,r,i}$ & $P^{+|k=3,r,i}$ & $\hat{P}^{+|k=3,r,i}_0$\\ 
 \midrule
 
-10 & 7 & no & 2 & 13 & 15.4\% & 14.3\% \\ 
-10 & 7 & yes & 11 & 13 & 84.6\% & 42.9\% \\ 
-10 & 8 & no & 1 & 10 & 10.0\% & 14.3\% \\ 
-10 & 8 & yes & 9 & 10 & 90.0\% & 42.9\% \\ 
-11 & 5 & no & 9 & 13 & 69.2\% & 25.0\% \\ 
-11 & 5 & yes & 4 & 13 & 30.8\% & 37.5\% \\ 
-11 & 6 & no & 4 & 13 & 30.8\% & 25.0\% \\ 
-11 & 6 & yes & 9 & 13 & 69.2\% & 37.5\% \\ 
-11 & 7 & no & 3 & 10 & 30.0\% & 25.0\% \\ 
-11 & 7 & yes & 7 & 10 & 70.0\% & 37.5\% \\ 
-11 & 9 & no & 5 & 15 & 33.3\% & 25.0\% \\ 
-11 & 9 & yes & 10 & 15 & 66.7\% & 37.5\% \\ 
-11 & 10 & no & 5 & 10 & 50.0\% & 25.0\% \\ 
-11 & 10 & yes & 5 & 10 & 50.0\% & 37.5\% \\ 
+10 & 7 & no & 2 & 6 & 33.3\% & 33.3\% \\ 
+10 & 7 & yes & 11 & 27 & 40.7\% & 33.3\% \\ 
+10 & 8 & no & 1 & 13 & 7.7\% & 33.3\% \\ 
+10 & 8 & yes & 9 & 24 & 37.5\% & 33.3\% \\ 
+10 & 9 & no & 2 & 12 & 16.7\% & 50.0\% \\ 
+10 & 9 & yes & 4 & 20 & 20.0\% & 50.0\% \\ 
+11 & 8 & no & 2 & 17 & 11.8\% & 28.6\% \\ 
+11 & 8 & yes & 3 & 19 & 15.8\% & 28.6\% \\ 
+11 & 9 & no & 5 & 12 & 41.7\% & 28.6\% \\ 
+11 & 9 & yes & 10 & 20 & 50.0\% & 28.6\% \\ 
+11 & 10 & no & 5 & 14 & 35.7\% & 50.0\% \\ 
+11 & 10 & yes & 5 & 22 & 22.7\% & 50.0\% \\
 
 \bottomrule
 \end{tabular}
@@ -779,18 +786,19 @@ the Wald-Wolfowitz null hypothesis\footnote{Interestingly, we identify
   for sequences with only successes or failures, we use the exact method
   to evaluate (and reject) the null hypothesis for the Wald Wolfowitz
   runs test for \(r = 6\).}. In addition to the 14 sequences shown,
-there are 12 additional sequences for \(r = 11\).
+there are 12 additional sequences for \(r = 11\).\footnote{Non-random
+  sequences for \(r = 11\) excluded for brevity.}
 
 \begin{table}
 
-\caption{Sequences ($\zeta_j$) for which we can reject Wald-Wolfowitz null hypothesis for $r \in [6, 7, 8, 9, 10]$, where round wins and losses are denoted with $+$ and $-$ respectively. The observed count, $N^{\zeta}_j$, and proportion, $P^{\zeta}_j$, of all possible sequences, as well as the expected count, $\hat{N}^{\zeta}_j$, and proportion, $\hat{P}^{\zeta}_j$. $\hat{N}^{\zeta}_j$ is scaled to the observed number of series played, hence its non-integer value.}
+\caption{Sequences ($\zeta_j$) for which we can reject Wald-Wolfowitz null hypothesis for $r \in [6, 7, 8, 9, 10]$, where round wins and losses are denoted with $+$ and $-$ respectively. Additionally, the observed count, $N^{\zeta}_j$, and proportion, $P^{\zeta}_j$, of all possible sequences, as well as the expected count, $\hat{N}^{\zeta}_j$, and proportion, $\hat{P}^{\zeta}_j$. $\hat{N}^{\zeta}_j$ is scaled to the observed number of series played, hence its non-integer value.}
 
 \centering
 \begin{tabular}{rlrrrr}
 \toprule
 $r$ & $\zeta_j$ & $N^{\zeta}_j$ & $P^{\zeta}_j$ & $\hat{N}^{\zeta}_j$ & $\hat{P}^{\zeta}_j$ \\ 
 \midrule
-6 & + + + + + + & 40 & 4.7\% & 32.9 & 3.86\% \\
+6 & + + + + + + & 40 & 4.69\% & 32.9 & 3.86\% \\
 8 & - - + + + + + + & 4 & 0.47\% & 7.67 & 0.90\% \\ 
 9 & - - - + + + + + + & 4 & 0.47\% & 3.75 & 0.44\% \\ 
 10 & + + + + - - - - + + & 1 & 0.12\% & 2.39 & 0.28\% \\ 
