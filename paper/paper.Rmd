@@ -237,7 +237,7 @@ To evaluate the constant round win probability hypothesis, we can compute the te
 \chi^2 = \sum_{r \in R} \frac{(\Phi(r) - \hat{\Phi}(r))^2}{\hat{\Phi}(r)}
 \end{equation}
 ```
-where $\hat{\Phi}(r)$ and $\Phi(r)$ represent the expected and observed round win proportions respectively, and where $R = [6, 7, 8, 9, 10, 11]$ for CoD SnD. The null hypothesis is that the test statistic is chi-squared distributed, where the number of degrees of freedom is $\vert R \vert -1 = 5$ for Cod SnD. We use a significance level of $\alpha = 0.05$ for this test and all others in this paper.
+where $\hat{\Phi}(r)$ and $\Phi(r)$ represent the expected and observed round win proportions respectively, and where $R = \{6, 7, 8, 9, 10, 11\}$ for CoD SnD. The null hypothesis is that the test statistic is chi-squared distributed, where the number of degrees of freedom is $\vert R \vert -1 = 5$ for Cod SnD. We use a significance level of $\alpha = 0.05$ for this test and all others in this paper.
 
 ## Momentum
 
@@ -670,7 +670,7 @@ Table \ref{tbl:prob-series-lasts-r-rounds} shows the expected proportion of seri
 
 ```{=tex}
 \begin{table}
-\caption{The observed frequencies of CoD SnD series ending in $r$ rounds shown as a count $N(r)$ and as a proportion $\Phi(r)$ of all series ($\sum_{r \in R} N(r)$, where $r \in R = [6, 7, 8, 9, 10, 11]$). Additionally, the expected proportion, $\hat{\Phi}_0(r)$, under the assumption that each team has a constant round win probability $\phi_0 = 0.5$.}
+\caption{The observed frequencies of CoD SnD series ending in $r$ rounds shown as a count $N(r)$ and as a proportion $\Phi(r)$ of all series ($\sum_{r \in R} N(r)$, where $R = \{6, 7, 8, 9, 10, 11\}$). Additionally, the expected proportion, $\hat{\Phi}_0(r)$, under the assumption that each team has a constant round win probability $\phi_0 = 0.5$.}
 
 \centering
 \begin{tabular}{rrrr}
@@ -994,7 +994,7 @@ Table \ref{tbl:pw3ri} shows the observed and notional proportions of round wins-
 ```{=tex}
 \begin{table}
 
-\caption{For streaks of $k=3$ round wins in CoD SnD series ending in $r$ rounds, the observed count of rounds wins, $r^{+|k=3,r,i}$, and proportion of round wins, $P^{+|k=3,r,i}$, among $N^{k=3,r,i}$ chances, given the index of the round, $i$, immediately following the streak. Additionally, the notional proportion, $\hat{P}^{+|k=3,r,i}_0$. Table restricted to $r \in [7, 8, 9, 10, 11]$ and $r - 3 \leq i \leq r - 1$. BY-corrected $p$-values shown in parentheses.}
+\caption{For streaks of $k=3$ round wins in CoD SnD series ending in $r$ rounds, the observed count of rounds wins, $r^{+|k=3,r,i}$, and proportion of round wins, $P^{+|k=3,r,i}$, among $N^{k=3,r,i}$ chances, given the index of the round, $i$, immediately following the streak. Additionally, the notional proportion, $\hat{P}^{+|k=3,r,i}_0$. Table restricted to $r \in \{7, 8, 9, 10, 11\}$ and $r - 3 \leq i \leq r - 1$. BY-corrected $p$-values shown in parentheses.}
 
 \centering
 \begin{tabular}{rrcrrrr}
@@ -1205,7 +1205,7 @@ In Table \ref{tbl:ww-sequences} the observed and expected count of sequences---$
 ```{=tex}
 \begin{table}
 
-\caption{Sequences ($\zeta_j$) for which we can reject Wald-Wolfowitz null hypothesis for $r \in [6, 7, 8, 9, 10]$, where round wins and losses are denoted with $+$ and $-$ respectively. Additionally, the observed count, $N^{\zeta}_j$, and proportion, $P^{\zeta}_j$, of all possible sequences, as well as the expected count, $\hat{N}^{\zeta}_j$, and proportion, $\hat{P}^{\zeta}_j$. $\hat{N}^{\zeta}_j$ is scaled to the observed number of series played, hence its non-integer value. BY-corrected equal proportions test $p$-values in parentheses.}
+\caption{Sequences ($\zeta_j$) for which we can reject Wald-Wolfowitz null hypothesis for $r \in \{6, 7, 8, 9, 10\}$, where round wins and losses are denoted with $+$ and $-$ respectively. Additionally, the observed count, $N^{\zeta}_j$, and proportion, $P^{\zeta}_j$, of all possible sequences, as well as the expected count, $\hat{N}^{\zeta}_j$, and proportion, $\hat{P}^{\zeta}_j$. $\hat{N}^{\zeta}_j$ is scaled to the observed number of series played, hence its non-integer value. BY-corrected equal proportions test $p$-values in parentheses.}
 
 \centering
 \begin{tabular}{rlrrrr}
