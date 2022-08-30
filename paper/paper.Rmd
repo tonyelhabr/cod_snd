@@ -907,44 +907,6 @@ cod_round_win_prop_after_k_wins <- tibble(win_streak = 2L:5L) |>
 
 cod_round_win_prop_after_k_wins |> filter(win_round, notional_p_value_adj < 0.05)
 cod_round_win_prop_after_k_wins |> filter(win_round, ms_p_value_adj < 0.05)
-
-cod_round_win_prop_after_k_wins |> 
-  filter(win_streak == 3L) |> 
-  mutate(
-    across(
-      matches('p_value'), 
-      ~case_when(
-        .x <= 0.01 ~ '<=0.01', 
-        TRUE ~ sprintf('%.2f', .x)
-      )
-    ),
-    prop_lab = sprintf('%.1f', 100 * prop),
-    notional_lab = sprintf('%.1f (%s)', 100 * notional_prop, notional_p_value_adj),
-    ms_lab = sprintf('%.1f (%s)', 100 * ms_prop, ms_p_value_adj)
-  ) |>
-  arrange(n_rounds, win_series, win_round) |> 
-  filter(win_round) |> 
-  transmute(
-    n_rounds,
-    across(win_series, ~ifelse(.x, 'yes', 'no')),
-    n,
-    total,
-    prop_lab,
-    notional_lab,
-    ms_lab
-  ) |> 
-  gt::gt() |> 
-  gt::cols_label(
-    n_rounds = 'r',
-    win_series = 'Win series?',
-    n = 'r+',
-    total = 'N',
-    prop_lab = 'O',
-    notional_lab = 'a',
-    ms_lab = 'b'
-  ) |> 
-  gt::as_latex() |> 
-  cat()
 ```
 
 Given that people typically perceive streaks as beginning after the third success (or failure) at minimum [@carlson2007], we focus on streaks of three round wins. Table \ref{tbl:pwkr} compares the observed round win proportion, $P^{+|k=3,r}$, with the notional proportion, $\hat{P}^{+|k=3,r}_0$, following streaks of $k=3$ round wins. The MS proportion, $\hat{P}^{+|k=3,r}_{MS}$, is also shown as a reference.
@@ -1021,48 +983,6 @@ cod_round_win_prop_after_k_wins_i_rounds <- tibble(win_streak = 2L:5L) |>
 
 cod_round_win_prop_after_k_wins_i_rounds |> filter(notional_p_value < 0.05)
 cod_round_win_prop_after_k_wins_i_rounds |> filter(notional_p_value_adj < 0.05)
-
-cod_round_win_prop_after_k_wins_i_rounds |> 
-  filter(
-    n_rounds >= 7,
-    (round + 2) >= n_rounds,
-    win_streak == 3L
-  ) |> 
-  mutate(
-    across(
-      matches('p_value'), 
-      ~case_when(
-        .x <= 0.01 ~ '<=0.01', 
-        TRUE ~ sprintf('%.2f', .x)
-      )
-    ),
-    prop_lab = sprintf('%.1f', 100 * prop),
-    notional_lab = sprintf('%.1f (%s)', 100 * notional_prop, notional_p_value_adj)
-  ) |>
-  arrange(n_rounds, win_series, win_round) |> 
-  filter(win_round) |> 
-  transmute(
-    n_rounds,
-    round,
-    across(win_series, ~ifelse(.x, 'yes', 'no')),
-    n,
-    total,
-    prop_lab,
-    notional_lab
-  ) |> 
-  arrange(n_rounds, round, win_series) |> 
-  gt::gt() |> 
-  gt::cols_label(
-    n_rounds = 'r',
-    round = 'i',
-    win_series = 'Win series?',
-    n = 'r+',
-    total = 'N',
-    prop_lab = 'O',
-    notional_lab = 'a'
-  ) |> 
-  gt::as_latex() |> 
-  cat()
 ```
 
 Table \ref{tbl:pw3ri} shows the observed and notional proportions of round wins---$P^{+|k=3,r,i}$ and $\hat{P}^{+|k=3,r,i}_0$ respectively---immediately following streaks of three round wins when explicitly accounting for the post-streak round index, $i$.[^21] While some of the observed and notional proportions differ strongly, the BY-corrected $p$-values indicate that the null hypothesis cannot be rejected for any combination of $i$ and $r$, including those not shown for brevity.[^22] The same is true for streaks of two, four, and five.
@@ -1270,54 +1190,6 @@ perform_run_tests <- function(cod_expected_round_arrangements) {
 
 cod_round_arrangements_naive <- cod_expected_round_arrangements_naive |> perform_run_tests()
 cod_round_arrangements_mle <- cod_expected_round_arrangements_mle |> perform_run_tests()
-
-cod_round_arrangements_mle |> 
-  filter(!is.na(p_value)) |> 
-  filter(is_significant) |> 
-  mutate(
-    total_actual = sum(n_actual),
-    total_expected_adj = sum(n_expected_adj)
-  ) |>
-  mutate(
-    prop_p_value = vectorized_prop_test(
-      n_actual, 
-      total_actual, 
-      round(n_expected_adj), 
-      round(total_expected_adj)
-    )$p.value,
-    across(prop_p_value, list(adj = ~p.adjust(.x, method = 'BY'))),
-    across(
-      matches('p_value'), 
-      ~case_when(
-        .x <= 0.01 ~ '<=0.01', 
-        TRUE ~ sprintf('%.2f', .x)
-      )
-    ),
-    across(ws, ~str_replace_all(.x, '-', ' ') |> str_replace_all(c('1' = '+', '0' = '-'))),
-    actual_lab = sprintf('%.2f', 100 * prop_actual),
-    expected_lab = sprintf('%.2f (%s)', 100 * prop_expected, prop_p_value)
-  ) |> 
-  select(
-    n_rounds, 
-    ws,
-    n_actual,
-    actual_lab,
-    n_expected,
-    expected_lab
-  ) |> 
-  arrange(n_rounds, ws) |> 
-  filter(n_rounds <= 10) |> 
-  gt::gt() |> 
-  gt::cols_label(
-    n_rounds = 'r',
-    ws = 'zeta',
-    n_actual = 'n1',
-    actual_lab = 'p1',
-    n_expected = 'n2',
-    expected_lab = 'p2'
-  ) |> 
-  gt::as_latex() |> 
-  cat()
 ```
 
 ### Wald-Wolfowitz runs test
