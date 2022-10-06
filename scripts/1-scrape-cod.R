@@ -3,7 +3,6 @@
 library(tidyverse)
 library(googlesheets4)
 library(qs)
-library(readr)
 
 dir_data <- 'data'
 dir.create(dir_data, showWarnings = FALSE)
