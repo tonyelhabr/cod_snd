@@ -2,10 +2,14 @@
 title: "The Hot Hand Fallacy in Call of Duty Search and Destroy"
 link-citations: true
 authors:
-  - name: Person One
-    email: personone@domain.com
-  - name: Person Two
-    email: persontwo@domain.com
+  - name: Tony ElHabr
+    email: anthonyelhabr@gmail.com
+    url: https://tonyelhabr.rbind.io
+  - name: Andrew ElHabr
+    email: andrewelhabr@gatech.edu
+    affiliation: Georgia Institute of Technology
+    department: School of Industrial and Systems Engineering (ISyE)
+    location: Atlanta, Georgia, USA
 abstract: |
   Our research investigates patterns in round win percentages in professional Search and Destroy (SnD) matches of the popular first-person shooter game Call of Duty (CoD). First, we find evidence supporting the hypothesis that round win probability can be modeled as a constant across rounds in the series, although not at the naive 50%. Second, we examine the proportion of round wins immediately following a win streak. Given the round index, streak length, series length, and series winner, we find no evidence that post-streak win proportion is significantly different than expected, suggesting that the perception of momentum at the team level is deceiving. Finally, we find that sequences of round wins that are identified as non-random by the Wald-Wolfowitz run tests do not occur more or less frequently than expectated, further failing to provide evidence for the hot hand effect.
 bibliography: references.bib
@@ -139,7 +143,7 @@ The data set consists of all SnD matches played in major tournaments and qualifi
 
 [^6]: 288 of the series occur in major tournaments, which are considered to be more competitive than the qualifiers since they are played in person (COVID-permitting), eliminating randomness due to online latency and ping. The qualifiers are played online.
 
-[^7]: Raw data: <https://linktr.ee/CDLArchive>. Cleaned data: <https://github.com/author/repo/blob/master/data/file.csv>.
+[^7]: Raw data: <https://linktr.ee/CDLArchive>. Cleaned data: <https://github.com/tonyelhabr/cod_snd/blob/master/data/cod_rounds.csv>.
 
 Sweeps (6-0 series) make up 4.7% of all series, while 6-5 series make up 23.7% of series. The observed offensive round win percentage[^8] across all rounds is $\bar{\tau}$ = 47.8%.[^9] Table \ref{tbl:o-win-prop-by-series-state} shows offensive round win percentages by series "state", i.e. the number of round wins by each team prior to an upcoming round. Offensive round win percentage is not quite constant, although never veers more than 10% from $\bar{\tau}$.
 
