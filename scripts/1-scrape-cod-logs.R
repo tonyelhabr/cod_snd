@@ -33,7 +33,7 @@ read_snd_logs_sheet <- function(year, overwrite = FALSE) {
     col_types = col_types
   )
   df <- raw |> janitor::clean_names()
-
+  
   qs::qsave(df, path)
   df
 }
@@ -57,7 +57,25 @@ cod_game_mapping <- c(
   '2020' = 'MW'
 )
 
-logs |> 
+team_mapping <- c(
+  'ATL' = 'FaZe',
+  'BOS' = 'Breach'
+  'DAL' = 'Empire',
+  'FLA' = 'Mutineers'
+  'LAG' = 'Guerrillas'
+  'LAT' = 'Thieves'
+  'LDN' = 'Royal Ravens'
+  'LON' = 'Royal Ravens',
+  'MIN' = 'Rokkr'
+  'NYSL' = 'Subliners'
+  'OC' = 'Optic'
+  'OPTX' = 'Optic'
+  'PAR' = 'Legion'
+  'SEA' = 'Surge'
+  'TOR' = 'Ultra'
+)
+
+log_ids <- logs |> 
   select(
     round,
     map,
@@ -67,26 +85,150 @@ logs |>
     map,
     offense_team,
     defense_team,
-    round_time_left,
-    bomb_timer_left,
-    activity,
-    weapon_or_bomb_site,
     offense_remaining,
     defense_remaining,
-    killer_player,
-    victim_player,
-    killer_team,
-    killer_off_def,
-    round_winner,
-    seconds_elapsed,
-    first_blood,
-    traded_out,
-    trade_kill,
-    initial_bomb_carrier_killed,
-    offense_players_remaining,
-    defense_players_remaining,
-    last_round_activity,
-    x1v_situation_entered_offense,
-    x1v_situation_entered_defense,
-    situation_length
+    round_time_left,
+    bomb_timer_left,
+    activity
+  )
+log_ids |> distinct()
+
+bind_rows(
+  logs |> 
+    transmute(
+      round,
+      map,
+      match_id,
+      map_id,
+      round,
+      map,
+      round_time_left,
+      bomb_timer_left,
+      activity,
+      is_offense = TRUE,
+      team = offense_team,
+      opponent = defense_team,
+      n_team_remaining = offense_remaining,
+      n_opp_remaining = defense_remaining,
+      weapon_or_bomb_site,
+      killer_player,
+      victim_player,
+      killer_team,
+      killer_off_def,
+      round_winner,
+      seconds_elapsed,
+      first_blood,
+      traded_out,
+      trade_kill,
+      initial_bomb_carrier_killed,
+      # offense_players_remaining,
+      # defense_players_remaining,
+      last_round_activity,
+      x1v1_situation_entered_team = x1v_situation_entered_offense,
+      x1v1_situation_entered_opponent = x1v_situation_entered_defense,
+      situation_length
+    ),
+  logs |> 
+    transmute(
+      round,
+      map,
+      match_id,
+      map_id,
+      round,
+      map,
+      round_time_left,
+      bomb_timer_left,
+      activity,
+      is_offense = FALSE,
+      team = defense_team,
+      opponent = offense_team,
+      n_remaining_team = defense_remaining,
+      n_remaining_opponent = offense_remaining,
+      weapon_or_bomb_site,
+      killer_player,
+      victim_player,
+      killer_team,
+      killer_off_def,
+      round_winner,
+      seconds_elapsed,
+      first_blood,
+      traded_out,
+      trade_kill,
+      initial_bomb_carrier_killed,
+      # offense_players_remaining,
+      # defense_players_remaining,
+      last_round_activity,
+      x1v1_situation_entered_opponent = x1v_situation_entered_offense,
+      x1v1_situation_entered_team = x1v_situation_entered_defense,
+      situation_length
+    )
+)
+
+bind_rows(
+  log_ids |> 
+    transmute(
+      round,
+      map,
+      match_id,
+      map_id,
+      round,
+      map,
+      round_time_left,
+      bomb_timer_left,
+      activity,
+      is_offense = TRUE,
+      team = offense_team,
+      opponent = defense_team,
+      n_team_remaining = offense_remaining,
+      n_opp_remaining = defense_remaining
+    ),
+  log_ids |> 
+    transmute(
+      round,
+      map,
+      match_id,
+      map_id,
+      round,
+      map,
+      round_time_left,
+      bomb_timer_left,
+      activity,
+      is_offense = FALSE,
+      team = defense_team,
+      opponent = offense_team,
+      n_team_remaining = defense_remaining,
+      n_opp_remaining = offense_remaining
+    )
+) |> 
+  inner_join(
+    logs |> 
+      select(
+        round,
+        map,
+        match_id,
+        map_id,
+        round,
+        map,
+        round_time_left,
+        bomb_timer_left,
+        activity,
+        weapon_or_bomb_site,
+        killer_player,
+        victim_player,
+        killer_team,
+        killer_off_def,
+        round_winner,
+        seconds_elapsed,
+        first_blood,
+        traded_out,
+        trade_kill,
+        initial_bomb_carrier_killed,
+        # offense_players_remaining,
+        # defense_players_remaining,
+        last_round_activity,
+        x1v_situation_entered_offense,
+        x1v_situation_entered_defense,
+        situation_length
+      ),
+    by = c('round', 'map', 'match_id', 'map_id', 'round_time_left', 'bomb_timer_left', 'activity')
   )
