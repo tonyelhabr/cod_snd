@@ -5,9 +5,9 @@ library(googlesheets4)
 library(qs)
 
 dir_data <- 'data'
-dir.create(dir_data, showWarnings = FALSE)
+dir.create(dir_data)
 
-generate_cod_sheets <- function(year = c('2021', '2022')) {
+generate_sheet_names <- function(year = c('2021', '2022')) {
   year <- match.arg(year)
   is_2022 <- year == '2022'
   if (is_2022) {
@@ -29,9 +29,9 @@ generate_cod_sheets <- function(year = c('2021', '2022')) {
   c('Champs', labs)
 }
 
-cod_sheets <- list(
-  '2022' = generate_cod_sheets('2022'),
-  '2021' =  generate_cod_sheets('2021'),
+sheets <- list(
+  '2022' = generate_sheet_names('2022'),
+  '2021' =  generate_sheet_names('2021'),
   '2020' = sprintf(
     '%s_SnD',
     c('CHAMPS', 'LAUNCH', 'LON', 'ATL', 'LA', 'DAL', 'CHI', 'FLA', 'SEA', 'MIN', 'PAR', 'NY', 'LON2', 'TOR')
@@ -150,13 +150,13 @@ read_snd_sheet <- function(year, sheet, overwrite = FALSE) {
   res
 }
 
-raw_cod_series <- cod_sheets |> 
+raw_series <- sheets |> 
   mutate(
     data = map2(year, sheet, read_snd_sheet, overwrite = FALSE)
   ) |> 
   unnest(data)
 
-fixed_cod_rounds <- tibble(
+fixed_rounds <- tibble(
   year = rep(2020L, 6),
   sheet = c(rep('LON_SnD', 4), rep('LA_SnD', 2)),
   series = c(rep(8L, 2), rep(17L, 2), rep(15L, 2)),
@@ -168,17 +168,17 @@ fixed_cod_rounds <- tibble(
   map = c(rep('Arklov Peak', 4), rep('St. Petrograd', 2))
 )
 
-cod_series <- raw_cod_series |> 
+series <- raw_series |> 
   anti_join(
-    fixed_cod_rounds |> 
+    fixed_rounds |> 
       distinct(year, sheet, series, team, round), 
     by = c('year', 'sheet', 'series', 'team', 'round')
   ) |> 
   bind_rows(
-    fixed_cod_rounds |> 
+    fixed_rounds |> 
       mutate(
         event = sprintf('%s - %s', year, sheet) |> 
-          factor(levels = cod_sheets$event)
+          factor(levels = sheets$event)
       )
   ) |> 
   mutate(
@@ -189,13 +189,13 @@ cod_series <- raw_cod_series |>
   ) |> 
   arrange(event, series, round, team)
 
-cod_game_mapping <- c(
+game_mapping <- c(
   '2022' = 'Vanguard',
   '2021' = 'Cold War',
   '2020' = 'MW'
 )
 
-cod_rounds <- cod_series |> 
+rounds <- series |> 
   group_by(year, sheet, series, team) |> 
   mutate(
     cumu_w = cumsum(win_round),
@@ -206,20 +206,28 @@ cod_rounds <- cod_series |>
   ) |> 
   ungroup() |> 
   inner_join(
-    cod_series |> 
+    series |> 
+      distinct(year, sheet, series, opponent = team), 
+    by = c('year', 'sheet', 'series')
+  ) |> 
+  filter(team != opponent) |> 
+  relocate(opponent, .after = team) |> 
+  inner_join(
+    series |> 
       distinct(year, sheet, series) |> 
       mutate(
         series_id = row_number()
-      )
+      ), 
+    by = c('year', 'sheet', 'series')
   ) |> 
   inner_join(
-    cod_series |> 
+    series |> 
       filter(round == 1L) |> 
       distinct(year, sheet, series, team, starts_as_offense = is_offense), 
     by = c('year', 'sheet', 'series', 'team')
   ) |> 
   inner_join(
-    cod_series |> 
+    series |> 
       group_by(year, sheet, series, team) |> 
       slice_max(round, n = 1, with_ties = FALSE) |> 
       ungroup() |> 
@@ -235,7 +243,7 @@ cod_rounds <- cod_series |>
     by = c('year', 'sheet', 'series', 'team')
   ) |> 
   mutate(
-    game = sprintf('%s (%s)', cod_game_mapping[as.character(year)], year),
+    game = sprintf('%s (%s)', game_mapping[as.character(year)], year),
     .before = 1
   ) |> 
   mutate(
@@ -245,7 +253,7 @@ cod_rounds <- cod_series |>
   relocate(series_id, .after = 'game')
 
 ## multiple directories in case knitting doesn't handle subdirectories well
-# filename <- 'cod_rounds.csv'
+# filename <- 'rounds.csv'
 # sprintf('%s/%s', c('data', 'paper', 'presentation'), filename) |> 
-#   walk(~write_csv(cod_rounds, .x, na = ''))
-write_csv(cod_rounds, 'data/cod_rounds.csv', na = '')
+#   walk(~write_csv(rounds, .x, na = ''))
+write_csv(rounds, 'data/rounds.csv', na = '')

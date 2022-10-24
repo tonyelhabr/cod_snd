@@ -41,9 +41,13 @@ read_snd_logs_sheet <- function(year, overwrite = FALSE) {
 cod_rounds <- read_csv('data/cod_rounds.csv')
 cod_rounds
 
-logs <- 2021:2022 |> 
-  map_dfr(read_snd_logs_sheet) |> 
+raw_logs <- 2021:2022 |> 
+  set_names() |> 
+  map_dfr(read_snd_logs_sheet, .id = 'year') |> 
   mutate(
+    across(year, as.integer),
+    across(activity, ~ifelse(.x == 'defuse', 'Defuse', .x)) # one bad name
+    across(match_id, ~str_replace_all(.x, c('CHA' = 'CH', '!' = '1'))), ## bugs with labels in sheet
     across(killer_team, ~coalesce(.x, initiating_team))
   ) |> 
   select(-initiating_team) |> 
@@ -59,24 +63,25 @@ cod_game_mapping <- c(
 
 team_mapping <- c(
   'ATL' = 'FaZe',
-  'BOS' = 'Breach'
+  'BOS' = 'Breach',
   'DAL' = 'Empire',
-  'FLA' = 'Mutineers'
-  'LAG' = 'Guerrillas'
-  'LAT' = 'Thieves'
-  'LDN' = 'Royal Ravens'
+  'FLA' = 'Mutineers',
+  'LAG' = 'Guerrillas',
+  'LAT' = 'Thieves',
+  'LDN' = 'Royal Ravens',
   'LON' = 'Royal Ravens',
-  'MIN' = 'Rokkr'
-  'NYSL' = 'Subliners'
-  'OC' = 'Optic'
-  'OPTX' = 'Optic'
-  'PAR' = 'Legion'
-  'SEA' = 'Surge'
+  'MIN' = 'Rokkr',
+  'NYSL' = 'Subliners',
+  'OC' = 'Optic',
+  'OPTX' = 'Optic',
+  'PAR' = 'Legion',
+  'SEA' = 'Surge',
   'TOR' = 'Ultra'
 )
 
-log_ids <- logs |> 
+log_ids <- raw_logs |> 
   select(
+    year,
     round,
     map,
     match_id,
@@ -92,10 +97,12 @@ log_ids <- logs |>
     activity
   )
 log_ids |> distinct()
-
-bind_rows(
-  logs |> 
+raw_logs |> filter(is.na(weapon_or_bomb_site))
+raw_logs |> filter(is.na(offense_remaining))
+logs <- bind_rows(
+  raw_logs |> 
     transmute(
+      year,
       round,
       map,
       match_id,
@@ -109,7 +116,7 @@ bind_rows(
       team = offense_team,
       opponent = defense_team,
       n_team_remaining = offense_remaining,
-      n_opp_remaining = defense_remaining,
+      n_opponent_remaining = defense_remaining,
       weapon_or_bomb_site,
       killer_player,
       victim_player,
@@ -128,8 +135,9 @@ bind_rows(
       x1v1_situation_entered_opponent = x1v_situation_entered_defense,
       situation_length
     ),
-  logs |> 
+  raw_logs |> 
     transmute(
+      year,
       round,
       map,
       match_id,
@@ -142,8 +150,8 @@ bind_rows(
       is_offense = FALSE,
       team = defense_team,
       opponent = offense_team,
-      n_remaining_team = defense_remaining,
-      n_remaining_opponent = offense_remaining,
+      n_team_remaining = defense_remaining,
+      n_opponent_remaining = offense_remaining,
       weapon_or_bomb_site,
       killer_player,
       victim_player,
@@ -162,73 +170,45 @@ bind_rows(
       x1v1_situation_entered_team = x1v_situation_entered_defense,
       situation_length
     )
-)
-
-bind_rows(
-  log_ids |> 
-    transmute(
-      round,
-      map,
-      match_id,
-      map_id,
-      round,
-      map,
-      round_time_left,
-      bomb_timer_left,
-      activity,
-      is_offense = TRUE,
-      team = offense_team,
-      opponent = defense_team,
-      n_team_remaining = offense_remaining,
-      n_opp_remaining = defense_remaining
-    ),
-  log_ids |> 
-    transmute(
-      round,
-      map,
-      match_id,
-      map_id,
-      round,
-      map,
-      round_time_left,
-      bomb_timer_left,
-      activity,
-      is_offense = FALSE,
-      team = defense_team,
-      opponent = offense_team,
-      n_team_remaining = defense_remaining,
-      n_opp_remaining = offense_remaining
-    )
 ) |> 
-  inner_join(
-    logs |> 
-      select(
-        round,
-        map,
-        match_id,
-        map_id,
-        round,
-        map,
-        round_time_left,
-        bomb_timer_left,
-        activity,
-        weapon_or_bomb_site,
-        killer_player,
-        victim_player,
-        killer_team,
-        killer_off_def,
-        round_winner,
-        seconds_elapsed,
-        first_blood,
-        traded_out,
-        trade_kill,
-        initial_bomb_carrier_killed,
-        # offense_players_remaining,
-        # defense_players_remaining,
-        last_round_activity,
-        x1v_situation_entered_offense,
-        x1v_situation_entered_defense,
-        situation_length
-      ),
-    by = c('round', 'map', 'match_id', 'map_id', 'round_time_left', 'bomb_timer_left', 'activity')
+  mutate(
+    across(c(team, opponent, round_winner), ~team_mapping[.x])
   )
+logs
+write_csv(logs, 'data/logs.csv')
+
+## extra ----
+translate_event <- function(event) {
+  # year <- str_sub(event, 1, 4)
+  stage <- str_sub(event, 9, 9)
+  ifelse(stage == 'h', 'CH-', sprintf('S%s', stage))
+}
+
+rounds <- read_csv('data/rounds.csv')
+rounds
+
+# |> 
+#   mutate(
+#     game = sprintf('%s (%s)', game_mapping[as.character(year)], year),
+#     .before = 1
+#   ) |> 
+#   mutate(
+#     across(game, ~fct_reorder(.x, year)),
+#     map = sprintf('%s - %s', map, game)
+#   )
+
+rounds |> 
+  filter(game == 'Vanguard (2022)') |> 
+  select(event, series, team, map, round, is_offense, win_round)
+logs |> 
+  head(100) |> 
+  inner_join(
+    rounds |> 
+      select(year, game, event, team, opponent) |> 
+      mutate(
+        match_id = translate_event(event)
+      ),
+    by = c('year', 'team', 'opponent')
+  )
+  filter(map == 'Desert Siege', team == 'LDN', opponent == 'SEA') |> 
+  count(match_id)
