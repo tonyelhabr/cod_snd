@@ -46,7 +46,7 @@ raw_logs <- 2021:2022 |>
   map_dfr(read_snd_logs_sheet, .id = 'year') |> 
   mutate(
     across(year, as.integer),
-    across(activity, ~ifelse(.x == 'defuse', 'Defuse', .x)) # one bad name
+    across(activity, ~ifelse(.x == 'defuse', 'Defuse', .x)), # one bad name
     across(match_id, ~str_replace_all(.x, c('CHA' = 'CH', '!' = '1'))), ## bugs with labels in sheet
     across(killer_team, ~coalesce(.x, initiating_team))
   ) |> 
@@ -97,8 +97,17 @@ log_ids <- raw_logs |>
     activity
   )
 log_ids |> distinct()
-raw_logs |> filter(is.na(weapon_or_bomb_site))
-raw_logs |> filter(is.na(offense_remaining))
+# raw_logs |> filter(is.na(weapon_or_bomb_site))
+# raw_logs |> filter(is.na(offense_remaining))
+
+raw_logs |> 
+  distinct(year, round, map, match_id, map_id, round, offense_team, round_winner) |> 
+  count(offense_team == round_winner)
+
+logs |> 
+  distinct(year, round, map, match_id, map_id, round, team, is_offense, round_winner) |> 
+  count(is_offense, team == round_winner)
+
 logs <- bind_rows(
   raw_logs |> 
     transmute(
@@ -174,7 +183,8 @@ logs <- bind_rows(
   mutate(
     across(c(team, opponent, round_winner), ~team_mapping[.x])
   )
-logs
+logs |> 
+  count(is_offense, team == round_winner)
 write_csv(logs, 'data/logs.csv')
 
 ## extra ----
