@@ -1,4 +1,4 @@
 -   `paper/`: arXiv formatted paper about team momentum in CoD SnD.
 -   `research/`: Reference papers.
--   `scripts/`: Data retrieval and cleaning for CoD SnD and Valorant.
--   `data/`: Data retrieved by scripts. Main data is `cod_rounds.csv`.
+-   `scripts/`: Data retrieval and cleaning for CoD SnD.
+-   `data/`: Data retrieved by scripts. Main data is `rounds.csv`.
