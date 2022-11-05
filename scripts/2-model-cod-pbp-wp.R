@@ -4,27 +4,6 @@ library(tidyr)
 library(purrr)
 library(ggplot2)
 
-# create_pre_plant_seconds_elapsed <- function(bomb_timer_left, activity, seconds_elapsed) {
-#   ifelse(
-#     !is.na(bomb_timer_left) & activity != 'Plant', 
-#     NA_real_, 
-#     ceiling(seconds_elapsed)
-#   ) |> 
-#     as.integer()
-# }
-# 
-# create_post_plant_seconds_elapsed <- function(bomb_timer_left) {
-#   as.integer(ceiling(45L - bomb_timer_left))
-# }
-# 
-# create_opponent_diff <- function(n_team_remaining, n_opponent_remaining) {
-#   n_team_remaining - n_opponent_remaining
-# }
-# 
-# create_is_post_plant <- function(activity) {
-#   activity == 'Plant'
-# }
-
 raw <- read_csv('data/logs.csv') |> 
   arrange(year, map_id, round) |> 
   mutate(
