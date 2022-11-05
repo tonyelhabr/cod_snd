@@ -4,17 +4,13 @@ library(tidyr)
 library(purrr)
 library(ggplot2)
 
-raw <- read_csv('data/logs.csv') |> 
-  arrange(year, map_id, round) |> 
-  mutate(
-    id = sprintf('%s-%s-%02d-%s-%sv%s', year, map_id, round, ifelse(is_offense, 'o', 'd'), n_team_remaining, n_opponent_remaining),
-    .before = 1
-  )
+raw <- read_csv('data/cod_snd_pbp.csv')
 
 raw_pbp <- raw |> 
+  arrange(year, map_id, round) |> 
   transmute(
-    id,
-    is_offense,
+    side = ifelse(is_offense, 'o', 'd') |> factor(),
+    id = sprintf('%s-%s-%02d-%s-%sv%s', year, map_id, round, side, n_team_remaining, n_opponent_remaining),
     # round_timer_left, ## need to keep around for timer fix
     pre_plant_seconds_elapsed = ifelse(
       !is.na(bomb_timer_left) & activity != 'Plant', 
@@ -26,7 +22,8 @@ raw_pbp <- raw |>
     is_post_plant = activity == 'Plant',
     win_round = ifelse(team == round_winner, 'yes', 'no') |> factor()
   ) |> 
-  group_by(id, is_offense) |> 
+  relocate(id, .before = 1) |> 
+  group_by(id, side) |> 
   fill(is_post_plant, .direction = 'down') |> 
   mutate(
     across(is_post_plant, ~coalesce(.x, FALSE)) # ,
@@ -39,13 +36,13 @@ raw_pbp <- raw |>
 ##   I believe the others have issues with the raw data, where round_timer_left has seconds after the plant, but bomb_timer_left doesn't.
 ##   These can be reasonably fixed with some smart logic, but the easiest solution is to just drop those rounds.
 bad_ids <- raw_pbp |> 
-  group_by(id, is_offense) |> 
+  group_by(id, side) |> 
   filter(any(is_post_plant == 'yes')) |> 
   filter(all(is.na(post_plant_seconds_elapsed))) |> 
   ungroup() |> 
-  distinct(id, is_offense)
+  distinct(id, side)
 
-pbp <- raw_pbp |> anti_join(bad_ids, by = c('id', 'is_offense'))
+pbp <- raw_pbp |> anti_join(bad_ids, by = c('id', 'side'))
 
 max_quietly <- function(...) {
   f <- quietly(max)
@@ -53,7 +50,7 @@ max_quietly <- function(...) {
 }
 
 seconds_elapsed <- pbp |> 
-  group_by(id, is_offense) |> 
+  group_by(id, side) |> 
   summarize(
     last_pre_plant_seconds_elapsed = max_quietly(pre_plant_seconds_elapsed, na.rm = TRUE),
     planted_bomb = any(is_post_plant)
@@ -65,20 +62,24 @@ seconds_elapsed <- pbp |>
   ) |> 
   left_join(
     pbp |> 
-      group_by(id, is_offense) |> 
+      group_by(id, side) |> 
       filter(any(is_post_plant == 'yes')) |> 
       summarize(
         last_post_plant_seconds_elapsed = max_quietly(post_plant_seconds_elapsed, na.rm = TRUE)
       ) |> 
       ungroup(),
-    by = c('id', 'is_offense')
+    by = c('id', 'side')
   )
 
-compute_wp <- function(fit, seconds_elapsed, opponent_diff, is_offense = TRUE) {
+predict.cod_wp_model <- function(object, data, ...) {
   
-  pred <- predict(fit, newdata = seconds_elapsed)
-  side_multiplier <- ifelse(is_offense, 1L, -1L)
-  log_odds <- side_multiplier * pred * opponent_diff
+  stopifnot(sort(names(object)) == c('opponent_diff', 'side_o'))
+  stopifnot(all(c('seconds_elapsed', 'side') %in% names(data)))
+  
+  opponent_diff_pred <- predict(object[['opponent_diff']], newdata = data$seconds_elapsed)
+  side_pred <- predict(object[['side_o']], newdata = data$seconds_elapsed)
+  side_multiplier <- ifelse(data$side == 'o', 1L, -1L)
+  log_odds <- opponent_diff_pred * data$opponent_diff + side_pred * side_multiplier
   
   plogis(log_odds) ## logit
 }
@@ -145,48 +146,61 @@ estimate_window_coefs <- function(pbp_grid, is_pre_plant = TRUE, overwrite = FAL
   
   coefs <- seconds_grid |>
     mutate(
-      opponent_diff = 
-        map2_dbl(
+      coefs = 
+        map2(
           min_sec, max_sec,
           ~{
             filt <- pbp_grid |> 
               filter(seconds_elapsed >= ..1, seconds_elapsed <= ..2)
             
-            fit <-glm(
-              win_round ~ opponent_diff - 1, 
+            fit <- glm(
+              win_round ~ opponent_diff + side - 1, 
               data = filt, 
               family = binomial(link = 'logit')
             )
-            coefs <- coefficients(fit)
-            coefs[["opponent_diff"]]
+            coefficients(fit)
           }
-        )
-    )
+        ),
+      opponent_diff = map_dbl(coefs, ~.x[['opponent_diff']]),
+      side_o = map_dbl(coefs, ~.x[['sideo']])
+    ) |> 
+    select(-coefs)
   write_csv(coefs, path)
   coefs
 }
 
-fit_model <- function(data) {
+fit_coef_model <- function(data, y) {
   loess(
-    opponent_diff ~ min_sec, 
-    data = data,
+    data[[y]] ~ data[['min_sec']], 
     span = 0.5
   )
 }
 
-generate_wp_grid <- function(fit, is_pre_plant = TRUE) {
+fit_wp_model <- function(data, coefs = c('opponent_diff', 'side_o')) {
+  models <- coefs |> 
+    set_names() |> 
+    map(
+      ~fit_coef_model(data, y = .x)
+    )
+  
+  class(models) <- c('cod_wp_model', class(models))
+  models
+}
+
+generate_wp_grid <- function(model, is_pre_plant = TRUE) {
   max_second <- get_max_second(is_pre_plant)
   
   pred_grid <- crossing(
     seconds_elapsed = 0L:(max_second - 1L),
-    opponent_diff = 1L:3L
-  )
+    opponent_diff = 0L:3L
+  ) |> 
+    mutate(
+      side = 'o'
+    )
   
-  pred_grid$wp <- compute_wp(
-    fit,
-    seconds_elapsed = pred_grid$seconds_elapsed,
-    opponent_diff = pred_grid$opponent_diff,
-    is_offense = TRUE
+  pred_grid$wp <- predict(
+    model,
+    pred_grid
   )
   
   pred_grid
@@ -196,8 +210,15 @@ plot_wp_grid <- function(pred_grid) {
   pred_grid |> 
     ggplot() +
     aes(x = seconds_elapsed, y = wp) +
+    geom_hline(aes(yintercept = 0.5)) +
     geom_step(
       aes(color = factor(opponent_diff))
+    ) +
+    scale_y_continuous(labels = scales::comma) +
+    coord_cartesian(ylim = c(0, 1)) +
+    labs(
+      x = 'Seconds Elapsed',
+      y = 'Win Probability'
     )
 }
 
@@ -211,12 +232,12 @@ pre_plant_pbp <- pbp |>
   )
 
 pre_plant_seconds_coefs <- pre_plant_pbp |> 
-  filter(is_offense) |> 
   estimate_window_coefs(is_pre_plant = TRUE, overwrite = TRUE)
 
-pre_plant_fit <- fit_model(pre_plant_seconds_coefs)
-pre_plant_grid_preds <- generate_wp_grid(pre_plant_fit, is_pre_plant = TRUE)
-plot_wp_grid(pre_plant_grid_preds)
+pre_plant_model <- fit_wp_model(pre_plant_seconds_coefs)
+pre_plant_grid_preds <- generate_wp_grid(pre_plant_model, is_pre_plant = TRUE)
+plot_wp_grid(pre_plant_grid_preds) +
+  labs(title = 'Offense Pre-Plant Win Probability')
 
 post_plant_pbp <- pbp |> 
   inner_join(
@@ -230,12 +251,12 @@ post_plant_pbp <- pbp |>
   )
 
 post_plant_seconds_coefs <- pre_plant_pbp |> 
-  filter(is_offense) |> 
   estimate_window_coefs(is_pre_plant = FALSE, overwrite = TRUE)
 
-post_plant_fit <- fit_model(post_plant_seconds_coefs)
-post_plant_grid_preds <- generate_wp_grid(post_plant_fit, is_pre_plant = FALSE)
-plot_wp_grid(post_plant_grid_preds)
+post_plant_model <- fit_wp_model(post_plant_seconds_coefs)
+post_plant_grid_preds <- generate_wp_grid(post_plant_model, is_pre_plant = FALSE)
+plot_wp_grid(post_plant_grid_preds) +
+  labs(title = 'Offense Post-Plant Win Probability')
 
 ## diagnostics ----
 bind_rows(
@@ -245,22 +266,17 @@ bind_rows(
   plot_wp_grid() +
   geom_vline(
     aes(xintercept = 90L)
-  ) +
-  coord_cartesian(ylim = c(0.5, 1))
+  )
 
 ## usage ----
-pre_plant_pbp$wp <- compute_wp(
-  pre_plant_fit,
-  seconds_elapsed = pre_plant_pbp$seconds_elapsed,
-  opponent_diff = pre_plant_pbp$opponent_diff,
-  is_offense = pre_plant_pbp$is_offense
+pre_plant_pbp$wp <- predict(
+  pre_plant_model,
+  data = pre_plant_pbp
 )
 
-post_plant_pbp$wp <- compute_wp(
-  post_plant_fit,
-  seconds_elapsed = post_plant_pbp$seconds_elapsed,
-  opponent_diff = post_plant_pbp$opponent_diff,
-  is_offense = post_plant_pbp$is_offense
+post_plant_pbp$wp <- predict(
+  post_plant_model,
+  data = post_plant_pbp
 )
 
 
