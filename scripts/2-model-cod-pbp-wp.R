@@ -4,6 +4,12 @@ library(tidyr)
 library(purrr)
 library(ggplot2)
 
+## TODO: 
+##   1. Add term for whether bomb is down.
+##   2. Possibly try features for number of ARs and SMGs left on each side.
+##   3. Try terms for the game (e.g. "Cold War" or "Vanguard") and the map. (mixed-effects?)
+##   3. Look into last 10 sec WPs more... shouldn't WP go down in the last 10 seconds or so pre-plant? Unless we know that they're planting.
+
 raw <- read_csv('data/cod_snd_pbp.csv')
 
 raw_pbp <- raw |> 
