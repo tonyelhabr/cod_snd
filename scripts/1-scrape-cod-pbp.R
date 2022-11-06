@@ -38,6 +38,7 @@ read_snd_logs_sheet <- function(year, overwrite = FALSE) {
   df
 }
 
+# 2021 S2-036 r11, S2-040 r7, amd S3-014 r8 have '#REF!' for initial_bomb_carrier_killed, so need to manually fix those
 raw_pbp <- 2021:2022 |> 
   set_names() |> 
   map_dfr(read_snd_logs_sheet, .id = 'year') |> 
@@ -45,7 +46,22 @@ raw_pbp <- 2021:2022 |>
     across(year, as.integer),
     across(activity, ~ifelse(.x == 'defuse', 'Defuse', .x)), # one bad name
     across(match_id, ~str_replace_all(.x, c('CHA' = 'CH', '!' = '1'))), ## bugs with labels in sheet
-    across(killer_team, ~coalesce(.x, initiating_team))
+    across(killer_team, ~coalesce(.x, initiating_team)),
+    is_traded_out = case_when(
+      traded_out == 'Y' ~ TRUE,
+      traded_out == 'N' ~ FALSE,
+      TRUE ~ NA
+    ),
+    is_kill_traded = trade_kill == 'Y',
+    side = case_when(
+      killer_off_def == 'Offense' ~ 'o',
+      killer_off_def == 'Defense' ~ 'd',
+      activity == 'Plant' ~ 'o',
+      activity == 'Defuse' ~ 'd'
+    ),
+    is_negative_action = activity %in% c('Self Kill', 'Team Kill'),
+    is_initial_bomb_carrier_killed = initial_bomb_carrier_killed == 'Y',
+    across(bomb_timer_left, ~ifelse(.x > 45, 45, .x)) ## one instance of this
   ) |> 
   select(-initiating_team) |> 
   rename(
@@ -54,8 +70,7 @@ raw_pbp <- 2021:2022 |>
 
 cod_game_mapping <- c(
   '2022' = 'Vanguard',
-  '2021' = 'Cold War',
-  '2020' = 'MW'
+  '2021' = 'Cold War'
 )
 
 team_mapping <- c(
@@ -97,18 +112,20 @@ stopifnot(nrow(pbp_ids) == nrow(distinct(pbp_ids)))
 
 pbp <- bind_rows(
   raw_pbp |> 
+    filter(side == 'o') |> 
     transmute(
+      # pbp_side = 'a',
+      side,
       year,
       round,
       map,
-      match_id,
+      # match_id,
       map_id,
       round,
-      map,
       round_time_left,
       bomb_timer_left,
+      seconds_elapsed,
       activity,
-      is_offense = TRUE,
       team = offense_team,
       opponent = defense_team,
       n_team_remaining = offense_remaining,
@@ -117,31 +134,27 @@ pbp <- bind_rows(
       killer_player,
       victim_player,
       killer_team,
-      killer_off_def,
       round_winner,
-      seconds_elapsed,
-      first_blood,
-      traded_out,
-      trade_kill,
-      initial_bomb_carrier_killed,
-      last_round_activity,
-      x1v1_situation_entered_team = x1v_situation_entered_offense,
-      x1v1_situation_entered_opponent = x1v_situation_entered_defense,
-      situation_length
+      is_initial_bomb_carrier_killed,
+      is_traded_out,
+      is_kill_traded,
+      is_negative_action
     ),
   raw_pbp |> 
+    filter(side == 'd') |> 
     transmute(
+      # pbp_side = 'b',
+      side,
       year,
       round,
-      map,
-      match_id,
+      # match_id,
       map_id,
       round,
       map,
       round_time_left,
       bomb_timer_left,
+      seconds_elapsed,
       activity,
-      is_offense = FALSE,
       team = defense_team,
       opponent = offense_team,
       n_team_remaining = defense_remaining,
@@ -150,22 +163,17 @@ pbp <- bind_rows(
       killer_player,
       victim_player,
       killer_team,
-      killer_off_def,
       round_winner,
-      seconds_elapsed,
-      first_blood,
-      traded_out,
-      trade_kill,
-      initial_bomb_carrier_killed,
-      last_round_activity,
-      x1v1_situation_entered_opponent = x1v_situation_entered_offense,
-      x1v1_situation_entered_team = x1v_situation_entered_defense,
-      situation_length
+      is_initial_bomb_carrier_killed,
+      is_traded_out,
+      is_kill_traded,
+      is_negative_action
     )
 ) |> 
+  arrange(year, map_id, round, desc(round_time_left), desc(bomb_timer_left)) |> 
   mutate(
     across(c(team, opponent, round_winner), ~team_mapping[.x])
   )
-
+pbp
 write_csv(pbp, 'data/cod_snd_pbp.csv')
 
