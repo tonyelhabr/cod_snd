@@ -13,12 +13,14 @@ library(broom)
 ##   3. Try terms for the game (e.g. "Cold War" or "Vanguard") and the map. (mixed-effects?)
 ##   3. Look into last 10 sec WPs more... shouldn't WP go down in the last 10 seconds or so pre-plant? Unless we know that they're planting.
 
-source('scripts/2-helpers.R')
+source('scripts/helpers-plot.R')
+source('scripts/helpers-wp.R')
 
 raw <- read_csv('data/cod_snd_pbp.csv') |> 
   arrange(year, map_id, round) |> 
   mutate(
-    across(side, factor),
+    # across(side, factor),
+    is_offense = as.integer(side == 'o'),
     round_id = sprintf('%s-%s-%02d', year, map_id, round), 
     engagement_id = sprintf('%s-%s-%sv%s', round_id, side, n_team_remaining, n_opponent_remaining)
   )
@@ -27,12 +29,35 @@ plant_times <- raw |>
   filter(activity == 'Plant') |> 
   select(round_id, plant_second = seconds_elapsed)
 
+defuse_times <- raw |> 
+  filter(activity == 'Defuse') |> 
+  select(round_id, defuse_second = seconds_elapsed)
+
+## Checked a few of these. These seem to be kills immediately after the bomb is defused, when
+##   there is a small window of time that you can still move your character.
+##   In the 2022 and most of the 2021 spreadsheet, these instances are marked with bomb_timer_left = 0.
+##   These activities are meaningless for win probability.
+engagements_to_drop <- raw |> 
+  inner_join(
+    defuse_times,
+    by = 'round_id'
+  ) |> 
+  filter(seconds_elapsed > defuse_second) |> 
+  select(engagement_id)
+
+killed_initial_bomb_carrier <- raw |> 
+  filter(side == 'd', is_initial_bomb_carrier_killed) |> 
+  group_by(round_id) |> 
+  slice_min(seconds_elapsed, n = 1, with_ties = FALSE) |> 
+  ungroup() |> 
+  select(engagement_id, seconds_elapsed)
+
 pbp <- raw |> 
+  anti_join(
+    engagements_to_drop,
+    by = 'engagement_id'
+  ) |> 
   mutate(
-    engagement_id,
-    round_id,
-    side,
-    seconds_elapsed,
     # round_timer_left, ## need to keep around for timer fix
     pre_plant_seconds_elapsed = ifelse(
       !is.na(bomb_timer_left) & activity != 'Plant', 
@@ -41,11 +66,11 @@ pbp <- raw |>
     ),
     post_plant_seconds_elapsed = 45L - bomb_timer_left,
     opponent_diff = n_team_remaining - n_opponent_remaining,
-    is_post_plant = ifelse(activity == 'Plant', TRUE, NA),
-    win_round = ifelse(team == round_winner, 'yes', 'no') |> factor()
+    across(is_initial_bomb_carrier_killed, as.integer),
+    win_round = as.integer(team == round_winner)
   ) |> 
   arrange(round_id, pre_plant_seconds_elapsed, post_plant_seconds_elapsed) |> 
-  group_by(round_id, side) |> 
+  group_by(round_id, is_offense) |> 
   mutate(
     prev_opponent_diff = lag(opponent_diff, n = 1, default = 0L)
   ) |> 
@@ -55,26 +80,53 @@ pbp <- raw |>
     by = 'round_id'
   ) |> 
   mutate(
-    across(
-      is_post_plant,
-      ~case_when(
-        is.na(plant_second) ~ FALSE,
-        seconds_elapsed < plant_second ~ FALSE,
-        TRUE ~ TRUE
-      )
+    is_post_plant = case_when(
+      is.na(plant_second) ~ FALSE,
+      seconds_elapsed < plant_second ~ FALSE,
+      activity == 'Plant' ~ TRUE,
+      TRUE ~ TRUE
+    ),
+    is_during_attempted_plant = case_when(
+      seconds_elapsed >= (plant_second - 5) & seconds_elapsed < plant_second ~ FALSE,
+      activity == 'Kill Planter' ~ TRUE,
+      TRUE ~ FALSE
     )
+  ) |> 
+  left_join(
+    defuse_times,
+    by = 'round_id'
+  ) |> 
+  mutate(
+    is_during_attempted_defuse = case_when(
+      seconds_elapsed >= (defuse_second - 7.5) & seconds_elapsed < defuse_second ~ FALSE,
+      activity == 'Kill Defuser' ~ TRUE,
+      TRUE ~ FALSE
+    )
+  ) |> 
+  mutate(
+    across(c(is_during_attempted_plant, is_during_attempted_defuse), as.integer)
   ) |> 
   select(
     engagement_id,
     round_id,
-    side, 
+    is_offense, 
     is_post_plant,
     seconds_elapsed,
     plant_second,
     pre_plant_seconds_elapsed,
     post_plant_seconds_elapsed,
+    # model_seconds_elapsed = ifelse(
+    #   is.na(pre_plant_seconds_elapsed),
+    #   post_plant_seconds_elapsed,
+    #   pre_plant_seconds_elapsed
+    # ),
     opponent_diff,
     prev_opponent_diff,
+    is_initial_bomb_carrier_killed,
+    is_during_attempted_plant,
+    is_during_attempted_defuse,
+    
+    ## outcome
     win_round,
     
     ## extra
@@ -87,20 +139,20 @@ pbp <- raw |>
     is_negative_action
   )
 
-kills_pbp <- pbp |> filter(activity == 'Kill')
+nonplant_pbp <- pbp |> filter(activity != 'Plant')
 
-# kills_pbp |> count(is_post_plant)
-# kills_pbp |> count(side, is_post_plant)
-# kills_pbp |> filter(is_post_plant) |> count(post_plant_time = is.na(pre_plant_seconds_elapsed), plant_time = (pre_plant_seconds_elapsed == plant_second))
+# nonplant_pbp |> count(is_post_plant)
+# nonplant_pbp |> count(is_offense, is_post_plant)
+# nonplant_pbp |> filter(is_post_plant) |> count(post_plant_time = is.na(pre_plant_seconds_elapsed), plant_time = (pre_plant_seconds_elapsed == plant_second))
 
 ## these are rounds when there are no kills pre-plant
-# kills_pbp |> 
+# nonplant_pbp |> 
 #   filter(is_post_plant) |> 
 #   filter(!is.na(pre_plant_seconds_elapsed) & (pre_plant_seconds_elapsed != plant_second)) |> 
 #   distinct(round_id)
 
-## don't need side here
-seconds_elapsed <- kills_pbp |> 
+## don't need is_offense here
+seconds_elapsed <- nonplant_pbp |> 
   group_by(round_id) |> 
   summarize(
     is_plant_in_round = any(is_post_plant),
@@ -112,7 +164,7 @@ seconds_elapsed <- kills_pbp |>
     across(last_pre_plant_seconds_elapsed, ~ifelse(is.infinite(.x), NA_integer_, .x))
   ) |> 
   left_join(
-    kills_pbp |> 
+    nonplant_pbp |> 
       group_by(round_id) |> 
       filter(any(is_post_plant)) |> 
       summarize(
@@ -122,7 +174,7 @@ seconds_elapsed <- kills_pbp |>
     by = 'round_id'
   )
 
-pre_plant_pbp <- kills_pbp |> 
+pre_plant_pbp <- nonplant_pbp |> 
   inner_join(
     seconds_elapsed |> 
       select(round_id, is_plant_in_round, last_seconds_elapsed = last_pre_plant_seconds_elapsed),
@@ -143,8 +195,10 @@ pre_plant_seconds_coefs <- pre_plant_pbp |>
 
 pre_plant_model <- fit_wp_model(pre_plant_seconds_coefs)
 pre_plant_grid_preds <- generate_wp_grid(pre_plant_model, is_pre_plant = TRUE)
-pre_plant_grid_preds |> tail()
-plot_wp_grid(pre_plant_grid_preds) +
+pre_plant_grid_preds |> tail(20)
+pre_plant_grid_preds |> 
+  filter(is_offense == 1L, is_initial_bomb_carrier_killed == 0L, is_during_attempted_plant == 0L) |> 
+  plot_wp_grid() +
   labs(title = 'Offense Pre-Plant Win Probability')
 ggsave(
   filename = file.path('figs', 'pre_plant_offensive_wp.png'),
@@ -152,14 +206,14 @@ ggsave(
   height = 6
 )
 
-post_plant_pbp <- kills_pbp |> 
+post_plant_pbp <- nonplant_pbp |> 
   inner_join(
     seconds_elapsed |> 
       filter(is_plant_in_round) |> 
       distinct(round_id, last_seconds_elapsed = last_post_plant_seconds_elapsed),
     by = 'round_id'
   ) |> 
-  rename(
+  rename( 
     round_seconds_elapsed = seconds_elapsed,
     seconds_elapsed = post_plant_seconds_elapsed
   ) |> 
@@ -191,7 +245,7 @@ augment.cod_wp_model <- function(x, data, ...) {
   data
 }
 
-base_point_df <- crossing(seconds_elapsed = 0L, opponent_diff = 0L, side = c('d', 'o'))
+base_point_df <- crossing(seconds_elapsed = 0L, opponent_diff = 0L, is_offense = c('yes', 'no'))
 pred_base_points <- bind_rows(
   augment(pre_plant_model, base_point_df) |> mutate(is_pre_plant = TRUE),
   augment(post_plant_model, base_point_df) |> mutate(is_pre_plant = FALSE)
@@ -211,10 +265,10 @@ add_wpa <- function(data, is_pre_plant = TRUE) {
       )
     ) |> 
     left_join(
-      pred_base_point |> select(side, default_wp = wp),
-      by = 'side'
+      pred_base_point |> select(is_offense, default_wp = wp),
+      by = 'is_offense'
     ) |> 
-    group_by(round_id, side) |> 
+    group_by(round_id, is_offense) |> 
     mutate(
       wpa = wp - coalesce(lag(wp), default_wp)
     ) |> 
