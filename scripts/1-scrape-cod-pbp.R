@@ -38,7 +38,7 @@ read_snd_logs_sheet <- function(year, overwrite = FALSE) {
   df
 }
 
-cod_game_mapping <- c(
+game_mapping <- c(
   '2022' = 'Vanguard',
   '2021' = 'Cold War'
 )
@@ -211,6 +211,10 @@ raw_pbp <- init_raw_pbp |>
       round_has_plant & is_post_plant ~ seconds_elapsed - plant_second,
       TRUE ~ NA_real_
     )
+  ) |> 
+  mutate(
+    game = sprintf('%s (%s)', game_mapping[as.character(year)], year),
+    .before = 1
   )
 # raw_pbp |> select(round_id, activity, seconds_elapsed, round_has_plant, is_post_plant, pre_plant_seconds_elapsed, post_plant_seconds_elapsed, bomb_timer_left)
 
@@ -218,7 +222,7 @@ select_pbp_side <- function(df, ...) {
   df |> 
     transmute(
       side,
-      # year,
+      game,
       # round,
       # map_id,
       round_id,
@@ -303,3 +307,47 @@ both_pbp <- bind_rows(
 
 write_csv(both_pbp, 'data/cod_snd_pbp.csv')
 
+translate_event <- function(event) {
+  # year <- str_sub(event, 1, 4)
+  stage <- str_sub(event, 9, 9)
+  ifelse(stage == 'h', 'CH-', sprintf('S%s', stage))
+}
+
+rounds <- read_csv('data/cod_snd_rounds.csv')
+rounds
+
+rounds |> 
+  filter(game == 'Vanguard (2022)') |> 
+  filter(map == 'Desert Siege', team == 'Royal Ravens') |> 
+  count(opponent)
+  select(event, series, team, map, round, is_offense, win_round)
+rounds |> 
+  filter(event |> str_detect('202[01]', negate = TRUE)) |> 
+  distinct(event, series, map, team, opponent) |> 
+  count(event, map, team, opponent, sort = TRUE) |> 
+  filter(n > 1L)
+  
+both_pbp |> 
+  filter(game == 'Vanguard (2022)') |> 
+  # inner_join(
+  #   rounds |> 
+  #     select(year, game, event, team, opponent) |> 
+  #     mutate(
+  #       match_id = translate_event(event)
+  #     ),
+  #   by = c('year', 'team', 'opponent')
+  # )
+  filter(map == 'Desert Siege', team == 'Royal Ravens') |> 
+  count(opponent)
+
+both_pbp |> 
+  filter(game == 'Vanguard (2022)') |> 
+  filter(map == 'Tuscan', team == 'FaZe', opponent == 'Surge') |> 
+  mutate(
+    match_id = round_id |> str_sub(1, -4)
+  ) |> 
+  distinct(match_id)
+prefixed_init_raw_pbp |> 
+  filter(year == 2022, str_sub(match_id, 1, 2) == 'CH') |> 
+  distinct(match_id, initiating_team, defense_team, map) |> 
+  filter(initiating_team == 'ATL', defense_team == 'SEA')

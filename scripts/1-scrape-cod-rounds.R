@@ -247,8 +247,7 @@ rounds <- series |>
     .before = 1
   ) |> 
   mutate(
-    across(game, ~fct_reorder(.x, year)),
-    map = sprintf('%s - %s', map, game)
+    across(game, ~fct_reorder(.x, year))
   ) |> 
   relocate(series_id, .after = 'game')
 
