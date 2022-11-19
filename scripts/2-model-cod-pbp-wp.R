@@ -16,111 +16,38 @@ library(broom)
 source('scripts/helpers-plot.R')
 source('scripts/helpers-wp.R')
 
-raw <- read_csv('data/cod_snd_pbp.csv') |> 
-  arrange(year, map_id, round) |> 
+both_pbp <- read_csv('data/cod_snd_pbp.csv', show_col_types = FALSE)
+
+init_model_pbp <- both_pbp |> 
   mutate(
-    # across(side, factor),
-    is_offense = as.integer(side == 'o'),
-    round_id = sprintf('%s-%s-%02d', year, map_id, round), 
-    engagement_id = sprintf('%s-%s-%sv%s', round_id, side, n_team_remaining, n_opponent_remaining)
-  )
-
-plant_times <- raw |> 
-  filter(activity == 'Plant') |> 
-  select(round_id, plant_second = seconds_elapsed)
-
-defuse_times <- raw |> 
-  filter(activity == 'Defuse') |> 
-  select(round_id, defuse_second = seconds_elapsed)
-
-## Checked a few of these. These seem to be kills immediately after the bomb is defused, when
-##   there is a small window of time that you can still move your character.
-##   In the 2022 and most of the 2021 spreadsheet, these instances are marked with bomb_timer_left = 0.
-##   These activities are meaningless for win probability.
-engagements_to_drop <- raw |> 
-  inner_join(
-    defuse_times,
-    by = 'round_id'
-  ) |> 
-  filter(seconds_elapsed > defuse_second) |> 
-  select(engagement_id)
-
-killed_initial_bomb_carrier <- raw |> 
-  filter(side == 'd', is_initial_bomb_carrier_killed) |> 
-  group_by(round_id) |> 
-  slice_min(seconds_elapsed, n = 1, with_ties = FALSE) |> 
-  ungroup() |> 
-  select(engagement_id, seconds_elapsed)
-
-pbp <- raw |> 
-  anti_join(
-    engagements_to_drop,
-    by = 'engagement_id'
-  ) |> 
-  mutate(
-    # round_timer_left, ## need to keep around for timer fix
-    pre_plant_seconds_elapsed = ifelse(
-      !is.na(bomb_timer_left) & activity != 'Plant', 
-      NA_real_, 
-      seconds_elapsed
+    across(
+      c(is_initial_bomb_carrier_killed, is_during_attempted_plant, is_during_attempted_defuse), 
+      as.integer
     ),
-    post_plant_seconds_elapsed = 45L - bomb_timer_left,
     opponent_diff = n_team_remaining - n_opponent_remaining,
-    across(is_initial_bomb_carrier_killed, as.integer),
     win_round = as.integer(team == round_winner)
   ) |> 
   arrange(round_id, pre_plant_seconds_elapsed, post_plant_seconds_elapsed) |> 
-  group_by(round_id, is_offense) |> 
+  group_by(round_id, side) |> 
   mutate(
     prev_opponent_diff = lag(opponent_diff, n = 1, default = 0L)
   ) |> 
   ungroup() |> 
-  left_join(
-    plant_times,
-    by = 'round_id'
-  ) |> 
-  mutate(
-    is_post_plant = case_when(
-      is.na(plant_second) ~ FALSE,
-      seconds_elapsed < plant_second ~ FALSE,
-      activity == 'Plant' ~ TRUE,
-      TRUE ~ TRUE
-    ),
-    is_during_attempted_plant = case_when(
-      seconds_elapsed >= (plant_second - 5) & seconds_elapsed < plant_second ~ FALSE,
-      activity == 'Kill Planter' ~ TRUE,
-      TRUE ~ FALSE
-    )
-  ) |> 
-  left_join(
-    defuse_times,
-    by = 'round_id'
-  ) |> 
-  mutate(
-    is_during_attempted_defuse = case_when(
-      seconds_elapsed >= (defuse_second - 7.5) & seconds_elapsed < defuse_second ~ FALSE,
-      activity == 'Kill Defuser' ~ TRUE,
-      TRUE ~ FALSE
-    )
-  ) |> 
-  mutate(
-    across(c(is_during_attempted_plant, is_during_attempted_defuse), as.integer)
-  ) |> 
   select(
+    ## ids
     engagement_id,
     round_id,
-    is_offense, 
-    is_post_plant,
+    
+    ## contextual
+    pbp_side,
+    side, 
     seconds_elapsed,
     plant_second,
+    defuse_second,
     pre_plant_seconds_elapsed,
     post_plant_seconds_elapsed,
-    # model_seconds_elapsed = ifelse(
-    #   is.na(pre_plant_seconds_elapsed),
-    #   post_plant_seconds_elapsed,
-    #   pre_plant_seconds_elapsed
-    # ),
-    opponent_diff,
+    
+    ## features
     prev_opponent_diff,
     is_initial_bomb_carrier_killed,
     is_during_attempted_plant,
@@ -130,14 +57,40 @@ pbp <- raw |>
     win_round,
     
     ## extra
-    killer_player,
-    victim_player,
-    is_negative_action,
-    activity,
+    is_post_plant,
+    opponent_diff,
     killer_player,
     victim_player,
     is_negative_action
   )
+
+## TODO
+## this will have duplicate records at the time of the plant, but that's fine imo
+model_pbp <- bind_rows(
+  init_model_pbp |> 
+    filter(!is.na(pre_plant_seconds_elapsed)) |> 
+    mutate(is_pre_plant = TRUE, model_seconds_elapsed = pre_plant_seconds_elapsed) |> 
+    select(-pre_plant_seconds_elapsed),
+  init_model_pbp |> 
+    filter(!is.na(post_plant_seconds_elapsed)) |> 
+    mutate(is_pre_plant = FALSE, model_seconds_elapsed = post_plant_seconds_elapsed) |> 
+    select(-post_plant_seconds_elapsed)
+)
+## should have 0 rows
+model_pbp |> filter(!is_pre_plant, !is_post_plant) |> distinct(round_id)
+
+init_model_pbp |> 
+  filter(round_id == '2021-SND-126-03') |> 
+  glimpse()
+model_pbp |> 
+  filter(round_id == '2021-SND-126-03') |> 
+  count(is_post_plant, is_pre_plant)
+model_pbp |> 
+  filter(round_id == '2021-SND-126-03') |> 
+  filter(!is.na(post_plant_seconds_elapsed)) |> 
+  mutate(is_pre_plant = FALSE, model_seconds_elapsed = post_plant_seconds_elapsed) |> 
+  select(-post_plant_seconds_elapsed)
+pbp |> filter(!is_pre_plant, !is_post_plant) |> count(round_id)
 
 nonplant_pbp <- pbp |> filter(activity != 'Plant')
 
@@ -155,7 +108,7 @@ nonplant_pbp <- pbp |> filter(activity != 'Plant')
 seconds_elapsed <- nonplant_pbp |> 
   group_by(round_id) |> 
   summarize(
-    is_plant_in_round = any(is_post_plant),
+    is_plant_in_round = any(!is_pre_plant),
     last_pre_plant_seconds_elapsed = max_quietly(pre_plant_seconds_elapsed, na.rm = TRUE)
   ) |> 
   ungroup() |> 
@@ -193,6 +146,35 @@ pre_plant_seconds_coefs <- pre_plant_pbp |>
   select(-last_seconds_elapsed) |> 
   estimate_window_coefs(is_pre_plant = TRUE, overwrite = TRUE)
 
+## ----
+library(tidymodels)
+
+o_pre_plant_grid <- pre_plant_pbp |> 
+  filter(side == 'o') |> 
+  select(-side)
+
+seconds_to_exclude <- o_pre_plant_grid |> 
+  group_by(id) |> 
+  slice_max(pre_plant_sec_elapsed, n = 1) |> 
+  ungroup()
+
+o_pre_plant_grid <- o_pre_plant_grid |> 
+  anti_join(seconds_to_exclude, by = c('id', 'pre_plant_sec_elapsed'))
+
+ids <- o_pre_plant_grid |> distinct(id) |> pull(id)
+set.seed(42)
+ids_trn <- sample(ids, size = 0.75 * length(ids))
+trn <- o_pre_plant_grid |> filter(id %in% ids_trn)
+tst <- o_pre_plant_grid |> filter(!id %in% ids_trn)
+
+rec <- recipe(win_round ~ pre_plant_sec_elapsed + opponent_diff, data = trn)
+spec <- boost_tree(mode = 'classification') |> 
+  set_engine(engine = 'xgboost', monotone_constraints = c(1, -1))
+wf <- workflow(preprocessor = rec, spec = spec)
+fit <- fit(wf, trn)
+fit$fit$fit$fit
+
+## ----
 pre_plant_model <- fit_wp_model(pre_plant_seconds_coefs)
 pre_plant_grid_preds <- generate_wp_grid(pre_plant_model, is_pre_plant = TRUE)
 pre_plant_grid_preds |> tail(20)
