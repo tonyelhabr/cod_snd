@@ -25,6 +25,7 @@ get_max_second <- function(is_pre_plant = TRUE) {
 }
 
 safely_glm <- safely(glm)
+library(recipes)
 model_window_wp <- function(pbp_grid, seconds_elapsed1, seconds_elapsed2) {
   filt <- pbp_grid |> 
     filter(seconds_elapsed >= seconds_elapsed1, seconds_elapsed <= seconds_elapsed2)
@@ -71,6 +72,12 @@ model_window_wp <- function(pbp_grid, seconds_elapsed1, seconds_elapsed2) {
     data = filt |> select(win_round, all_of(all_terms)), 
     family = binomial(link = 'logit')
   )
+  fit <- recipe(
+    win_round ~ .,
+    data = filt |> select(win_round, all_of(all_terms))
+  ) |> 
+    step_interact(everything())
+  
   if (!is.null(fit$error)) {
     message(sprintf('Error %s.\n%s', msg, fit$error))
     return(default_result)
@@ -136,7 +143,7 @@ predict.cod_wp_model <- function(object, data, ...) {
 
 generate_pred_grid <- function(model, is_pre_plant = TRUE) {
   nms <- fit$fit$fit$fit$feature_names
-  binary_features <- setdiff(nms, c('prev_opponent_diff'))
+  binary_features <- setdiff(nms, c('seconds_elapsed', 'prev_opponent_diff'))
   
   max_second <- get_max_second(is_pre_plant)
   max_diff <- 3L
@@ -189,7 +196,6 @@ generate_wp_grid <- function(model, is_pre_plant = TRUE) {
   
   pred_grid
 }
-
 
 plot_wp_grid <- function(df) {
   df |> 

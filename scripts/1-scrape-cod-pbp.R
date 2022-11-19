@@ -302,5 +302,4 @@ both_pbp <- bind_rows(
   arrange(round_id, seconds_elapsed, pbp_side, side)
 
 write_csv(both_pbp, 'data/cod_snd_pbp.csv')
-one_pbp |> filter(round_id == '2021-SND-071-06')
-model_pbp |> filter(round_id == '2021-SND-071-06') |> filter(is_pre_plant, is_post_plant) |> glimpse()
+

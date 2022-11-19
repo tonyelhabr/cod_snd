@@ -18,6 +18,53 @@ source('scripts/helpers-wp.R')
 
 both_pbp <- read_csv('data/cod_snd_pbp.csv', show_col_types = FALSE)
 
+both_pbp |> 
+  # filter(side == 'd') |> 
+  # distinct(round_id)
+  distinct(side, round_id, win_round = ifelse(team == round_winner, 'w', 'l')) |> 
+  count(side, win_round) |> 
+  group_by(side) |>
+  mutate(
+    prop = n / sum(n)
+  ) |> 
+  ungroup()
+
+both_pbp |>
+  arrange(round_id, pre_plant_seconds_elapsed, post_plant_seconds_elapsed) |> 
+  group_by(round_id, side) |> 
+  mutate(
+    across(c(n_team_remaining, n_opponent_remaining), list(prev = ~lag(.x, n = 1, default = 4L)))
+  ) |> 
+  ungroup() |> 
+  filter(n_team_remaining_prev == 0L | n_opponent_remaining_prev == 0L, activity != 'Defuse') |> 
+  count(activity, weapon_or_bomb_site)
+
+round_win_prop_by_xvy <- both_pbp |>
+  arrange(round_id, pre_plant_seconds_elapsed, post_plant_seconds_elapsed) |> 
+  group_by(round_id, side) |> 
+  mutate(
+    across(c(n_team_remaining, n_opponent_remaining), list(prev = ~lag(.x, n = 1, default = 4L)))
+  ) |> 
+  ungroup() |> 
+  filter(n_team_remaining_prev > 0L, n_opponent_remaining_prev > 0L) |> 
+  count(side, n_team_remaining_prev, n_opponent_remaining_prev, win_round = ifelse(team == round_winner, 'w', 'l')) |> 
+  group_by(side, n_team_remaining_prev, n_opponent_remaining_prev) |> 
+  mutate(
+    prop = n / sum(n)
+  ) |> 
+  ungroup()
+
+wide_round_win_prop_by_xvy <- round_win_prop_by_xvy |>
+  pivot_wider(
+    names_from = win_round,
+    values_from = c(n, prop),
+    values_fill = list(n = 0L, prop = 0)
+  )
+
+both_pbp |> 
+  filter(pbp_side == 'a', n_team_remaining == 0, n_opponent_remaining == 0) |> 
+  glimpse()
+
 init_model_pbp <- both_pbp |> 
   mutate(
     across(
@@ -66,8 +113,7 @@ init_model_pbp <- both_pbp |>
     is_negative_action
   )
 
-## TODO
-## this will have duplicate records at the time of the plant, but that's fine imo
+## this will have duplicate records at the time of the plant, but that's fine
 all_model_pbp <- bind_rows(
   init_model_pbp |> 
     filter(!is.na(pre_plant_seconds_elapsed)) |>
@@ -123,6 +169,7 @@ tst <- pre_plant_model_pbp |> filter(!(round_id %in% round_ids_trn))
 
 rec <- recipe(
   win_round ~ 
+    seconds_elapsed +
     prev_opponent_diff +
     is_initial_bomb_carrier_killed +
     is_during_attempted_plant +
@@ -131,53 +178,70 @@ rec <- recipe(
 )
 
 spec <- boost_tree(mode = 'classification') |> 
-  set_engine(engine = 'xgboost') # , monotone_constraints = c(1, -1, 1, -1))
+  set_engine(engine = 'xgboost', monotone_constraints = c(1, -1, -1, 1, -1)) # 1, -1))
 wf <- workflow(preprocessor = rec, spec = spec)
 fit <- fit(wf, trn)
-fit$fit$fit$fit
-
-fit$fit$fit$fit$feature_names
-
-pre_plant_grid_preds <- generate_pred_grid(pre_plant_model, is_pre_plant = TRUE)
+pre_plant_grid_preds <- generate_pred_grid(fit, is_pre_plant = TRUE)
 pre_plant_grid_preds$wp <- predict(fit, pre_plant_grid_preds, type = 'prob')$`.pred_yes`
 
-# pre_plant_grid_preds |> 
-#   pivot_longer(
-#     -c(seconds_elapsed, prev_opponent_diff, wp),
-#     names_to = 'feature',
-#     values_to = 'value'
-#   ) |> 
-#   ggplot() +
-#   aes(x = seconds_elapsed, y = wp) +
-#   geom_hline(
-#     color = 'white',
-#     aes(yintercept = 0.5)
-#   ) +
-#   geom_step(
-#     size = 1.5,
-#     aes(color = factor(prev_opponent_diff), linetype = factor(value))
-#   ) +
-#   guides(
-#     color = guide_legend(
-#       title = 'Net # of players', 
-#       override.aes = list(size = 3)
-#     )
-#   ) +
-#   ggsci::scale_color_tron() +
-#   scale_y_continuous(labels = scales::comma) +
-#   facet_wrap(~feature) +
-#   coord_cartesian(ylim = c(0, 1)) +
-#   theme(
-#     legend.position = 'top'
-#   ) +
-#   labs(
-#     title = 'Offensive Win Probability',
-#     x = 'Seconds Elapsed',
-#     y = 'Win Probability'
-#   )
+pre_plant_grid_preds <- generate_pred_grid(fit, is_pre_plant = TRUE)
+pre_plant_grid_preds$wp <- predict(fit, pre_plant_grid_preds, type = 'prob')$`.pred_yes`
+
+summarize_pred_grid_across_features <- function(df, col) {
+  df |> 
+    group_by(seconds_elapsed, prev_opponent_diff, value = .data[[col]]) |> 
+    summarize(
+      across(wp, mean)
+    ) |> 
+    ungroup()
+}
+
+c(
+  'is_initial_bomb_carrier_killed',
+  'is_during_attempted_defuse', 
+  'is_during_attempted_plant'
+) |> 
+  set_names() |> 
+  map_dfr(
+    ~summarize_pred_grid_across_features(pre_plant_grid_preds, .x), 
+    .id = 'feature'
+  ) |> 
+  unite('feature_value', feature, value) |> 
+  ggplot() +
+  aes(x = seconds_elapsed, y = wp) +
+  geom_hline(
+    color = 'white',
+    aes(yintercept = 0.5)
+  ) +
+  geom_step(
+    size = 1,
+    aes(color = factor(prev_opponent_diff))
+  ) +
+  guides(
+    color = guide_legend(
+      title = 'Net # of players',
+      override.aes = list(size = 3)
+    )
+  ) +
+  ggsci::scale_color_tron() +
+  scale_y_continuous(labels = scales::comma) +
+  facet_wrap(~feature_value, dir = 'v', nrow = 2) +
+  coord_cartesian(ylim = c(0, 1)) +
+  theme(
+    legend.position = 'top'
+  ) +
+  labs(
+    title = 'Offensive Win Probability',
+    x = 'Seconds Elapsed',
+    y = 'Win Probability'
+  )
 
 pre_plant_grid_preds |> 
-  filter(is_during_attempted_defuse == 0, is_during_attempted_plant == 0, is_initial_bomb_carrier_killed == 0) |> 
+  filter(
+    is_during_attempted_defuse == 0, 
+    is_during_attempted_plant == 0, 
+    is_initial_bomb_carrier_killed == 0
+  ) |> 
   # count(seconds_elapsed, prev_opponent_diff)
   ggplot() +
   aes(x = seconds_elapsed, y = wp) +
