@@ -134,6 +134,30 @@ predict.cod_wp_model <- function(object, data, ...) {
   plogis(log_odds) ## logit
 }
 
+generate_pred_grid <- function(model, is_pre_plant = TRUE) {
+  nms <- fit$fit$fit$fit$feature_names
+  binary_features <- setdiff(nms, c('prev_opponent_diff'))
+  
+  max_second <- get_max_second(is_pre_plant)
+  max_diff <- 3L
+  
+  binary_l <- vector(mode = 'list', length(binary_features))
+  names(binary_l) <- binary_features
+  for(el in names(binary_l)) {
+    binary_l[[el]] <- c(0L, 1L)
+  }
+  
+  crossing(
+    !!!append(
+      list(
+        seconds_elapsed = 0L:(max_second - 1L),
+        prev_opponent_diff = -max_diff:max_diff
+      ),
+      binary_l
+    )
+  )
+}
+
 generate_wp_grid <- function(model, is_pre_plant = TRUE) {
   nms <- names(model)
   binary_features <- setdiff(nms, c('prev_opponent_diff', '(Intercept)'))

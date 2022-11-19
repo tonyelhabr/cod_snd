@@ -70,7 +70,7 @@ prefixed_init_raw_pbp <- 2021:2022 |>
     round_id = sprintf('%s-%s-%02d', year, map_id, round)
   )
 
-## Issue with bomb timer left for 2021-SND-126-03 (bomb is never planted): https://youtu.be/3guxnrsIulQ?t=13387
+## Issue with bomb timer left for 2021-SND-126-03 (bomb is never planted) + seconds elapsed is 20 seconds ahead of what it should be: https://youtu.be/3guxnrsIulQ?t=13387
 ## acitivity = 'Kill' for 2021-SND-285-03 when it should be a plant
 
 ## rows_patch was being inconsistent for me when joining with non-character keys (specifically seconds elapsed)
@@ -87,22 +87,24 @@ changes <- bind_rows(
   ),
   tibble(
     round_id = '2021-SND-126-03',
-    seconds_elapsed = c(71.4, 75.4, 94.3, 96.2, 98.9),
-    round_time_left = as.integer(c(41.0, 37.0, 18.1, 16.2, 13.5)),
-    bomb_timer_left = rep(NA, 5)
-  )
+    seconds_elapsed = c(71.4, 75.4, 94.3, 96.2, 98.9)
+  ) |> 
+    mutate(
+      actual_seconds_elapsed = seconds_elapsed - 20
+    )
 )
 
-init_raw_pbp <- rows_update(
-  prefixed_init_raw_pbp |> add_key(),
+fixed_init_raw_pbp <- rows_update(
+  prefixed_init_raw_pbp |> add_key() |> mutate(actual_seconds_elapsed = NA_real_),
   changes |> add_key(.keep = 'unused'),
   by = 'key'
-)
+) |> 
+  mutate(
+    across(seconds_elapsed, ~coalesce(actual_seconds_elapsed, .x))
+  ) |> 
+  select(-actual_seconds_elapsed)
 
-init_raw_pbp |> 
-  filter(round_id %in% unique(changes$round_id))
-
-init_raw_pbp <- init_raw_pbp |> 
+init_raw_pbp <- fixed_init_raw_pbp |> 
   mutate(
     across(activity, ~ifelse(.x == 'defuse', 'Defuse', .x)), # one bad name
     across(match_id, ~str_replace_all(.x, c('CHA' = 'CH', '!' = '1'))), ## bugs with labels in sheet
@@ -119,16 +121,7 @@ init_raw_pbp <- init_raw_pbp |>
       activity == 'Plant' ~ 'o',
       activity == 'Defuse' ~ 'd'
     ),
-    is_negative_action = activity %in% c('Self Kill', 'Team Kill'),
-    # is_initial_bomb_carrier_killed = initial_bomb_carrier_killed == 'Y',
-    across(bomb_timer_left, ~ifelse(.x > 45, 45, .x)), ## one instance of this
-    # round_timer_left, ## need to keep around for timer fix
-    pre_plant_seconds_elapsed = ifelse(
-      !is.na(bomb_timer_left) & activity != 'Plant', 
-      NA_real_, 
-      seconds_elapsed
-    ),
-    post_plant_seconds_elapsed = 45L - bomb_timer_left,
+    is_negative_action = activity %in% c('Self Kill', 'Team Kill')
   ) |> 
   select(-initiating_team) |> 
   rename(
@@ -180,6 +173,7 @@ raw_pbp <- init_raw_pbp |>
     by = 'round_id'
   ) |> 
   mutate(
+    round_has_plant = !is.na(plant_second),
     is_post_plant = case_when(
       is.na(plant_second) ~ FALSE,
       seconds_elapsed < plant_second ~ FALSE,
@@ -204,26 +198,21 @@ raw_pbp <- init_raw_pbp |>
       activity == 'Kill Defuser' ~ TRUE,
       TRUE ~ FALSE
     )
+  ) |> 
+  mutate(
+    ## there are some issues where bomb_timer_left is not filled in after plant (and, instead, round timer is)
+    ##   so just compute these soley from seconds elapsed and activity implied timings.
+    pre_plant_seconds_elapsed = case_when(
+      !is_post_plant | (activity == 'Plant') ~ seconds_elapsed,
+      TRUE ~ NA_real_
+    ),
+    post_plant_seconds_elapsed = case_when(
+      activity == 'Plant' ~ 0,
+      round_has_plant & is_post_plant ~ seconds_elapsed - plant_second,
+      TRUE ~ NA_real_
+    )
   )
-
-# pbp_ids <- raw_pbp |> 
-#   select(
-#     year,
-#     round,
-#     map,
-#     match_id,
-#     map_id,
-#     round,
-#     map,
-#     offense_team,
-#     defense_team,
-#     offense_remaining,
-#     defense_remaining,
-#     round_time_left,
-#     bomb_timer_left,
-#     activity
-#   )
-# stopifnot(nrow(pbp_ids) == nrow(distinct(pbp_ids)))
+# raw_pbp |> select(round_id, activity, seconds_elapsed, round_has_plant, is_post_plant, pre_plant_seconds_elapsed, post_plant_seconds_elapsed, bomb_timer_left)
 
 select_pbp_side <- function(df, ...) {
   df |> 
@@ -251,6 +240,7 @@ select_pbp_side <- function(df, ...) {
       plant_second,
       defuse_second,
       
+      round_has_plant,
       is_post_plant,
       is_during_attempted_plant,
       is_during_attempted_defuse,
@@ -312,4 +302,5 @@ both_pbp <- bind_rows(
   arrange(round_id, seconds_elapsed, pbp_side, side)
 
 write_csv(both_pbp, 'data/cod_snd_pbp.csv')
-
+one_pbp |> filter(round_id == '2021-SND-071-06')
+model_pbp |> filter(round_id == '2021-SND-071-06') |> filter(is_pre_plant, is_post_plant) |> glimpse()

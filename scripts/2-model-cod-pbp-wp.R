@@ -25,7 +25,7 @@ init_model_pbp <- both_pbp |>
       as.integer
     ),
     opponent_diff = n_team_remaining - n_opponent_remaining,
-    win_round = as.integer(team == round_winner)
+    win_round = ifelse(team == round_winner, 'yes', 'no') |> factor()
   ) |> 
   arrange(round_id, pre_plant_seconds_elapsed, post_plant_seconds_elapsed) |> 
   group_by(round_id, side) |> 
@@ -44,6 +44,7 @@ init_model_pbp <- both_pbp |>
     seconds_elapsed,
     plant_second,
     defuse_second,
+    round_has_plant,
     pre_plant_seconds_elapsed,
     post_plant_seconds_elapsed,
     
@@ -57,6 +58,7 @@ init_model_pbp <- both_pbp |>
     win_round,
     
     ## extra
+    activity,
     is_post_plant,
     opponent_diff,
     killer_player,
@@ -66,113 +68,144 @@ init_model_pbp <- both_pbp |>
 
 ## TODO
 ## this will have duplicate records at the time of the plant, but that's fine imo
-model_pbp <- bind_rows(
+all_model_pbp <- bind_rows(
   init_model_pbp |> 
-    filter(!is.na(pre_plant_seconds_elapsed)) |> 
+    filter(!is.na(pre_plant_seconds_elapsed)) |>
     mutate(is_pre_plant = TRUE, model_seconds_elapsed = pre_plant_seconds_elapsed) |> 
     select(-pre_plant_seconds_elapsed),
   init_model_pbp |> 
-    filter(!is.na(post_plant_seconds_elapsed)) |> 
+    filter(round_has_plant, !is.na(post_plant_seconds_elapsed)) |> 
     mutate(is_pre_plant = FALSE, model_seconds_elapsed = post_plant_seconds_elapsed) |> 
     select(-post_plant_seconds_elapsed)
 )
 ## should have 0 rows
-model_pbp |> filter(!is_pre_plant, !is_post_plant) |> distinct(round_id)
+stopifnot(0 == (all_model_pbp |> filter(!is_pre_plant, !is_post_plant) |> distinct(round_id) |> nrow()))
+## should only be plant activities
+stopifnot(1 == (all_model_pbp |> filter(is_pre_plant, is_post_plant) |> count(activity) |> nrow()))
 
-init_model_pbp |> 
-  filter(round_id == '2021-SND-126-03') |> 
-  glimpse()
-model_pbp |> 
-  filter(round_id == '2021-SND-126-03') |> 
-  count(is_post_plant, is_pre_plant)
-model_pbp |> 
-  filter(round_id == '2021-SND-126-03') |> 
-  filter(!is.na(post_plant_seconds_elapsed)) |> 
-  mutate(is_pre_plant = FALSE, model_seconds_elapsed = post_plant_seconds_elapsed) |> 
-  select(-post_plant_seconds_elapsed)
-pbp |> filter(!is_pre_plant, !is_post_plant) |> count(round_id)
+model_pbp <- all_model_pbp |> 
+  filter(side == 'o') |> 
+  filter(activity == 'Kill')
 
-nonplant_pbp <- pbp |> filter(activity != 'Plant')
-
-# nonplant_pbp |> count(is_post_plant)
-# nonplant_pbp |> count(is_offense, is_post_plant)
-# nonplant_pbp |> filter(is_post_plant) |> count(post_plant_time = is.na(pre_plant_seconds_elapsed), plant_time = (pre_plant_seconds_elapsed == plant_second))
-
-## these are rounds when there are no kills pre-plant
-# nonplant_pbp |> 
-#   filter(is_post_plant) |> 
-#   filter(!is.na(pre_plant_seconds_elapsed) & (pre_plant_seconds_elapsed != plant_second)) |> 
-#   distinct(round_id)
-
-## don't need is_offense here
-seconds_elapsed <- nonplant_pbp |> 
+last_pre_plant_seconds_elapsed <- model_pbp |> 
+  filter(is_pre_plant) |> 
   group_by(round_id) |> 
-  summarize(
-    is_plant_in_round = any(!is_pre_plant),
-    last_pre_plant_seconds_elapsed = max_quietly(pre_plant_seconds_elapsed, na.rm = TRUE)
-  ) |> 
+  slice_max(seconds_elapsed, n = 1) |> 
   ungroup() |> 
-  mutate(
-    ## this happens when there are no kills before the plant
-    across(last_pre_plant_seconds_elapsed, ~ifelse(is.infinite(.x), NA_integer_, .x))
-  ) |> 
-  left_join(
-    nonplant_pbp |> 
-      group_by(round_id) |> 
-      filter(any(is_post_plant)) |> 
-      summarize(
-        last_post_plant_seconds_elapsed = max_quietly(post_plant_seconds_elapsed, na.rm = TRUE)
-      ) |> 
-      ungroup(),
-    by = 'round_id'
-  )
+  select(round_id, round_has_plant, last_pre_plant_seconds_elapsed = seconds_elapsed)
 
-pre_plant_pbp <- nonplant_pbp |> 
+last_post_plant_seconds_elapsed <- model_pbp |> 
+  filter(round_has_plant, !is_pre_plant) |> 
+  group_by(round_id) |> 
+  slice_max(seconds_elapsed, n = 1) |> 
+  ungroup() |> 
+  select(round_id, last_post_plant_seconds_elapsed = seconds_elapsed)
+
+pre_plant_model_pbp <- model_pbp |> 
   inner_join(
-    seconds_elapsed |> 
-      select(round_id, is_plant_in_round, last_seconds_elapsed = last_pre_plant_seconds_elapsed),
+    last_pre_plant_seconds_elapsed,
     by = 'round_id'
   ) |> 
-  rename(
-    round_seconds_elapsed = seconds_elapsed, ## this combines both pre- and post-plant
-    seconds_elapsed = pre_plant_seconds_elapsed
-  ) |> 
-  filter(!is_post_plant) |> 
-  select(-c(post_plant_seconds_elapsed, is_post_plant)) 
+  filter(is_pre_plant) |> 
+  select(-c(is_post_plant)) 
 
-pre_plant_seconds_coefs <- pre_plant_pbp |> 
-  filter(!is.na(seconds_elapsed)) |> ## drop post-plant records
-  # filter(!(!is_plant_in_round & (seconds_elapsed == last_seconds_elapsed))) |> ## drop the last kill when all kills are pre-plant
-  select(-last_seconds_elapsed) |> 
-  estimate_window_coefs(is_pre_plant = TRUE, overwrite = TRUE)
+# pre_plant_seconds_coefs <- pre_plant_model_pbp |> 
+#   estimate_window_coefs(is_pre_plant = TRUE, overwrite = TRUE)
 
 ## ----
 library(tidymodels)
 
-o_pre_plant_grid <- pre_plant_pbp |> 
-  filter(side == 'o') |> 
-  select(-side)
-
-seconds_to_exclude <- o_pre_plant_grid |> 
-  group_by(id) |> 
-  slice_max(pre_plant_sec_elapsed, n = 1) |> 
-  ungroup()
-
-o_pre_plant_grid <- o_pre_plant_grid |> 
-  anti_join(seconds_to_exclude, by = c('id', 'pre_plant_sec_elapsed'))
-
-ids <- o_pre_plant_grid |> distinct(id) |> pull(id)
+round_ids <- pre_plant_model_pbp |> distinct(round_id) |> pull(round_id)
 set.seed(42)
-ids_trn <- sample(ids, size = 0.75 * length(ids))
-trn <- o_pre_plant_grid |> filter(id %in% ids_trn)
-tst <- o_pre_plant_grid |> filter(!id %in% ids_trn)
+round_ids_trn <- sample(round_ids, size = 0.75 * length(round_ids))
+trn <- pre_plant_model_pbp |> filter(round_id %in% round_ids_trn)
+tst <- pre_plant_model_pbp |> filter(!(round_id %in% round_ids_trn))
 
-rec <- recipe(win_round ~ pre_plant_sec_elapsed + opponent_diff, data = trn)
+rec <- recipe(
+  win_round ~ 
+    prev_opponent_diff +
+    is_initial_bomb_carrier_killed +
+    is_during_attempted_plant +
+    is_during_attempted_defuse, 
+  data = trn
+)
+
 spec <- boost_tree(mode = 'classification') |> 
-  set_engine(engine = 'xgboost', monotone_constraints = c(1, -1))
+  set_engine(engine = 'xgboost') # , monotone_constraints = c(1, -1, 1, -1))
 wf <- workflow(preprocessor = rec, spec = spec)
 fit <- fit(wf, trn)
 fit$fit$fit$fit
+
+fit$fit$fit$fit$feature_names
+
+pre_plant_grid_preds <- generate_pred_grid(pre_plant_model, is_pre_plant = TRUE)
+pre_plant_grid_preds$wp <- predict(fit, pre_plant_grid_preds, type = 'prob')$`.pred_yes`
+
+# pre_plant_grid_preds |> 
+#   pivot_longer(
+#     -c(seconds_elapsed, prev_opponent_diff, wp),
+#     names_to = 'feature',
+#     values_to = 'value'
+#   ) |> 
+#   ggplot() +
+#   aes(x = seconds_elapsed, y = wp) +
+#   geom_hline(
+#     color = 'white',
+#     aes(yintercept = 0.5)
+#   ) +
+#   geom_step(
+#     size = 1.5,
+#     aes(color = factor(prev_opponent_diff), linetype = factor(value))
+#   ) +
+#   guides(
+#     color = guide_legend(
+#       title = 'Net # of players', 
+#       override.aes = list(size = 3)
+#     )
+#   ) +
+#   ggsci::scale_color_tron() +
+#   scale_y_continuous(labels = scales::comma) +
+#   facet_wrap(~feature) +
+#   coord_cartesian(ylim = c(0, 1)) +
+#   theme(
+#     legend.position = 'top'
+#   ) +
+#   labs(
+#     title = 'Offensive Win Probability',
+#     x = 'Seconds Elapsed',
+#     y = 'Win Probability'
+#   )
+
+pre_plant_grid_preds |> 
+  filter(is_during_attempted_defuse == 0, is_during_attempted_plant == 0, is_initial_bomb_carrier_killed == 0) |> 
+  # count(seconds_elapsed, prev_opponent_diff)
+  ggplot() +
+  aes(x = seconds_elapsed, y = wp) +
+  geom_hline(
+    color = 'white',
+    aes(yintercept = 0.5)
+  ) +
+  geom_step(
+    size = 1.5,
+    aes(group = factor(prev_opponent_diff), color = factor(prev_opponent_diff))
+  ) +
+  guides(
+    color = guide_legend(
+      title = 'Net # of players', 
+      override.aes = list(size = 3)
+    )
+  ) +
+  ggsci::scale_color_tron() +
+  scale_y_continuous(labels = scales::comma) +
+  coord_cartesian(ylim = c(0, 1)) +
+  theme(
+    legend.position = 'top'
+  ) +
+  labs(
+    title = 'Offensive Win Probability',
+    x = 'Seconds Elapsed',
+    y = 'Win Probability'
+  )
 
 ## ----
 pre_plant_model <- fit_wp_model(pre_plant_seconds_coefs)
@@ -188,7 +221,7 @@ ggsave(
   height = 6
 )
 
-post_plant_pbp <- nonplant_pbp |> 
+post_plant_pbp <- model_pbp |> 
   inner_join(
     seconds_elapsed |> 
       filter(is_plant_in_round) |> 
