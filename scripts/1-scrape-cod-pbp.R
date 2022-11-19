@@ -196,6 +196,7 @@ raw_pbp <- init_raw_pbp |>
       ## TODO: What about plant_second NA?
       !is.na(defuse_second) & (seconds_elapsed >= (defuse_second - 7.5)) & (seconds_elapsed < defuse_second) ~ TRUE,
       activity == 'Kill Defuser' ~ TRUE,
+      weapon_or_bomb_site == 'Bomb Detonation' ~ TRUE,
       TRUE ~ FALSE
     )
   ) |> 
@@ -277,7 +278,22 @@ one_pbp <- bind_rows(
   arrange(round_id, seconds_elapsed) |> 
   mutate(
     across(c(team, opponent, round_winner), ~team_mapping[.x])
-  )
+  ) |> 
+  group_by(round_id, side) |> 
+  mutate(
+    across(c(n_team_remaining, n_opponent_remaining), list(prev = ~lag(.x, n = 1, default = 4L)))
+  ) |> 
+  ungroup()
+
+# one_pbp |>
+#   filter(n_team_remaining_prev == 0L | n_opponent_remaining_prev == 0L, activity != 'Defuse') |> 
+#   glimpse()
+## 2021-SND-018-05, plant at the same time as the last kill?
+## 2021-SND-086-04, team kill after already clinching win
+## 2021-SND-292-02, team kill between time of last kill of opponent and defuse
+## 2022-SND-025-10, killed last opponent before killing himself with glide bomb in 1v1
+## 2022-SND-198-09, died while defusing in 1v0 situation
+## 2022-SND-263-02, team kill between time of last kill of opponent and defuse
 
 both_pbp <- bind_rows(
   one_pbp |> mutate(pbp_side = 'a', .before = 1),
