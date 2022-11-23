@@ -105,10 +105,18 @@ fixed_init_raw_pbp <- rows_update(
   select(-actual_seconds_elapsed)
 
 init_raw_pbp <- fixed_init_raw_pbp |> 
+  rename(
+    killer_player = initiating_player
+  ) |> 
   mutate(
     across(activity, ~ifelse(.x == 'defuse', 'Defuse', .x)), # one bad name
     across(match_id, ~str_replace_all(.x, c('CHA' = 'CH', '!' = '1'))), ## bugs with labels in sheet
     across(killer_team, ~coalesce(.x, initiating_team)),
+    ## first_blood and traded_out also use 'n/a', but we're not going to keep them around
+    across(
+      c(killer_team, killer_player, victim_player),
+      ~na_if(.x, 'n/a')
+    ),
     is_traded_out = case_when(
       traded_out == 'Y' ~ TRUE,
       traded_out == 'N' ~ FALSE,
@@ -121,11 +129,8 @@ init_raw_pbp <- fixed_init_raw_pbp |>
       activity == 'Plant' ~ 'o',
       activity == 'Defuse' ~ 'd'
     ),
-    is_negative_action = activity %in% c('Self Kill', 'Team Kill')
-  ) |> 
-  select(-initiating_team) |> 
-  rename(
-    killer_player = initiating_player
+    is_negative_action = activity %in% c('Self Kill', 'Team Kill'),
+    is_kill_on_attempted_clinch = activity %in% c('Kill Defuser', 'Kill Planter')
   )
 
 initial_bomb_carrier_killed_times <- init_raw_pbp |> 
@@ -161,13 +166,6 @@ raw_pbp <- init_raw_pbp |>
     initial_bomb_carrier_killed_times,
     by = 'round_id'
   ) |> 
-  mutate(
-    is_initial_bomb_carrier_killed = case_when(
-      is.na(initial_bomb_carrier_killed_second) ~ FALSE,
-      seconds_elapsed < initial_bomb_carrier_killed_second ~ FALSE,
-      TRUE ~ TRUE
-    )
-  ) |> 
   left_join(
     plant_times,
     by = 'round_id'
@@ -180,25 +178,16 @@ raw_pbp <- init_raw_pbp |>
       activity == 'Plant' ~ TRUE,
       TRUE ~ TRUE
     ),
-    is_during_attempted_plant = case_when(
-      ## TODO: What about plant_second NA?
-      !is.na(plant_second) & (seconds_elapsed >= (plant_second - 5)) & (seconds_elapsed < plant_second) ~ TRUE,
-      activity == 'Kill Planter' ~ TRUE,
-      TRUE ~ FALSE
+    is_initial_bomb_carrier_killed = case_when(
+      is_post_plant ~ NA,
+      is.na(initial_bomb_carrier_killed_second) ~ FALSE,
+      seconds_elapsed < initial_bomb_carrier_killed_second ~ FALSE,
+      TRUE ~ TRUE
     )
   ) |> 
   left_join(
     defuse_times,
     by = 'round_id'
-  ) |> 
-  mutate(
-    is_during_attempted_defuse = case_when(
-      ## TODO: What about plant_second NA?
-      !is.na(defuse_second) & (seconds_elapsed >= (defuse_second - 7.5)) & (seconds_elapsed < defuse_second) ~ TRUE,
-      activity == 'Kill Defuser' ~ TRUE,
-      weapon_or_bomb_site == 'Bomb Detonation' ~ TRUE,
-      TRUE ~ FALSE
-    )
   ) |> 
   mutate(
     ## there are some issues where bomb_timer_left is not filled in after plant (and, instead, round timer is)
@@ -224,8 +213,8 @@ select_pbp_side <- function(df, ...) {
     transmute(
       side,
       game,
-      # round,
-      # map_id,
+      round,
+      map_id,
       round_id,
       
       seconds_elapsed,
@@ -247,8 +236,7 @@ select_pbp_side <- function(df, ...) {
       
       round_has_plant,
       is_post_plant,
-      is_during_attempted_plant,
-      is_during_attempted_defuse,
+      is_kill_on_attempted_clinch,
       is_initial_bomb_carrier_killed,
       
       is_traded_out,
@@ -275,15 +263,19 @@ one_pbp <- bind_rows(
       n_opponent_remaining = offense_remaining
     )
 ) |> 
-  arrange(round_id, seconds_elapsed) |> 
   mutate(
     across(c(team, opponent, round_winner), ~team_mapping[.x])
   ) |> 
-  group_by(round_id, side) |> 
-  mutate(
-    across(c(n_team_remaining, n_opponent_remaining), list(prev = ~lag(.x, n = 1, default = 4L)))
-  ) |> 
-  ungroup()
+  arrange(round_id, seconds_elapsed) |> 
+  # group_by(round_id, side) |> 
+  # mutate(
+  #   across(
+  #     c(n_team_remaining, n_opponent_remaining), 
+  #     list(prev = ~lag(.x, n = 1, default = 4L))
+  #   )
+  # ) |> 
+  # ungroup() |> 
+  arrange(round_id, seconds_elapsed)
 
 # one_pbp |>
 #   filter(n_team_remaining_prev == 0L | n_opponent_remaining_prev == 0L, activity != 'Defuse') |> 
@@ -295,9 +287,110 @@ one_pbp <- bind_rows(
 ## 2022-SND-198-09, died while defusing in 1v0 situation
 ## 2022-SND-263-02, team kill between time of last kill of opponent and defuse
 
+one_pbp_teams <- one_pbp |> 
+  distinct(
+    game,
+    map_id,
+    round,
+    round_id,
+    side,
+    team,
+    opponent,
+    round_winner,
+    plant_second,
+    defuse_second,
+    round_has_plant
+  )
+
+## fill in for when we only have one side (i.e. all kills from one team)
+one_pbp_padded_side <- one_pbp_teams |> 
+  rename(old_team = team, old_opponent = opponent, old_side = side) |> 
+  inner_join(
+    one_pbp_teams |> 
+      count(round_id) |> 
+      filter(n == 1L) |> 
+      select(-n),
+    by = 'round_id'
+  ) |> 
+  mutate(
+    team = old_opponent,
+    opponent = old_team,
+    side = ifelse(old_side == 'o', 'd', 'o')
+  ) |> 
+  select(-starts_with('old'))
+
+one_pbp_round_begin_events <- bind_rows(
+  one_pbp_teams,
+  one_pbp_padded_side
+) |> 
+  bind_cols(
+    tibble(
+      seconds_elapsed = 0L,
+      pre_plant_seconds_elapsed = 0L,
+      post_plant_seconds_elapsed = NA_real_,
+      
+      n_team_remaining = 4L,
+      n_opponent_remaining = 4L,
+      
+      activity = 'Start round',
+      weapon_or_bomb_site = NA_character_,
+      killer_player = NA_character_,
+      victim_player = NA_character_,
+      killer_team = NA_character_,
+      
+      is_post_plant = FALSE,
+      is_kill_on_attempted_clinch = NA,
+      is_traded_out = NA,
+      is_negative_action = NA
+    )
+  )
+
+round_records <- one_pbp_round_begin_events |> 
+  distinct(
+    round_id, 
+    map_id, 
+    round,
+    team, 
+    opponent,
+    win_round = team == round_winner, 
+    lose_round = team != round_winner
+  ) |> 
+  arrange(map_id, round_id, team) |> 
+  group_by(map_id, team) |> 
+  mutate(
+    team_round_wins = cumsum(win_round),
+    opponent_round_wins = cumsum(lose_round),
+    ## FALSE as the default makes sense for modeling
+    won_prior_round = lag(win_round, n = 1L, default = FALSE)
+  ) |> 
+  ungroup() |> 
+  mutate(
+    team_round_wl_diff = team_round_wins - opponent_round_wins
+  ) |> 
+  group_by(map_id, team) |> 
+  mutate(
+    prev_team_round_wl_diff = dplyr::lag(team_round_wl_diff, n = 1L, default = 0L)
+  ) |> 
+  ungroup() |> 
+  select(-c(map_id, round, win_round, lose_round))
+
+padded_one_pbp <- bind_rows(
+  one_pbp,
+  one_pbp_round_begin_events
+) |> 
+  inner_join(
+    round_records,
+    by = c('round_id', 'team', 'opponent')
+  ) |> 
+  arrange(round_id, seconds_elapsed, side) |> 
+  mutate(
+    engagement_id = sprintf('%s-%s-%sv%s', round_id, side, n_team_remaining, n_opponent_remaining),
+    .before = round_id
+  )
+
 both_pbp <- bind_rows(
-  one_pbp |> mutate(pbp_side = 'a', .before = 1),
-  one_pbp |> 
+  padded_one_pbp |> mutate(pbp_side = 'a', .before = 1),
+  padded_one_pbp |> 
     mutate(
       across(
         c(n_team_remaining, n_opponent_remaining, team, opponent),
@@ -316,9 +409,17 @@ both_pbp <- bind_rows(
     select(-starts_with('orig'))
 ) |> 
   mutate(
-    engagement_id = sprintf('%s-%s-%sv%s', round_id, side, n_team_remaining, n_opponent_remaining),
-    .before = round_id
+    opponent_diff = n_team_remaining - n_opponent_remaining
   ) |> 
-  arrange(round_id, seconds_elapsed, pbp_side, side)
+  arrange(round_id, seconds_elapsed, pbp_side, side) |> 
+  # arrange(round_id, pre_plant_seconds_elapsed, post_plant_seconds_elapsed) |> 
+  group_by(round_id, side) |> 
+  mutate(
+    prev_opponent_diff = lag(opponent_diff, n = 1, default = 0L)
+  ) |> 
+  ungroup() |> 
+  ## 2022-SND-223-07 has simultaneous kills to clinch
+  filter(!(abs(prev_opponent_diff) == 4 & activity != 'Defuse')) |> 
+  select(-prev_opponent_diff)
 
 write_csv(both_pbp, 'data/cod_snd_pbp.csv')

@@ -7,67 +7,23 @@ library(scales)
 library(broom)
 
 ## TODO: 
-##   0. Combine pre and post plant seconds elapsed terms into one column earlier.
-##   1. Add term for whether bomb is down.
-##   2. Possibly try features for number of ARs and SMGs left on each side.
-##   3. Try terms for the game (e.g. "Cold War" or "Vanguard") and the map. (mixed-effects?)
-##   3. Look into last 10 sec WPs more... shouldn't WP go down in the last 10 seconds or so pre-plant? Unless we know that they're planting.
+##   1. Possibly try features for number of ARs and SMGs left on each side.
+##   2. Try terms for the game (e.g. "Cold War" or "Vanguard") and the map. (mixed-effects?)
 
 source('scripts/helpers-plot.R')
 source('scripts/helpers-wp.R')
 
 both_pbp <- read_csv('data/cod_snd_pbp.csv', show_col_types = FALSE)
 
-## naive round win rates ----
-both_pbp |> 
-  # filter(side == 'd') |> 
-  # distinct(round_id)
-  distinct(side, round_id, win_round = ifelse(team == round_winner, 'w', 'l')) |> 
-  count(side, win_round) |> 
-  group_by(side) |>
-  mutate(
-    prop = n / sum(n)
-  ) |> 
-  ungroup()
-
-round_win_prop_by_xvy <- both_pbp |>
-  arrange(round_id, pre_plant_seconds_elapsed, post_plant_seconds_elapsed) |> 
-  group_by(round_id, side) |> 
-  mutate(
-    across(c(n_team_remaining, n_opponent_remaining), list(prev = ~lag(.x, n = 1, default = 4L)))
-  ) |> 
-  ungroup() |> 
-  filter(n_team_remaining_prev > 0L, n_opponent_remaining_prev > 0L) |> 
-  count(side, n_team_remaining_prev, n_opponent_remaining_prev, win_round = ifelse(team == round_winner, 'w', 'l')) |> 
-  group_by(side, n_team_remaining_prev, n_opponent_remaining_prev) |> 
-  mutate(
-    prop = n / sum(n)
-  ) |> 
-  ungroup()
-
-wide_round_win_prop_by_xvy <- round_win_prop_by_xvy |>
-  pivot_wider(
-    names_from = win_round,
-    values_from = c(n, prop),
-    values_fill = list(n = 0L, prop = 0)
-  )
-
 ## model data prep ----
 init_model_pbp <- both_pbp |> 
   mutate(
     across(
-      c(is_initial_bomb_carrier_killed, is_during_attempted_plant, is_during_attempted_defuse), 
+      c(is_initial_bomb_carrier_killed, is_kill_on_attempted_clinch, won_prior_round), 
       as.integer
     ),
-    opponent_diff = n_team_remaining - n_opponent_remaining,
     win_round = ifelse(team == round_winner, 'yes', 'no') |> factor()
   ) |> 
-  arrange(round_id, pre_plant_seconds_elapsed, post_plant_seconds_elapsed) |> 
-  group_by(round_id, side) |> 
-  mutate(
-    prev_opponent_diff = lag(opponent_diff, n = 1, default = 0L)
-  ) |> 
-  ungroup() |> 
   select(
     ## ids
     engagement_id,
@@ -84,10 +40,12 @@ init_model_pbp <- both_pbp |>
     post_plant_seconds_elapsed,
     
     ## features
-    prev_opponent_diff,
+    opponent_diff,
     is_initial_bomb_carrier_killed,
-    is_during_attempted_plant,
-    is_during_attempted_defuse,
+    is_kill_on_attempted_clinch,
+    # round,
+    prev_team_round_wl_diff,
+    won_prior_round,
     
     ## outcome
     win_round,
@@ -129,7 +87,7 @@ ggsave(
   height = 6
 )
 
-model_xgb <- all_model_pbp |> fit_wp_model_xgb(tune = FALSE)
+model_xgb <- all_model_pbp |> fit_wp_model_xgb(tune = TRUE)
 # augment(model_xgb, all_model_pbp) |> slice_max(wp) |> glimpse()
 wp_grid_xgb <- generate_wp_grid(model_xgb)
 autoplot(wp_grid_xgb)

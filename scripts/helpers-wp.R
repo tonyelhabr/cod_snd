@@ -1,4 +1,90 @@
 
+## yardstick ----
+library(yardstick)
+brier_score <- function(data, ...) {
+  UseMethod("brier_score")
+}
+
+brier_score <- yardstick::new_prob_metric(brier_score, direction = "minimize")
+
+brier_score_vec <- function(truth, estimate, na_rm = TRUE, event_level, ...) {
+  
+  brier_score_impl <- function(truth, estimate, event_level, ...) {
+    truth <- 1 - (as.numeric(truth) - 1)
+    
+    if (event_level == "second") {
+      truth <- 1 - truth
+    }
+    mean((truth - estimate)^2)
+  }
+  
+  yardstick::metric_vec_template(
+    metric_impl = brier_score_impl,
+    truth = truth,
+    estimate = estimate,
+    na_rm = na_rm,
+    cls = c("factor", "numeric"),
+    estimator = "binary",
+    event_level = event_level,
+    ...
+  )
+}
+
+brier_score.data.frame <- function(data, truth, estimate, na_rm = TRUE, event_level = "first", ...) {
+  yardstick::metric_summarizer(
+    metric_nm = "brier_score",
+    metric_fn = brier_score_vec,
+    data = data,
+    truth = !!rlang::enquo(truth),
+    estimate = !!rlang::enquo(estimate),
+    na_rm = na_rm,
+    event_level = event_level,
+    ...
+  )
+}
+
+brier_skill_score <- function(data, ...) {
+  UseMethod("brier_skill_score")
+}
+
+brier_skill_score <- yardstick::new_prob_metric(brier_skill_score, direction = "maximize")
+
+brier_skill_score_vec <- function(truth, estimate, ref_estimate, na_rm = TRUE, event_level, ...) {
+  
+  brier_skill_score_impl <- function(truth, estimate, ref_estimate, event_level, ...) {
+    truth_quo <- rlang::enquo(truth)
+    
+    estimate_bs <- brier_score_vec(
+      truth = truth,
+      estimate = estimate,
+      na_rm = na_rm,
+      event_level = event_level,
+      ...
+    )
+    
+    ref_bs <- brier_score_vec(
+      truth = truth,
+      estimate = ref_estimate,
+      na_rm = na_rm,
+      event_level = event_level,
+      ...
+    )
+    
+    1 - (estimate_bs / ref_bs)
+  }
+  
+  yardstick::metric_vec_template(
+    metric_impl = brier_skill_score_impl,
+    truth = truth,
+    estimate = estimate,
+    ref_estimate = ref_estimate,
+    cls = c("factor", "numeric"),
+    estimator = "binary",
+    event_level = event_level,
+    ...
+  )
+}
+
 ## generic ----
 target_name <- 'win_round'
 default_side <- 'o'
@@ -24,52 +110,46 @@ get_max_second <- function(is_pre_plant) {
   ifelse(isTRUE(is_pre_plant), 90L, 45L)
 }
 
-## TODO: 
-## - is_initial_bomb_carrier_killed should only be a feature for pre plant
-## - is_during_attempted fields should only be relevant if player planting / defusing is killed
-get_extra_feature <- function(is_pre_plant) {
-  extra_features <- c('plant' = -1, 'defuse' = 1)
-  extra_feature_name <- ifelse(isTRUE(is_pre_plant), 'plant', 'defuse')
-  extra_feature <- extra_features[extra_feature_name]
-  names(extra_feature) <- sprintf('is_during_attempted_%s', extra_feature_name)
-  extra_feature
-}
-
 ## TODO: Add more validation for `method`
-get_all_features <- function(is_pre_plant, named, method = NULL) {
+get_all_features <- function(is_pre_plant, named, method = 'xgb') {
   
-  if (!is.null(method)) {
-    stopifnot('`method` must be one of "lb" or "xgb" if not `NULL`' = method %in% c('lb', 'xgb'))
+  if (!is.na(method)) {
+    stopifnot('`method` must be one of "lb" or "xgb" if not `NA`' = method %in% c('lb', 'xgb'))
   }
   
-  extra_feature <- get_extra_feature(is_pre_plant = is_pre_plant)
-  
   all_features <- c(
-    'seconds_elapsed' = 1,
-    'prev_opponent_diff' = -1,
+    'model_seconds_elapsed' = 1,
+    'opponent_diff' = -1,
+    'is_kill_on_attempted_clinch' = 1,
     'is_initial_bomb_carrier_killed' = -1,
-    extra_feature
+    'prev_team_round_wl_diff' = 0, # -1,
+    'won_prior_round' = 0
   )
+  
+  if (isFALSE(is_pre_plant)) {
+    idx_to_drop <- which(names(all_features) == 'is_initial_bomb_carrier_killed')
+    idx_to_keep <- setdiff(seq.int(1, length(all_features)), idx_to_drop)
+    all_features <- all_features[idx_to_keep]
+  }
   
   if (isFALSE(named)) {
     all_features <- names(all_features)
   }
   
-  if (is.null(method) || method == 'xgb') {
+  if (method != 'lb') {
     return(all_features)
   }
   
   ## if method == 'lb'
-  setdiff(all_features, 'seconds_elapsed')
+  setdiff(all_features, 'model_seconds_elapsed')
 }
 
 get_lb_window_feature_names <- function(is_pre_plant) {
-  feature_names <- get_all_features(
+  get_all_features(
     is_pre_plant = is_pre_plant, 
     named = FALSE,
     method = 'lb'
   )
-  setdiff(feature_names, 'seconds_elapsed')
 }
 
 validate_colnames <- function(data) {
@@ -83,9 +163,13 @@ validate_colnames <- function(data) {
     purrr::flatten_chr() |> 
     unique()
   
-  stopifnot(
-    all(c('is_pre_plant', 'side', all_feature_names) %in% colnames(data))
-  )
+  nms_diff <- setdiff(c('is_pre_plant', 'side', all_feature_names), colnames(data))
+  if (length(nms_diff) > 0L) {
+    stop(
+      sprintf('Missing feature names:\n%s', paste0(nms_diff, collapse = ', '))
+    )
+  }
+  
   invisible(data)
 }
 
@@ -117,20 +201,19 @@ fit_wp_model_states <- function(data, method, ...) {
     'pre' = f(model_data[['pre']], is_pre_plant = TRUE, ...),
     'post' = f(model_data[['post']], is_pre_plant = FALSE, ...)
   )
-
+  
   class(models) <- c('wp_model', class(models))
   models
 }
 
+
+## TODO: Do less hard-coding here with features
 generate_pred_grid <- function(is_pre_plant) {
-  all_feature_names <- get_all_features(
-    is_pre_plant = is_pre_plant, 
-    named = FALSE
+  binary_feature_names <- c(
+    'is_kill_on_attempted_clinch',
+    'is_initial_bomb_carrier_killed',
+    'won_prior_round'
   )
-  binary_feature_names <- all_feature_names[grepl('^is', all_feature_names)]
-  
-  max_second <- get_max_second(is_pre_plant)
-  max_diff <- 3L
   
   binary_l <- vector(mode = 'list', length(binary_feature_names))
   names(binary_l) <- binary_feature_names
@@ -138,24 +221,22 @@ generate_pred_grid <- function(is_pre_plant) {
     binary_l[[el]] <- c(0L, 1L)
   }
   
-  extra_feature <- get_extra_feature(is_pre_plant = !is_pre_plant)
+  max_second <- get_max_second(is_pre_plant)
+  max_player_diff <- 3L
+  max_round_diff <- 5L
   
-  grid <- tidyr::crossing(
-    !!!append(
-      ## TODO:
-      ## is it possible for me to not hard-code this? 
-      ##   maybe another function similar to get_all_feature_names where a named vector of values can be returned?
-      list(
-        'side' = c('o', 'd'),
-        'is_pre_plant' = is_pre_plant,
-        'seconds_elapsed' = 0L:(max_second - 1L),
-        'prev_opponent_diff' = -max_diff:max_diff
-      ),
-      binary_l
-    )
+  max_is_initial_bomb_carrier_killed <- ifelse(isTRUE(is_pre_plant), 1L, 0L)
+  binary_values <- 0L:1L
+  tidyr::crossing(
+    'side' = c('o', 'd'),
+    'is_pre_plant' = is_pre_plant,
+    'model_seconds_elapsed' = 0L:(max_second - 1L),
+    'opponent_diff' = -max_player_diff:max_player_diff,
+    'prev_team_round_wl_diff' = -max_round_diff:max_round_diff,
+    'is_kill_on_attempted_clinch' = binary_values,
+    'won_prior_round' = binary_values,
+    'is_initial_bomb_carrier_killed' = 0L:max_is_initial_bomb_carrier_killed
   )
-  grid[[names(extra_feature)]] <- 0L
-  grid
 }
 
 predict.wp_model <- function(object, new_data, ...) {
@@ -202,12 +283,13 @@ generate_wp_grid <- function(model) {
   wp_grid
 }
 
+## TODO: Weight by observed frequency
 summarize_pred_grid_across_features <- function(df, binary_feature_name) {
   df |> 
     group_by(
       .data[['is_pre_plant']],
-      .data[['seconds_elapsed']],
-      .data[['prev_opponent_diff']],
+      .data[['model_seconds_elapsed']],
+      .data[['opponent_diff']],
       value = .data[[binary_feature_name]]
     ) |> 
     summarize(
@@ -218,7 +300,6 @@ summarize_pred_grid_across_features <- function(df, binary_feature_name) {
 
 # ggsci::pal_tron('legacy', 1)(7)
 # RColorBrewer::brewer.pal(7, 'PRGn') |> datapasta::vector_paste_vertical()
-
 player_diff_pal <- c(
   '#762A83',
   '#AF8DC3',
@@ -231,11 +312,17 @@ player_diff_pal <- c(
   rlang::set_names(as.character(seq(-3, 3, by = 1)))
 
 autoplot.wp_grid <- function(data) {
-  filt <- dplyr::filter(data, .data[['side']] == default_side)
+  filt <- dplyr::filter(
+    data, 
+    .data[['side']] == default_side,
+    .data[['won_prior_round']] == 0,
+    .data[['prev_team_round_wl_diff']] == 0
+  )
   df <- c(
     'is_initial_bomb_carrier_killed',
-    'is_during_attempted_defuse', 
-    'is_during_attempted_plant'
+    'is_kill_on_attempted_clinch' # ,
+    # 'won_prior_round',
+    # 'prev_team_round_wl_diff'
   ) |> 
     rlang::set_names() |> 
     purrr::map_dfr(
@@ -259,7 +346,7 @@ autoplot.wp_grid <- function(data) {
   post <- df |> 
     filter(!is_pre_plant) |> 
     mutate(
-      'seconds_elapsed' = seconds_elapsed + max_pre_plant_second
+      'model_seconds_elapsed' = model_seconds_elapsed + max_pre_plant_second
     )
   
   dplyr::bind_rows(
@@ -267,7 +354,7 @@ autoplot.wp_grid <- function(data) {
     post
   ) |> 
     ggplot2::ggplot() +
-    ggplot2::aes(x = .data[['seconds_elapsed']], y = .data[['wp']]) +
+    ggplot2::aes(x = .data[['model_seconds_elapsed']], y = .data[['wp']]) +
     ggplot2::geom_hline(
       color = 'white',
       ggplot2::aes(yintercept = 0.5)
@@ -278,7 +365,7 @@ autoplot.wp_grid <- function(data) {
     ) +
     ggplot2::geom_step(
       size = 1,
-      ggplot2::aes(color = factor(.data[['prev_opponent_diff']]))
+      ggplot2::aes(color = factor(.data[['opponent_diff']]))
     ) +
     ggplot2::guides(
       color = ggplot2::guide_legend(
@@ -303,20 +390,20 @@ autoplot.wp_grid <- function(data) {
 
 ## lb approach ----
 safely_glm <- purrr::safely(glm)
-fit_window_wp_coefs <- function(data, earlist_seconds_elapsed, latest_seconds_elapsed, is_pre_plant) {
+fit_window_wp_coefs <- function(data, earliest_seconds_elapsed, latest_seconds_elapsed, is_pre_plant) {
   filt <- dplyr::filter(
     data,
-    .data[['seconds_elapsed']] >= earlist_seconds_elapsed, 
-    .data[['seconds_elapsed']] <= latest_seconds_elapsed
+    .data[['model_seconds_elapsed']] >= earliest_seconds_elapsed, 
+    .data[['model_seconds_elapsed']] <= latest_seconds_elapsed
   )
   
   msg <- sprintf(
-    'for `seconds_elapsed >= %s & seconds_elapsed <= %s.',
-    earlist_seconds_elapsed, 
+    'for `model_seconds_elapsed >= %s & model_seconds_elapsed <= %s.',
+    earliest_seconds_elapsed, 
     latest_seconds_elapsed
   )
-  if (nrow(filt) == 0) {
-    message(sprintf('No data %s', msg))
+  if (nrow(filt) <= 2) {
+    message(sprintf('Less than 3 records %s', msg))
     return(NULL)
   }
   
@@ -331,7 +418,7 @@ fit_window_wp_coefs <- function(data, earlist_seconds_elapsed, latest_seconds_el
     feature_names
   )
   
-  form <- sprintf('%s ~ . - 1L', target_name)
+  form <- sprintf('%s ~ . - 1', target_name)
   fit <- safely_glm(
     as.formula(form), 
     data = dplyr::select(
@@ -360,7 +447,7 @@ estimate_window_coefs <- function(data, is_pre_plant) {
         .data[['max_second']], 
         ~fit_window_wp_coefs(
           data = data, 
-          earlist_seconds_elapsed = ..1, 
+          earliest_seconds_elapsed = ..1, 
           latest_seconds_elapsed = ..2,
           is_pre_plant = is_pre_plant
         )
@@ -385,26 +472,36 @@ fit_wp_model_lb_state <- function(data, is_pre_plant) {
   
   feature_names <- get_lb_window_feature_names(is_pre_plant = is_pre_plant)
   
+  coefs <- tidyr::fill(
+    coefs,
+    tidyselect::vars_select_helpers$all_of(feature_names), 
+    .direction = 'downup'
+  )
+  
   models <- feature_names |> 
     rlang::set_names() |> 
     purrr::map(
       ~fit_coef_model(coefs, y = .x)
     )
   
-  class(models) <- c('wp_model_lb_state', class(models))
-  models
+  res <- list(
+    model = models,
+    coefs = coefs
+  )
+  class(res) <- c('wp_model_lb_state', class(res))
+  res
 }
 
 predict.wp_model_lb_state <- function(object, new_data, ...) {
-  
-  nms <- names(object)
+  model <- object$model
+  nms <- names(model)
   n_row <- nrow(new_data)
   n_col <- length(nms)
   m <- matrix(rep(0L, times = n_row * n_col), nrow = n_row, ncol = n_col)
   
   colnames(m) <- nms
   for(el in nms) {
-    m[, el] <- predict(object[[el]], newdata = new_data$seconds_elapsed)
+    m[, el] <- predict(model[[el]], newdata = new_data$model_seconds_elapsed)
   }
   
   ## Check that they are in the same order
@@ -438,22 +535,25 @@ fit_wp_model_xgb_state <- function(data, is_pre_plant, tune = FALSE) {
       )
   )
   
+  n_features <- length(all_features)
   if (isTRUE(tune)) {
+    mtry <- tune::tune()
     trees <- tune::tune()
     min_n <- tune::tune()
     # tree_depth <- tune::tune()
     # sample_size <- tune::tune()
   } else if (isTRUE(is_pre_plant)) {
-    trees <- 150
-    min_n <- 50
+    mtry <- 5L
+    trees <- 10L
+    min_n <- 2L
   } else if (isFALSE(is_pre_plant)) {
-    trees <- 100
-    min_n <- 25
-    tree_depth <- 1
+    mtry <- n_features - 1L
+    trees <- 100L
+    min_n <- 25L
   }
   
   spec <- parsnip::boost_tree(
-    mtry = length(all_features), 
+    mtry = !!mtry, 
     trees = !!trees,
     min_n = !!min_n
   ) |> 
@@ -480,12 +580,14 @@ fit_wp_model_xgb_state <- function(data, is_pre_plant, tune = FALSE) {
     n_row <- nrow(data)
     param_grid <- tidyr::crossing(
       # tree_depth = c(1, 2, 3, 4, 8),
-      # sample_size = round(n_row / 100, n_row / 50, n_row / 10)
-      trees = c(10, 50, 100, 150, 250, 500),
-      min_n  = c(2, 5, 10, 25, 50, 100)
+      # sample_size = round(n_row / 100, n_row / 50, n_row / 10),
+      mtry = seq.int(n_features - 2L, n_features, by = 1L),
+      trees = c(1L, 5L, 10L, 50L, 100L, 150L, 250L, 500L),
+      min_n  = c(2L, 5L, 10L, 25L, 50L, 100L)
     )
     
-    ms <- yardstick::metric_set(yardstick::roc_auc)
+    # ms <- yardstick::metric_set(yardstick::roc_auc)
+    ms <- yardstick::metric_set(brier_score)
     
     tune_res <- tune::tune_grid(
       wf,
@@ -495,7 +597,7 @@ fit_wp_model_xgb_state <- function(data, is_pre_plant, tune = FALSE) {
       metrics = ms
     )
     
-    best_met <- tune::select_best(tune_res, 'roc_auc')
+    best_met <- tune::select_best(tune_res, 'brier_score')
     print(best_met) ## so that we know what to update the hard-coded values to
     wf <- tune::finalize_workflow(wf, best_met)
   }
