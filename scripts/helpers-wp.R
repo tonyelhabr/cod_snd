@@ -88,12 +88,13 @@ brier_skill_score_vec <- function(truth, estimate, ref_estimate, na_rm = TRUE, e
 ## generic ----
 target_name <- 'win_round'
 default_side <- 'o'
+max_pre_plant_second <- 90L
+max_post_plant_second <- 45L
+max_pre_plant_second_buffer <- 0L ## for plot
 
 ## TODO: Add validation for is_pre_plant
 generate_seconds_grid <- function(is_pre_plant) {
   if (isTRUE(is_pre_plant)) {
-    # min_second <- c(seq(0, 30, 3), seq(30, 60, 2), seq(50, 75, 1), seq(75, 85, 1), seq(86, 90))
-    # max_second <- c(seq(15, 45, 3), seq(40, 70, 2), seq(60, 85, 1), seq(80, 90, 1), rep(90, 5))
     min_second <- c(seq(0, 75, by = 3), seq(75, 85, by = 1), seq(86, 88))
     max_second <- c(seq(15, 90, by = 3), seq(80, 90, by = 1), rep(90, 3))
   } else {
@@ -122,8 +123,8 @@ get_all_features <- function(is_pre_plant, named, method = 'xgb') {
     'opponent_diff' = -1,
     'is_kill_on_attempted_clinch' = 1,
     'is_initial_bomb_carrier_killed' = -1,
-    'prev_team_round_wl_diff' = 0, # -1,
-    'won_prior_round' = 0
+    'won_prior_round_side' = 0,
+    'prev_team_round_wl_diff' = 0 # -1,
   )
   
   if (isFALSE(is_pre_plant)) {
@@ -202,7 +203,7 @@ fit_wp_model_states <- function(data, method, ...) {
     'post' = f(model_data[['post']], is_pre_plant = FALSE, ...)
   )
   
-  class(models) <- c('wp_model', class(models))
+  class(models) <- c('wp_model', sprintf('wp_model_%s', method), class(models))
   models
 }
 
@@ -210,9 +211,9 @@ fit_wp_model_states <- function(data, method, ...) {
 ## TODO: Do less hard-coding here with features
 generate_pred_grid <- function(is_pre_plant) {
   binary_feature_names <- c(
+    'won_prior_round_side',
     'is_kill_on_attempted_clinch',
-    'is_initial_bomb_carrier_killed',
-    'won_prior_round'
+    'is_initial_bomb_carrier_killed'
   )
   
   binary_l <- vector(mode = 'list', length(binary_feature_names))
@@ -225,8 +226,12 @@ generate_pred_grid <- function(is_pre_plant) {
   max_player_diff <- 3L
   max_round_diff <- 5L
   
-  max_is_initial_bomb_carrier_killed <- ifelse(isTRUE(is_pre_plant), 1L, 0L)
   binary_values <- 0L:1L
+  is_initial_bomb_carrier_killed <- if (isTRUE(is_pre_plant)) {
+    binary_values
+  } else {
+    NA_integer_
+  }
   tidyr::crossing(
     'side' = c('o', 'd'),
     'is_pre_plant' = is_pre_plant,
@@ -234,8 +239,8 @@ generate_pred_grid <- function(is_pre_plant) {
     'opponent_diff' = -max_player_diff:max_player_diff,
     'prev_team_round_wl_diff' = -max_round_diff:max_round_diff,
     'is_kill_on_attempted_clinch' = binary_values,
-    'won_prior_round' = binary_values,
-    'is_initial_bomb_carrier_killed' = 0L:max_is_initial_bomb_carrier_killed
+    'won_prior_round_side' = c(-1L, 0L, 1L),
+    'is_initial_bomb_carrier_killed' = is_initial_bomb_carrier_killed
   )
 }
 
@@ -272,15 +277,13 @@ generate_wp_state_grid <- function(model, is_pre_plant) {
 }
 
 generate_wp_grid <- function(model) {
-  wp_grid <- c(TRUE, FALSE) |> 
+  c(TRUE, FALSE) |> 
     purrr::map_dfr(
       ~generate_wp_state_grid(
         model,
         is_pre_plant = .x
       )
     )
-  class(wp_grid) <- c('wp_grid', class(wp_grid))
-  wp_grid
 }
 
 ## TODO: Weight by observed frequency
@@ -311,48 +314,81 @@ player_diff_pal <- c(
 ) |> 
   rlang::set_names(as.character(seq(-3, 3, by = 1)))
 
-autoplot.wp_grid <- function(data) {
+scale_x_continuous_wp_states <- function(...) {
+  list(
+    ...,
+    ggplot2::scale_x_continuous(
+      breaks = c(
+        0, 
+        max_pre_plant_second / 2, 
+        max_pre_plant_second, 
+        max_pre_plant_second + max_pre_plant_second_buffer / 2, 
+        max_pre_plant_second + max_pre_plant_second_buffer, 
+        max_pre_plant_second + max_pre_plant_second_buffer + 25, 
+        max_pre_plant_second + max_pre_plant_second_buffer + 45
+      ),
+      labels = c('90', '45', '', 'Plant', '', '20', '0')
+    ),
+    ggplot2::theme(
+      legend.position = 'top'
+    ),
+    ggplot2::labs(
+      x = 'Seconds remaining'
+    )
+  )
+}
+
+# weights_by_second <- seconds_grid |>
+#   dplyr::transmute(
+#     'model_seconds_elapsed' = .data[['min_second']],
+#     'n' = purrr::map2_int(
+#       .data[['min_second']], 
+#       .data[['max_second']], 
+#       ~dplyr::filter(
+#         all_model_pbp,
+#         .data[['model_seconds_elapsed']] >= ..1, 
+#         .data[['model_seconds_elapsed']] <= ..2
+#       ) |> nrow()
+#     )
+#   ) |> 
+#   dplyr::mutate('scaler' = .data[['n']] / max(.data[['n']]))
+# scaler_by_second <- \(x) x^(-0.5)
+plot_wp_grid <- function(data, feature_name, ...) {
+  
   filt <- dplyr::filter(
     data, 
-    .data[['side']] == default_side,
-    .data[['won_prior_round']] == 0,
-    .data[['prev_team_round_wl_diff']] == 0
+    .data[['side']] == default_side
   )
-  df <- c(
-    'is_initial_bomb_carrier_killed',
-    'is_kill_on_attempted_clinch' # ,
-    # 'won_prior_round',
-    # 'prev_team_round_wl_diff'
-  ) |> 
-    rlang::set_names() |> 
-    purrr::map_dfr(
-      ~summarize_pred_grid_across_features(
-        filt, 
-        .x
-      ), 
-      .id = 'feature'
+  
+  agg <- filt |> 
+    group_by(
+      .data[['is_pre_plant']],
+      .data[['model_seconds_elapsed']],
+      .data[['opponent_diff']],
+      'feature_value' = .data[[feature_name]]
     ) |> 
-    dplyr::mutate(
-      'feature_value' = 
-        sprintf(
-          '%s: %s', 
-          .data[['feature']], 
-          ifelse(.data[['value']] == 1, 'yes', 'no')
-        )
-    )
-  
-  pre <- df |> filter(is_pre_plant)
-  max_pre_plant_second <- 90L
-  post <- df |> 
-    filter(!is_pre_plant) |> 
+    summarize(
+      'wp' = mean(.data[['wp']])
+    ) |> 
+    ungroup() |> 
     mutate(
-      'model_seconds_elapsed' = model_seconds_elapsed + max_pre_plant_second
+      'feature' = sprintf(
+        '%s: %s',
+        feature_name,
+        .data[['feature_value']]
+      )
     )
   
-  dplyr::bind_rows(
-    pre,
-    post
-  ) |> 
+  df <- dplyr::bind_rows(
+    dplyr::filter(agg, .data[['is_pre_plant']]),
+    agg |> 
+      dplyr::filter(!.data[['is_pre_plant']]) |> 
+      dplyr::mutate(
+        'model_seconds_elapsed' = .data[['model_seconds_elapsed']] + max_pre_plant_second + max_pre_plant_second_buffer
+      )
+  )
+  
+  df |> 
     ggplot2::ggplot() +
     ggplot2::aes(x = .data[['model_seconds_elapsed']], y = .data[['wp']]) +
     ggplot2::geom_hline(
@@ -373,19 +409,37 @@ autoplot.wp_grid <- function(data) {
         override.aes = list(size = 3)
       )
     ) +
-    # ggsci::scale_color_tron() +
     ggplot2::scale_color_manual(values = player_diff_pal) +
+    scale_x_continuous_wp_states() +
     ggplot2::scale_y_continuous(labels = scales::percent) +
-    ggplot2::facet_wrap(~.data[['feature_value']], dir = 'v', nrow = 2) +
+    ggplot2::facet_wrap(~.data[['feature']], dir = 'v', nrow = 2) +
     ggplot2::coord_cartesian(ylim = c(0, 1)) +
     ggplot2::theme(
       legend.position = 'top'
     ) +
     ggplot2::labs(
       title = 'Offensive Win Probability',
-      x = 'Seconds Elapsed',
-      y = 'Win Probability'
+      y = 'Win probability'
     )
+}
+
+autoplot.wp_model <- function(object, type = 'grid', ...) {
+  type <- rlang::arg_match(type, c('grid', 'coefs'))
+  
+  cls <- class(object)
+  if (type == 'coefs' & !any(cls == 'wp_model_lb')) {
+    stop(
+      sprintf(
+        'Object must have class `wp_model_lb` for `type = "coefs"`. Object has class %s',
+        paste0(cls, collapse = ', ')
+      )
+    )
+  }
+  switch(
+    type,
+    'grid' = plot_wp_grid(generate_wp_grid(object), ...),
+    'coefs' = plot_coefs(object, ...)
+  )
 }
 
 ## lb approach ----
@@ -441,7 +495,8 @@ estimate_window_coefs <- function(data, is_pre_plant) {
   seconds_grid <- generate_seconds_grid(is_pre_plant = is_pre_plant)
   
   seconds_grid |>
-    dplyr::mutate(
+    dplyr::transmute(
+      'model_seconds_elapsed' = .data[['min_second']],
       'coefs' = purrr::map2(
         .data[['min_second']], 
         .data[['max_second']], 
@@ -456,9 +511,17 @@ estimate_window_coefs <- function(data, is_pre_plant) {
     tidyr::unnest_wider(.data[['coefs']])
 }
 
-fit_coef_model <- function(data, y) {
+# halflife <- \(x) 1/(x^0.5)
+convert_seconds_to_weights_lb <- function(x, is_pre_plant) {
+  max_second <- ifelse(isTRUE(is_pre_plant), max_pre_plant_second, max_post_plant_second)
+  dplyr::na_if(sqrt((max_second - x) / max_second), NaN)
+}
+
+fit_coef_model <- function(data, y, is_pre_plant) {
+  wts <- convert_seconds_to_weights_lb(data[['model_seconds_elapsed']], is_pre_plant)
   loess(
-    data[[y]] ~ data[['min_second']], 
+    data[[y]] ~ data[['model_seconds_elapsed']], 
+    weights = wts,
     span = 0.5
   )
 }
@@ -481,7 +544,7 @@ fit_wp_model_lb_state <- function(data, is_pre_plant) {
   models <- feature_names |> 
     rlang::set_names() |> 
     purrr::map(
-      ~fit_coef_model(coefs, y = .x)
+      ~fit_coef_model(coefs, y = .x, is_pre_plant = is_pre_plant)
     )
   
   res <- list(
@@ -515,6 +578,65 @@ predict.wp_model_lb_state <- function(object, new_data, ...) {
 fit_wp_model_lb <- function(data, ...) {
   fit_wp_model_states(data = data, method = 'lb', ...)
 }
+
+add_lb_plot_caption <- function(...) {
+  list(
+    ...,
+    ggplot2::labs(
+      caption = 'Method: LOESS glm models'
+    )
+  )
+}
+
+plot_coefs <- function(model, ...) {
+  
+  df <- dplyr::bind_rows(
+    dplyr::mutate(model[['pre']][['coefs']], 'is_pre_plant' = TRUE),
+    dplyr::mutate(
+      model[['post']][['coefs']],
+      'model_seconds_elapsed' = .data[['model_seconds_elapsed']] + max_pre_plant_second + max_pre_plant_second_buffer,
+      'is_pre_plant' = FALSE
+    )
+  ) |> 
+    tidyr::pivot_longer(
+      -c(.data[['model_seconds_elapsed']], .data[['is_pre_plant']]),
+      names_to = 'feature',
+      values_to = 'value'
+    )
+  
+  df$weights <- convert_seconds_to_weights_lb(df[['model_seconds_elapsed']], df[['is_pre_plant']])
+  
+  df |> 
+    ggplot2::ggplot() +
+    ggplot2::aes(
+      x = .data[['model_seconds_elapsed']],
+      y = .data[['value']],
+      group = .data[['is_pre_plant']],
+      color = .data[['is_pre_plant']]
+    ) +
+    ggplot2::guides(color = 'none') +
+    # geom_vline(
+    #   color = 'white',
+    #   aes(xintercept = max_pre_plant_second + max_pre_plant_second_buffer / 2)
+    # ) +
+    # geom_text(
+    #   aes()
+    # ) +
+    ggplot2::geom_point() +
+    ggplot2::geom_smooth(
+      # method.args = list(span = 0.5, df$weights),
+      method = 'loess',
+      formula = y ~ x
+    ) +
+    scale_x_continuous_wp_states() +
+    ggplot2::facet_wrap(~.data[['feature']], scales = 'free_y') +
+    add_lb_plot_caption() +
+    ggplot2::labs(
+      title = 'Offensive win probability',
+      y = 'Coefficient estimate'
+    )
+  }
+
 
 ## xgb approach ----
 options(yardstick.event_level = 'second') ## maybe i should just withr::with_seed in functions?
@@ -616,4 +738,13 @@ predict.wp_model_xgb_state <- function(object, new_data, type = 'prob', ...) {
 
 fit_wp_model_xgb <- function(data, ...) {
   fit_wp_model_states(data = data, method = 'xgb', ...)
+}
+
+add_xgb_plot_caption <- function(...) {
+  list(
+    ...,
+    ggplot2::labs(
+      caption = 'Method: xgboost model with monotonic constraints'
+    )
+  )
 }

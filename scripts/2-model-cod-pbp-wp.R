@@ -19,7 +19,15 @@ both_pbp <- read_csv('data/cod_snd_pbp.csv', show_col_types = FALSE)
 init_model_pbp <- both_pbp |> 
   mutate(
     across(
-      c(is_initial_bomb_carrier_killed, is_kill_on_attempted_clinch, won_prior_round), 
+      won_prior_round_side,
+      ~case_when(
+        is.na(.x) ~ 0L,
+        .x ~ 1L,
+        !.x ~ -1L
+      )
+    ),
+    across(
+      c(is_initial_bomb_carrier_killed, is_kill_on_attempted_clinch), 
       as.integer
     ),
     win_round = ifelse(team == round_winner, 'yes', 'no') |> factor()
@@ -45,7 +53,7 @@ init_model_pbp <- both_pbp |>
     is_kill_on_attempted_clinch,
     # round,
     prev_team_round_wl_diff,
-    won_prior_round,
+    won_prior_round_side,
     
     ## outcome
     win_round,
@@ -77,23 +85,56 @@ stopifnot(1 == (all_model_pbp |> filter(is_pre_plant, is_post_plant) |> count(ac
 
 ## model ----
 model_lb <- all_model_pbp |> fit_wp_model_lb()
-# augment(model_lb, all_model_pbp)
-wp_grid_lb <- generate_wp_grid(model_lb)
-autoplot(wp_grid_lb)
+model_xgb <- all_model_pbp |> fit_wp_model_xgb(tune = FALSE)
 
+coefs_plot <- autoplot(model_lb, type = 'coefs')
 ggsave(
-  filename = file.path('figs', 'wp_grid_lb.png'),
-  width = 8,
-  height = 6
+  coefs_plot,
+  filename = file.path('figs', 'wp_coefs-lb.png'),
+  width = 12,
+  height = 8
 )
 
-model_xgb <- all_model_pbp |> fit_wp_model_xgb(tune = TRUE)
-# augment(model_xgb, all_model_pbp) |> slice_max(wp) |> glimpse()
-wp_grid_xgb <- generate_wp_grid(model_xgb)
-autoplot(wp_grid_xgb)
+plot_and_save_wp_by_feature <- function(model, method, feature_name) {
+  p <- autoplot(model, type = 'grid', feature_name = feature_name)
+  f_lab <- switch(
+    method,
+    'lb' = add_lb_plot_caption,
+    'xgb' = add_xgb_plot_caption
+  )
+  p <- p + f_lab()
+  ggsave(
+    p,
+    filename = file.path('figs', sprintf('wp_grid-%s-%s.png', method, feature_name)),
+    width = 12,
+    height = 8
+  )
+  invisible(p)
+}
 
-ggsave(
-  filename = file.path('figs', 'wp_grid_xgb.png'),
-  width = 8,
-  height = 6
-)
+plot_and_save_wp_by_all_discrete_features <- function(model, method) {
+  c(
+    'won_prior_round_side',
+    'prev_team_round_wl_diff',
+    'is_kill_on_attempted_clinch',
+    'is_initial_bomb_carrier_killed'
+  ) |> 
+    map(
+      ~plot_and_save_wp_by_feature(
+        model = model,
+        method = method,
+        feature_name = .x
+      )
+    )
+}
+
+list(
+  'lb' = model_lb,
+  'xgb' = model_xgb
+) |> 
+  iwalk(
+    ~plot_and_save_wp_by_all_discrete_features(
+      model = .x,
+      method = .y
+    )
+  )

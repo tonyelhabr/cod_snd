@@ -180,9 +180,11 @@ raw_pbp <- init_raw_pbp |>
     ),
     is_initial_bomb_carrier_killed = case_when(
       is_post_plant ~ NA,
-      is.na(initial_bomb_carrier_killed_second) ~ FALSE,
-      seconds_elapsed < initial_bomb_carrier_killed_second ~ FALSE,
-      TRUE ~ TRUE
+      # is.na(initial_bomb_carrier_killed_second) ~ FALSE,
+      # seconds_elapsed < initial_bomb_carrier_killed_second ~ FALSE,
+      # TRUE ~ TRUE
+      seconds_elapsed >= initial_bomb_carrier_killed_second ~ TRUE,
+      TRUE ~ FALSE
     )
   ) |> 
   left_join(
@@ -361,7 +363,8 @@ round_records <- one_pbp_round_begin_events |>
     team_round_wins = cumsum(win_round),
     opponent_round_wins = cumsum(lose_round),
     ## FALSE as the default makes sense for modeling
-    won_prior_round = lag(win_round, n = 1L, default = FALSE)
+    # won_prior_round = lag(win_round, n = 1L),
+    won_prior_round_side = lag(win_round, n = 2L)
   ) |> 
   ungroup() |> 
   mutate(
