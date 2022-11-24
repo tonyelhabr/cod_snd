@@ -122,9 +122,7 @@ get_all_features <- function(is_pre_plant, named, method = 'xgb') {
     'model_seconds_elapsed' = 1,
     'opponent_diff' = -1,
     'is_kill_on_attempted_clinch' = 1,
-    'is_initial_bomb_carrier_killed' = -1,
-    'won_prior_round_side' = 0,
-    'prev_team_round_wl_diff' = 0 # -1,
+    'is_initial_bomb_carrier_killed' = -1
   )
   
   if (isFALSE(is_pre_plant)) {
@@ -211,7 +209,6 @@ fit_wp_model_states <- function(data, method, ...) {
 ## TODO: Do less hard-coding here with features
 generate_pred_grid <- function(is_pre_plant) {
   binary_feature_names <- c(
-    'won_prior_round_side',
     'is_kill_on_attempted_clinch',
     'is_initial_bomb_carrier_killed'
   )
@@ -224,7 +221,6 @@ generate_pred_grid <- function(is_pre_plant) {
   
   max_second <- get_max_second(is_pre_plant)
   max_player_diff <- 3L
-  max_round_diff <- 5L
   
   binary_values <- 0L:1L
   is_initial_bomb_carrier_killed <- if (isTRUE(is_pre_plant)) {
@@ -237,9 +233,7 @@ generate_pred_grid <- function(is_pre_plant) {
     'is_pre_plant' = is_pre_plant,
     'model_seconds_elapsed' = 0L:(max_second - 1L),
     'opponent_diff' = -max_player_diff:max_player_diff,
-    'prev_team_round_wl_diff' = -max_round_diff:max_round_diff,
     'is_kill_on_attempted_clinch' = binary_values,
-    'won_prior_round_side' = c(-1L, 0L, 1L),
     'is_initial_bomb_carrier_killed' = is_initial_bomb_carrier_killed
   )
 }

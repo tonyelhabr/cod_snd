@@ -51,10 +51,7 @@ init_model_pbp <- both_pbp |>
     opponent_diff,
     is_initial_bomb_carrier_killed,
     is_kill_on_attempted_clinch,
-    # round,
-    prev_team_round_wl_diff,
-    won_prior_round_side,
-    
+
     ## outcome
     win_round,
     
@@ -114,8 +111,6 @@ plot_and_save_wp_by_feature <- function(model, method, feature_name) {
 
 plot_and_save_wp_by_all_discrete_features <- function(model, method) {
   c(
-    'won_prior_round_side',
-    'prev_team_round_wl_diff',
     'is_kill_on_attempted_clinch',
     'is_initial_bomb_carrier_killed'
   ) |> 
