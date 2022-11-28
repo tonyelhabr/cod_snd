@@ -33,3 +33,4 @@ theme_update(
 update_geom_defaults('text', list(family = font, size = 10 / .pt, fontface = 'bold'))
 update_geom_defaults('point', list(color = 'white'))
 update_geom_defaults('segment', list(color = 'white'))
+update_geom_defaults('step', list(color = 'white'))

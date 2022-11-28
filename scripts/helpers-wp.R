@@ -93,13 +93,14 @@ max_post_plant_second <- 45L
 max_pre_plant_second_buffer <- 0L ## for plot
 
 ## TODO: Add validation for is_pre_plant
+## Add extra second so that LOESS span can handle exactly on the last second
 generate_seconds_grid <- function(is_pre_plant) {
   if (isTRUE(is_pre_plant)) {
-    min_second <- c(seq(0, 75, by = 3), seq(75, 85, by = 1), seq(86, 90))
-    max_second <- c(seq(15, 90, by = 3), seq(80, 90, by = 1), rep(90, 5))
+    min_second <- c(seq(0, 75, by = 3), seq(75, 85, by = 1), seq(86, 90), 91)
+    max_second <- c(seq(15, 90, by = 3), seq(80, 90, by = 1), rep(90, 5), 91)
   } else {
-    min_second <- c(seq(0, 30, 2), seq(30, 38, 1), seq(39, 45))
-    max_second <- c(seq(10, 40, 2), seq(37, 45, 1), rep(45, 7))
+    min_second <- c(seq(0, 30, 2), seq(30, 38, 1), seq(39, 46))
+    max_second <- c(seq(10, 40, 2), seq(37, 45, 1), rep(45, 7), 46)
   }
   tibble(
     min_second = as.integer(min_second),
@@ -118,6 +119,13 @@ get_all_features <- function(is_pre_plant, named, method = 'xgb') {
     stopifnot('`method` must be one of "lb" or "xgb" if not `NA`' = method %in% c('lb', 'xgb'))
   }
   
+  ## TODO:
+  ## Ideally, xgboost would be monotonically decreasing when opponent diff is negative
+  ##   and monotonocially increasing when opponent_diff is positive.
+  ##   This is technically possible by splitting out opponent_diff into 3 features (positive, negative, and neutral) 
+  ##   and applying separate monotonic constraints to each, or perhaps by having
+  ##   two models, one where a positive constraint is applied and one where a negative constraint
+  ##   is applied, and then using the appropriate prediction given the data.
   all_features <- c(
     'model_seconds_elapsed' = 0, # 1,
     'opponent_diff' = -1,
@@ -382,31 +390,44 @@ scale_x_continuous_wp_states <- function(...) {
 #   ) |> 
 #   dplyr::mutate('scaler' = .data[['n']] / max(.data[['n']]))
 # scaler_by_second <- \(x) x^(-0.5)
-plot_wp_grid <- function(data, feature_name, ...) {
+plot_wp_grid <- function(data, feature_name = NULL, ...) {
   
   filt <- dplyr::filter(
     data, 
     .data[['side']] == default_side
   )
   
-  agg <- filt |> 
-    group_by(
-      .data[['is_pre_plant']],
-      .data[['model_seconds_elapsed']],
-      .data[['opponent_diff']],
-      'feature_value' = .data[[feature_name]]
-    ) |> 
-    summarize(
-      'wp' = mean(.data[['wp']])
-    ) |> 
-    ungroup() |> 
-    mutate(
-      'feature' = sprintf(
-        '%s: %s',
-        feature_name,
-        .data[['feature_value']]
+  agg <- if (!is.null(feature_name)) {
+    filt |> 
+      group_by(
+        .data[['is_pre_plant']],
+        .data[['model_seconds_elapsed']],
+        .data[['opponent_diff']],
+        'feature_value' = .data[[feature_name]]
+      ) |> 
+      summarize(
+        'wp' = mean(.data[['wp']])
+      ) |> 
+      ungroup() |> 
+      mutate(
+        'feature' = sprintf(
+          '%s: %s',
+          feature_name,
+          .data[['feature_value']]
+        )
       )
-    )
+  } else {
+    filt |> 
+      group_by(
+        .data[['is_pre_plant']],
+        .data[['model_seconds_elapsed']],
+        .data[['opponent_diff']]
+      ) |> 
+      summarize(
+        'wp' = mean(.data[['wp']])
+      ) |> 
+      ungroup()
+  }
   
   df <- dplyr::bind_rows(
     dplyr::filter(agg, .data[['is_pre_plant']]),
@@ -417,7 +438,7 @@ plot_wp_grid <- function(data, feature_name, ...) {
       )
   )
   
-  df |> 
+  p <- df |> 
     ggplot2::ggplot() +
     ggplot2::aes(x = .data[['model_seconds_elapsed']], y = .data[['wp']]) +
     ggplot2::geom_hline(
@@ -441,7 +462,6 @@ plot_wp_grid <- function(data, feature_name, ...) {
     ggplot2::scale_color_manual(values = player_diff_pal) +
     scale_x_continuous_wp_states() +
     ggplot2::scale_y_continuous(labels = scales::percent) +
-    ggplot2::facet_wrap(~.data[['feature']], dir = 'v', nrow = 2) +
     ggplot2::coord_cartesian(ylim = c(0, 1)) +
     ggplot2::theme(
       legend.position = 'top'
@@ -450,6 +470,13 @@ plot_wp_grid <- function(data, feature_name, ...) {
       title = 'Offensive Win Probability',
       y = 'Win probability'
     )
+  
+  if (is.null(feature_name)) {
+    return(p)
+  }
+  
+  p +
+    ggplot2::facet_wrap(~.data[['feature']], dir = 'v', nrow = 2)
 }
 
 autoplot.wp_model <- function(object, type = 'grid', ...) {
@@ -592,7 +619,9 @@ predict.wp_model_lb_state <- function(object, new_data, ...) {
   
   colnames(m) <- nms
   for(el in nms) {
-    m[, el] <- predict(model[[el]], newdata = new_data$model_seconds_elapsed)
+    ## was having some issues with last second predictions (even if they showed 45 exactly)
+    ##   without rounding
+    m[, el] <- predict(model[[el]], newdata = round(new_data$model_seconds_elapsed))
   }
   
   ## Check that they are in the same order

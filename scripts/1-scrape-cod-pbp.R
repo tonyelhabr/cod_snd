@@ -98,6 +98,14 @@ changes <- bind_rows(
   ) |> 
     mutate(
       actual_seconds_elapsed = seconds_elapsed + 0.1
+    ),
+  ## defuse happens 7 seconds after implied last second, so assume that plant happens 10 seconds later than indicated
+  tibble(
+    round_id = '2021-SND-247-01',
+    seconds_elapsed = 15
+  ) |> 
+    mutate(
+      actual_seconds_elapsed = seconds_elapsed + 10
     )
 )
 
@@ -336,9 +344,12 @@ one_pbp_round_begin_events <- bind_rows(
       killer_team = NA_character_,
       
       is_post_plant = FALSE,
-      is_kill_on_attempted_clinch = NA,
+      is_kill_on_attempted_clinch = FALSE,
+      is_initial_bomb_carrier_killed = FALSE,
+      
       is_traded_out = NA,
-      is_negative_action = NA
+      is_kill_traded = NA,
+      is_negative_action = FALSE
     )
   )
 

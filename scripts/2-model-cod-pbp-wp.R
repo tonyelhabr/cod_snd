@@ -98,8 +98,6 @@ qs::qsave(all_model_pbp, file.path('data', 'wp_model_data.qs'))
 ## model ----
 model_lb <- all_model_pbp |> fit_wp_model_lb()
 qs::qsave(model_lb, file.path('data', 'wp_model-lb.qs'))
-model_xgb <- all_model_pbp |> fit_wp_model_xgb(tune = FALSE)
-qs::qsave(model_xgb, file.path('data', 'wp_model-xgb.qs'))
 
 coefs_plot <- autoplot(model_lb, type = 'coefs')
 ggsave(
@@ -109,7 +107,10 @@ ggsave(
   height = 8
 )
 
-plot_and_save_wp_by_feature <- function(model, method, feature_name) {
+model_xgb <- all_model_pbp |> fit_wp_model_xgb(tune = FALSE)
+qs::qsave(model_xgb, file.path('data', 'wp_model-xgb.qs'))
+
+plot_and_save_wp_by_feature <- function(model, method, feature_name = NULL) {
   p <- autoplot(model, type = 'grid', feature_name = feature_name)
   f_lab <- switch(
     method,
@@ -117,9 +118,15 @@ plot_and_save_wp_by_feature <- function(model, method, feature_name) {
     'xgb' = add_xgb_plot_caption
   )
   p <- p + f_lab()
+  
+  sep <- '-'
+  if (is.null(feature_name)) {
+    sep <- ''
+    feature_name <- ''
+  }
   ggsave(
     p,
-    filename = file.path('figs', sprintf('wp_grid-%s-%s.png', method, feature_name)),
+    filename = file.path('figs', sprintf('wp_grid-%s%s%s.png', method, sep, feature_name)),
     width = 12,
     height = 8
   )
@@ -127,10 +134,11 @@ plot_and_save_wp_by_feature <- function(model, method, feature_name) {
 }
 
 plot_and_save_wp_by_all_discrete_features <- function(model, method) {
-  c(
+  ps <- c(
     'is_kill_on_attempted_clinch',
     'is_initial_bomb_carrier_killed'
   ) |> 
+    set_names() |> 
     map(
       ~plot_and_save_wp_by_feature(
         model = model,
@@ -138,6 +146,13 @@ plot_and_save_wp_by_all_discrete_features <- function(model, method) {
         feature_name = .x
       )
     )
+  
+  agg_p <- plot_and_save_wp_by_feature(
+    model = model,
+    method = method
+  )
+  
+  append(ps, list('agg' = agg_p))
 }
 
 list(
