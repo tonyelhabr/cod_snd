@@ -70,9 +70,6 @@ prefixed_init_raw_pbp <- 2021:2022 |>
     round_id = sprintf('%s-%s-%02d', year, map_id, round)
   )
 
-## Issue with bomb timer left for 2021-SND-126-03 (bomb is never planted) + seconds elapsed is 20 seconds ahead of what it should be: https://youtu.be/3guxnrsIulQ?t=13387
-## acitivity = 'Kill' for 2021-SND-285-03 when it should be a plant
-
 ## rows_patch was being inconsistent for me when joining with non-character keys (specifically seconds elapsed)
 add_key <- function(df, .keep = 'all') {
   df |> 
@@ -80,17 +77,27 @@ add_key <- function(df, .keep = 'all') {
 }
 
 changes <- bind_rows(
+  ## activity = 'Kill' for 2021-SND-285-03 when it should be a plant
   tibble(
     round_id = '2021-SND-285-03',
     seconds_elapsed = 34,
     activity = 'Plant'
   ),
+  ## Issue with bomb timer left for 2021-SND-126-03 (bomb is never planted) + seconds elapsed is 20 seconds ahead of what it should be: https://youtu.be/3guxnrsIulQ?t=13387
   tibble(
     round_id = '2021-SND-126-03',
     seconds_elapsed = c(71.4, 75.4, 94.3, 96.2, 98.9)
   ) |> 
     mutate(
       actual_seconds_elapsed = seconds_elapsed - 20
+    ),
+  ## this is a last kill tied with a plant, so increment by 0.1 to make it non-problematic
+  tibble(
+    round_id = '2021-SND-012-04',
+    seconds_elapsed = 88.6
+  ) |> 
+    mutate(
+      actual_seconds_elapsed = seconds_elapsed + 0.1
     )
 )
 
@@ -179,10 +186,7 @@ raw_pbp <- init_raw_pbp |>
       TRUE ~ TRUE
     ),
     is_initial_bomb_carrier_killed = case_when(
-      is_post_plant ~ NA,
-      # is.na(initial_bomb_carrier_killed_second) ~ FALSE,
-      # seconds_elapsed < initial_bomb_carrier_killed_second ~ FALSE,
-      # TRUE ~ TRUE
+      is_post_plant & activity != 'Plant' ~ NA,
       seconds_elapsed >= initial_bomb_carrier_killed_second ~ TRUE,
       TRUE ~ FALSE
     )
@@ -268,15 +272,6 @@ one_pbp <- bind_rows(
   mutate(
     across(c(team, opponent, round_winner), ~team_mapping[.x])
   ) |> 
-  arrange(round_id, seconds_elapsed) |> 
-  # group_by(round_id, side) |> 
-  # mutate(
-  #   across(
-  #     c(n_team_remaining, n_opponent_remaining), 
-  #     list(prev = ~lag(.x, n = 1, default = 4L))
-  #   )
-  # ) |> 
-  # ungroup() |> 
   arrange(round_id, seconds_elapsed)
 
 # one_pbp |>
@@ -334,7 +329,7 @@ one_pbp_round_begin_events <- bind_rows(
       n_team_remaining = 4L,
       n_opponent_remaining = 4L,
       
-      activity = 'Start round',
+      activity = 'Start',
       weapon_or_bomb_site = NA_character_,
       killer_player = NA_character_,
       victim_player = NA_character_,
@@ -377,6 +372,9 @@ round_records <- one_pbp_round_begin_events |>
   ungroup() |> 
   select(-c(map_id, round, win_round, lose_round))
 
+one_pbp |> 
+  filter(round_id == '2021-SND-307-05')
+
 padded_one_pbp <- bind_rows(
   one_pbp,
   one_pbp_round_begin_events
@@ -387,7 +385,7 @@ padded_one_pbp <- bind_rows(
   ) |> 
   arrange(round_id, seconds_elapsed, side) |> 
   mutate(
-    engagement_id = sprintf('%s-%s-%sv%s', round_id, side, n_team_remaining, n_opponent_remaining),
+    engagement_id = sprintf('%s-%s-%sv%s-%s', round_id, side, n_team_remaining, n_opponent_remaining, activity),
     .before = round_id
   )
 

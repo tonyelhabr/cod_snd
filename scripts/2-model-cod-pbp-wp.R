@@ -5,6 +5,7 @@ library(purrr)
 library(ggplot2)
 library(scales)
 library(broom)
+library(qs)
 
 ## TODO: 
 ##   1. Possibly try features for number of ARs and SMGs left on each side.
@@ -56,6 +57,8 @@ init_model_pbp <- both_pbp |>
     win_round,
     
     ## extra
+    n_team_remaining,
+    n_opponent_remaining,
     activity,
     is_post_plant,
     opponent_diff,
@@ -68,21 +71,35 @@ init_model_pbp <- both_pbp |>
 all_model_pbp <- bind_rows(
   init_model_pbp |> 
     filter(!is.na(pre_plant_seconds_elapsed)) |>
-    mutate(is_pre_plant = TRUE, model_seconds_elapsed = pre_plant_seconds_elapsed) |> 
+    mutate(
+      is_pre_plant = TRUE, 
+      model_seconds_elapsed = pre_plant_seconds_elapsed,
+      model_seconds_remaining = 90L - pre_plant_seconds_elapsed
+    ) |> 
     select(-pre_plant_seconds_elapsed),
   init_model_pbp |> 
     filter(round_has_plant, !is.na(post_plant_seconds_elapsed)) |> 
-    mutate(is_pre_plant = FALSE, model_seconds_elapsed = post_plant_seconds_elapsed) |> 
+    mutate(
+      is_pre_plant = FALSE, 
+      model_seconds_elapsed = post_plant_seconds_elapsed,
+      model_seconds_remaining = 45L - post_plant_seconds_elapsed
+    ) |> 
     select(-post_plant_seconds_elapsed)
 )
 ## should have 0 rows
 stopifnot(0 == (all_model_pbp |> filter(!is_pre_plant, !is_post_plant) |> distinct(round_id) |> nrow()))
 ## should only be plant activities
 stopifnot(1 == (all_model_pbp |> filter(is_pre_plant, is_post_plant) |> count(activity) |> nrow()))
+all_model_pbp |> filter(is_pre_plant, is_post_plant) |> count(is_initial_bomb_carrier_killed)
+all_model_pbp |> filter(!is_pre_plant, is_post_plant) |> count(is_initial_bomb_carrier_killed)
+
+qs::qsave(all_model_pbp, file.path('data', 'wp_model_data.qs'))
 
 ## model ----
 model_lb <- all_model_pbp |> fit_wp_model_lb()
+qs::qsave(model_lb, file.path('data', 'wp_model-lb.qs'))
 model_xgb <- all_model_pbp |> fit_wp_model_xgb(tune = FALSE)
+qs::qsave(model_xgb, file.path('data', 'wp_model-xgb.qs'))
 
 coefs_plot <- autoplot(model_lb, type = 'coefs')
 ggsave(

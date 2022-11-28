@@ -95,8 +95,8 @@ max_pre_plant_second_buffer <- 0L ## for plot
 ## TODO: Add validation for is_pre_plant
 generate_seconds_grid <- function(is_pre_plant) {
   if (isTRUE(is_pre_plant)) {
-    min_second <- c(seq(0, 75, by = 3), seq(75, 85, by = 1), seq(86, 88))
-    max_second <- c(seq(15, 90, by = 3), seq(80, 90, by = 1), rep(90, 3))
+    min_second <- c(seq(0, 75, by = 3), seq(75, 85, by = 1), seq(86, 90))
+    max_second <- c(seq(15, 90, by = 3), seq(80, 90, by = 1), rep(90, 5))
   } else {
     min_second <- c(seq(0, 30, 2), seq(30, 38, 1), seq(39, 45))
     max_second <- c(seq(10, 40, 2), seq(37, 45, 1), rep(45, 7))
@@ -119,7 +119,7 @@ get_all_features <- function(is_pre_plant, named, method = 'xgb') {
   }
   
   all_features <- c(
-    'model_seconds_elapsed' = 1,
+    'model_seconds_elapsed' = 0, # 1,
     'opponent_diff' = -1,
     'is_kill_on_attempted_clinch' = 1,
     'is_initial_bomb_carrier_killed' = -1
@@ -152,6 +152,23 @@ get_lb_window_feature_names <- function(is_pre_plant) {
 }
 
 validate_colnames <- function(data) {
+  nms_diff <- setdiff(
+    c(
+      'is_pre_plant', 
+      'side',
+      'n_team_remaining',
+      'n_opponent_remaining',
+      'model_seconds_remaining'
+    ),
+    colnames(data)
+  )
+  
+  if (length(nms_diff) > 0L) {
+    stop(
+      sprintf('Missing essential non-feature columns:\n%s', paste0(nms_diff, collapse = ', '))
+    )
+  }
+  
   all_feature_names <- c(TRUE, FALSE) |> 
     purrr::map(
       ~get_all_features(
@@ -162,7 +179,11 @@ validate_colnames <- function(data) {
     purrr::flatten_chr() |> 
     unique()
   
-  nms_diff <- setdiff(c('is_pre_plant', 'side', all_feature_names), colnames(data))
+  nms_diff <- setdiff(
+    all_feature_names,
+    colnames(data)
+  )
+  
   if (length(nms_diff) > 0L) {
     stop(
       sprintf('Missing feature names:\n%s', paste0(nms_diff, collapse = ', '))
@@ -205,7 +226,6 @@ fit_wp_model_states <- function(data, method, ...) {
   models
 }
 
-
 ## TODO: Do less hard-coding here with features
 generate_pred_grid <- function(is_pre_plant) {
   binary_feature_names <- c(
@@ -220,7 +240,7 @@ generate_pred_grid <- function(is_pre_plant) {
   }
   
   max_second <- get_max_second(is_pre_plant)
-  max_player_diff <- 3L
+  max_players <- 4L
   
   binary_values <- 0L:1L
   is_initial_bomb_carrier_killed <- if (isTRUE(is_pre_plant)) {
@@ -232,10 +252,19 @@ generate_pred_grid <- function(is_pre_plant) {
     'side' = c('o', 'd'),
     'is_pre_plant' = is_pre_plant,
     'model_seconds_elapsed' = 0L:(max_second - 1L),
-    'opponent_diff' = -max_player_diff:max_player_diff,
+    'n_team_remaining' = 1L:max_players,
+    'n_opponent_remaining' = 1L:max_players,
     'is_kill_on_attempted_clinch' = binary_values,
     'is_initial_bomb_carrier_killed' = is_initial_bomb_carrier_killed
-  )
+  ) |> 
+    mutate(
+      'opponent_diff' = .data[['n_team_remaining']] - .data[['n_opponent_remaining']],
+      'model_seconds_remaining' = ifelse(
+        .data[['is_pre_plant']],
+        max_pre_plant_second - .data[['model_seconds_elapsed']],
+        max_post_plant_second - .data[['model_seconds_elapsed']]
+      )
+    )
 }
 
 predict.wp_model <- function(object, new_data, ...) {
@@ -248,11 +277,19 @@ predict.wp_model <- function(object, new_data, ...) {
     predict(object[['post']], new_data, ...)
   )
   
-  ifelse(
-    new_data[['side']] == 'o',
-    pred,
-    1 - pred
+  hi <- rep(0.9999, nrow(new_data))
+  lo <- rep(0.0001, nrow(new_data))
+  case_when(
+    new_data[['n_opponent_remaining']] == 0 & new_data[['model_seconds_remaining']] >= 10 ~ hi,
+    new_data[['n_team_remaining']] == 0 & new_data[['model_seconds_remaining']] >= 10 ~ lo,
+    TRUE ~ pred
   )
+  
+  # ifelse(
+  #   new_data[['side']] == 'o',
+  #   pred,
+  #   1 - pred
+  # )
 }
 
 augment.wp_model <- function(x, data, ...) {
@@ -280,7 +317,6 @@ generate_wp_grid <- function(model) {
     )
 }
 
-## TODO: Weight by observed frequency
 summarize_pred_grid_across_features <- function(df, binary_feature_name) {
   df |> 
     group_by(
@@ -295,7 +331,6 @@ summarize_pred_grid_across_features <- function(df, binary_feature_name) {
     ungroup()
 }
 
-# ggsci::pal_tron('legacy', 1)(7)
 # RColorBrewer::brewer.pal(7, 'PRGn') |> datapasta::vector_paste_vertical()
 player_diff_pal <- c(
   '#762A83',
@@ -487,7 +522,6 @@ fit_window_wp_coefs <- function(data, earliest_seconds_elapsed, latest_seconds_e
 estimate_window_coefs <- function(data, is_pre_plant) {
   
   seconds_grid <- generate_seconds_grid(is_pre_plant = is_pre_plant)
-  
   seconds_grid |>
     dplyr::transmute(
       'model_seconds_elapsed' = .data[['min_second']],
@@ -629,7 +663,7 @@ plot_coefs <- function(model, ...) {
       title = 'Offensive win probability',
       y = 'Coefficient estimate'
     )
-  }
+}
 
 
 ## xgb approach ----
@@ -659,13 +693,13 @@ fit_wp_model_xgb_state <- function(data, is_pre_plant, tune = FALSE) {
     # tree_depth <- tune::tune()
     # sample_size <- tune::tune()
   } else if (isTRUE(is_pre_plant)) {
-    mtry <- 5L
-    trees <- 10L
-    min_n <- 2L
+    mtry <- 2L # 4L
+    trees <- 50L # 500L
+    min_n <- 25L # 10L
   } else if (isFALSE(is_pre_plant)) {
-    mtry <- n_features - 1L
-    trees <- 100L
-    min_n <- 25L
+    mtry <- 1L # 3L
+    trees <- 50L
+    min_n <- 5L # 25L
   }
   
   spec <- parsnip::boost_tree(
