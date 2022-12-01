@@ -62,8 +62,12 @@ init_model_pbp <- both_pbp |>
     activity,
     is_post_plant,
     opponent_diff,
-    killer_player,
-    victim_player,
+    activity_player,
+    activity_opposer,
+    activity_team,
+    activity_opponent,
+    team,
+    opponent,
     is_negative_action
   )
 
@@ -90,8 +94,8 @@ all_model_pbp <- bind_rows(
 stopifnot(0 == (all_model_pbp |> filter(!is_pre_plant, !is_post_plant) |> distinct(round_id) |> nrow()))
 ## should only be plant activities
 stopifnot(1 == (all_model_pbp |> filter(is_pre_plant, is_post_plant) |> count(activity) |> nrow()))
-all_model_pbp |> filter(is_pre_plant, is_post_plant) |> count(is_initial_bomb_carrier_killed)
-all_model_pbp |> filter(!is_pre_plant, is_post_plant) |> count(is_initial_bomb_carrier_killed)
+# all_model_pbp |> filter(is_pre_plant, is_post_plant) |> count(is_initial_bomb_carrier_killed)
+# all_model_pbp |> filter(!is_pre_plant, is_post_plant) |> count(is_initial_bomb_carrier_killed)
 
 qs::qsave(all_model_pbp, file.path('data', 'wp_model_data.qs'))
 
@@ -156,8 +160,8 @@ plot_and_save_wp_by_all_discrete_features <- function(model, method) {
 }
 
 list(
-  'lb' = model_lb,
-  'xgb' = model_xgb
+  # 'xgb' = model_xgb,
+  'lb' = model_lb
 ) |> 
   iwalk(
     ~plot_and_save_wp_by_all_discrete_features(

@@ -1,5 +1,6 @@
 
 ## yardstick ----
+## TODO: Actually use this for xgboost model
 library(yardstick)
 brier_score <- function(data, ...) {
   UseMethod("brier_score")
@@ -149,6 +150,7 @@ get_all_features <- function(is_pre_plant, named, method = 'xgb') {
   
   ## if method == 'lb'
   setdiff(all_features, 'model_seconds_elapsed')
+  # c(setdiff(all_features, 'model_seconds_elapsed'), '(Intercept)')
 }
 
 get_lb_window_feature_names <- function(is_pre_plant) {
@@ -390,8 +392,8 @@ scale_x_continuous_wp_states <- function(...) {
 #   ) |> 
 #   dplyr::mutate('scaler' = .data[['n']] / max(.data[['n']]))
 # scaler_by_second <- \(x) x^(-0.5)
-plot_wp_grid <- function(data, feature_name = NULL, ...) {
-  
+plot_wp_grid <- function(data, feature_name, ...) {
+
   filt <- dplyr::filter(
     data, 
     .data[['side']] == default_side
@@ -528,7 +530,7 @@ fit_window_wp_coefs <- function(data, earliest_seconds_elapsed, latest_seconds_e
     feature_names
   )
   
-  form <- sprintf('%s ~ . - 1', target_name)
+  form <- sprintf('%s ~ .', target_name)
   fit <- safely_glm(
     as.formula(form), 
     data = dplyr::select(
@@ -589,6 +591,7 @@ fit_wp_model_lb_state <- function(data, is_pre_plant) {
   )
   
   feature_names <- get_lb_window_feature_names(is_pre_plant = is_pre_plant)
+  feature_names <- c(feature_names, '(Intercept)')
   
   coefs <- tidyr::fill(
     coefs,
@@ -624,6 +627,7 @@ predict.wp_model_lb_state <- function(object, new_data, ...) {
     m[, el] <- predict(model[[el]], newdata = round(new_data$model_seconds_elapsed))
   }
   
+  new_data$`(Intercept)` <- 1L
   ## Check that they are in the same order
   stopifnot(colnames(m) == colnames(new_data[, nms]))
   

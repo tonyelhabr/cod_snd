@@ -177,6 +177,27 @@ raw_pbp <- init_raw_pbp |>
     engagements_to_drop,
     by = c('round_id', 'seconds_elapsed')
   ) |> 
+  mutate(
+    victim_team = case_when(
+      is.na(killer_team) ~ NA_character_,
+      killer_team == offense_team ~ defense_team,
+      killer_team == defense_team ~ offense_team
+    ),
+    activity_team = case_when(
+      activity %in% c('Defuse', 'Kill Planter') ~ defense_team,
+      activity %in% c('Plant', 'Kill Defuser') ~ offense_team,
+      activity %in% c('Kill', 'Self Kill', 'Team Kill') ~ killer_team
+    ),
+    activity_opponent = case_when(
+      activity %in% c('Defuse', 'Kill Planter') ~ offense_team,
+      activity %in% c('Plant', 'Kill Defuser') ~ defense_team,
+      activity %in% c('Kill', 'Self Kill', 'Team Kill') ~ victim_team
+    )
+  ) |> 
+  rename(
+    activity_player = killer_player,
+    activity_opposer = victim_player
+  ) |> 
   left_join(
     initial_bomb_carrier_killed_times,
     by = 'round_id'
@@ -240,9 +261,10 @@ select_pbp_side <- function(df, ...) {
       activity,
       map,
       weapon_or_bomb_site,
-      killer_player,
-      victim_player,
-      killer_team,
+      activity_player,
+      activity_opposer,
+      activity_team,
+      activity_opponent,
       round_winner,
       
       plant_second,
@@ -278,7 +300,16 @@ one_pbp <- bind_rows(
     )
 ) |> 
   mutate(
-    across(c(team, opponent, round_winner), ~team_mapping[.x])
+    across(
+      c(
+        team, 
+        opponent,
+        round_winner, 
+        activity_team, 
+        activity_opponent
+      ), 
+      ~team_mapping[.x]
+    )
   ) |> 
   arrange(round_id, seconds_elapsed)
 
@@ -383,9 +414,6 @@ round_records <- one_pbp_round_begin_events |>
   ungroup() |> 
   select(-c(map_id, round, win_round, lose_round))
 
-one_pbp |> 
-  filter(round_id == '2021-SND-307-05')
-
 padded_one_pbp <- bind_rows(
   one_pbp,
   one_pbp_round_begin_events
@@ -394,11 +422,7 @@ padded_one_pbp <- bind_rows(
     round_records,
     by = c('round_id', 'team', 'opponent')
   ) |> 
-  arrange(round_id, seconds_elapsed, side) |> 
-  mutate(
-    engagement_id = sprintf('%s-%s-%sv%s-%s', round_id, side, n_team_remaining, n_opponent_remaining, activity),
-    .before = round_id
-  )
+  arrange(round_id, seconds_elapsed, side)
 
 both_pbp <- bind_rows(
   padded_one_pbp |> mutate(pbp_side = 'a', .before = 1),
@@ -420,6 +444,16 @@ both_pbp <- bind_rows(
     ) |> 
     select(-starts_with('orig'))
 ) |> 
+  ## we don't need 4 records for the round start (i.e. pbp_side=a, side=o, pbp_side=b, side=o, pbp_side=a, side=d, pbp_side=b, side=d)
+  ##   so filter out 2 of the records and re-assign the pbp_side to be NA
+  filter(
+    !(pbp_side == 'b' & activity == 'Start')
+  ) |> 
+  mutate(
+    across(pbp_side, ~ifelse(activity == 'Start', NA_character_, .x)),
+    engagement_id = sprintf('%s-%s-%sv%s-%s', round_id, side, n_team_remaining, n_opponent_remaining, activity),
+    .before = round_id
+  ) |> 
   mutate(
     opponent_diff = n_team_remaining - n_opponent_remaining
   ) |> 
