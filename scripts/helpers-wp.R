@@ -490,7 +490,7 @@ side_lab_switcher <- function(side) {
   )
 }
 
-plot_round <- function(model, data, round_id, side = 'o', expand = FALSE) {
+plot_round <- function(model, data, round_id, side = 'o', expand = FALSE, save = TRUE, ...) {
   stopifnot(length(round_id) == 1)
   side <- rlang::arg_match(side, c('o', 'd'))
   
@@ -579,7 +579,7 @@ plot_round <- function(model, data, round_id, side = 'o', expand = FALSE) {
       )
     )
   
-  df |> 
+  p <- df |> 
     ggplot2::ggplot() +
     ggplot2::aes(x = .data[['seconds_elapsed']], y = .data[['wp']]) +
     # ggplot2::geom_step() +
@@ -619,6 +619,16 @@ plot_round <- function(model, data, round_id, side = 'o', expand = FALSE) {
       y = 'Win probability',
       x = 'Seconds elapsed'
     )
+  
+  if (isFALSE(save)) {
+    return(p)
+  }
+  
+  ggsave(
+    plot = p,
+    filename = file.path('figs', sprintf('round_id=%s|side=%s.png', round_id, side)),
+    ...
+  )
 }
 
 

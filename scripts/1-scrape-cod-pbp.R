@@ -43,22 +43,40 @@ game_mapping <- c(
   '2021' = 'Cold War'
 )
 
+# team_mapping <- c(
+#   'ATL' = 'FaZe',
+#   'BOS' = 'Breach',
+#   'DAL' = 'Empire',
+#   'FLA' = 'Mutineers',
+#   'LAG' = 'Guerrillas',
+#   'LAT' = 'Thieves',
+#   'LDN' = 'Royal Ravens',
+#   'LON' = 'Royal Ravens',
+#   'MIN' = 'Rokkr',
+#   'NYSL' = 'Subliners',
+#   'OC' = 'Optic',
+#   'OPTX' = 'Optic',
+#   'PAR' = 'Legion',
+#   'SEA' = 'Surge',
+#   'TOR' = 'Ultra'
+# )
+
 team_mapping <- c(
-  'ATL' = 'FaZe',
-  'BOS' = 'Breach',
-  'DAL' = 'Empire',
-  'FLA' = 'Mutineers',
-  'LAG' = 'Guerrillas',
-  'LAT' = 'Thieves',
-  'LDN' = 'Royal Ravens',
-  'LON' = 'Royal Ravens',
-  'MIN' = 'Rokkr',
-  'NYSL' = 'Subliners',
-  'OC' = 'Optic',
-  'OPTX' = 'Optic',
-  'PAR' = 'Legion',
-  'SEA' = 'Surge',
-  'TOR' = 'Ultra'
+  'ATL' = 'ATL',
+  'BOS' = 'BOS',
+  'DAL' = 'DAL',
+  'FLA' = 'FLA',
+  'LAG' = 'LAG',
+  'LAT' = 'LAT',
+  'LDN' = 'LDN',
+  'LON' = 'LDN',
+  'MIN' = 'MIN',
+  'NYSL' = 'NYSL',
+  'OC' = 'OPTX',
+  'OPTX' = 'OPTX',
+  'PAR' = 'PAR',
+  'SEA' = 'SEA',
+  'TOR' = 'TOR'
 )
 
 # 2021 S2-036 r11, S2-040 r7, amd S3-014 r8 have '#REF!' for initial_bomb_carrier_killed, so need to manually fix those
