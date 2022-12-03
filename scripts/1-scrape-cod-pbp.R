@@ -599,10 +599,10 @@ numbered_players <- both_pbp |>
   ungroup()
 
 round_map_team_mapping <- both_pbp |> 
-  distinct(game, map_id, round_id, team)
+  distinct(game, map_id, round_id, team, side)
 
 round_engagement_mapping <- both_pbp |> 
-  distinct(round_id, engagement_id)
+  distinct(round_id, engagement_id, side)
 
 round_team_player_mapping <- round_map_team_mapping |> 
   left_join(
@@ -611,34 +611,18 @@ round_team_player_mapping <- round_map_team_mapping |>
     multiple = 'all'
   )
 
-round_side_mapping <- both_pbp |> 
-  distinct(round_id, team, side)
-
-## missing rows where one team is all dead
+# 649,544
 grid <- round_engagement_mapping |> 
-  # filter(
-  #   # engagement_id == '2021-SND-011-01-d-1v2-Kill'
-  #   engagement_id == '2021-SND-011-01-o-2v0-Kill'
-  #   # round_id == '2021-SND-011-01'
-  # ) |> 
   left_join(
     round_team_player_mapping,
-    by = 'round_id',
+    by = c('round_id', 'side'),
     multiple = 'all'
-  ) |> 
-  left_join(
-    round_side_mapping,
-    by = c('round_id', 'team')
-  ) # |> 
-  # mutate(
-  #   engagement_side = str_replace_all(engagement_id, '(^[0-2]{4}-SND-[0-9]{3}-[0-9]{2}-)([od])(-[0-4]v[0-4]-.*$)', '\\2')
-  # ) |> 
-  # filter(side == engagement_side)
+  )
 
 init <- both_pbp |> 
   distinct(game, map_id, engagement_id, round_id, team, player = team_players_pre_activity) |> 
   separate_rows(player, sep = '-') |> 
-  # filter(player != '') |> 
+  filter(player != '') |> 
   distinct(game, map_id, engagement_id, round_id, team, player) |> 
   left_join(
     numbered_players,
@@ -647,95 +631,106 @@ init <- both_pbp |>
   mutate(value = 1)
 
 long_participation <- grid |> 
-  filter(
-    engagement_id == '2021-SND-011-01-d-0v2-Kill'
-    # round_id == '2021-SND-011-01'
-  ) |> 
   left_join(
     init,
     by = c('game', 'map_id', 'engagement_id', 'round_id', 'team', 'player', 'player_rn')
-  ) |> 
-  filter(
-    # engagement_id == '2021-SND-011-01-d-0v2-Kill'
-    round_id == '2021-SND-011-01'
-  ) |> 
-  # distinct(game, map_id, team, engagement_id, round_id, seconds_elapsed) |> 
-  # right_join(
-  #   round_map_team_id_mapping |> filter(round_id == '2021-SND-011-01'),
-  #   by = c('game', 'map_id', 'round_id', 'team'),
-  #   multiple = 'all'
-  # ) |> 
-  # left_join(
-  #   numbered_players,
-  #   by = c('game', 'map_id', 'team'),
-  #   multiple = 'all'
-  # ) |> 
-  # full_join(
-  #   init,
-  #   by = c('game', 'map_id', 'engagement_id', 'round_id', 'seconds_elapsed', 'team', 'player', 'player_rn')
-  # ) |> 
-  filter(
-    engagement_id == '2021-SND-011-01-d-0v2-Kill'
-    # round_id == '2021-SND-011-01'
   ) |> 
   mutate(
     across(value, ~coalesce(.x, 0))
   )
 
 wide_participation <- long_participation |> 
+  filter(side == 'o') |> 
   pivot_wider(
     names_sort = TRUE,
     names_from = player_rn,
-    values_from = c(player, value)
+    values_from = c(player, value),
+    names_glue = 'o_{.value}_{player_rn}'
   )
-wide_participation
 
-both_pbp |> 
-  filter(
-    engagement_id == '2021-SND-011-01-d-0v2-Kill'
+str_extract_engagement_id <- function(engagement_id, field) {
+  i <- switch(
+    field,
+    'year' = 1,
+    'map_id' = 2,
+    'round' = 3,
+    'side' = 4,
+    'n_team_remaining' = 5,
+    'n_opponent_remaining' = 6,
+    'activity' = 7
+  )
+  str_replace(engagement_id, '(^[0-2]{4})-(SND-[0-9]{3})-([0-9]{2})-([od])-([0-4])v([0-4])-(.*$)', sprintf('\\%d', i))
+}
+
+
+symmetrics_engagement_ids <- wide_participation |> 
+  select(engagement_id) |> 
+  mutate(
+    across(
+      engagement_id,
+      list(
+        year = ~str_extract_engagement_id(.x, 'year'),
+        map_id = ~str_extract_engagement_id(.x, 'map_id'),
+        round = ~str_extract_engagement_id(.x, 'round'),
+        side = ~str_extract_engagement_id(.x, 'side'),
+        n_team_remaining = ~str_extract_engagement_id(.x, 'n_team_remaining'),
+        n_opponent_remaining = ~str_extract_engagement_id(.x, 'n_opponent_remaining'),
+        activity = ~str_extract_engagement_id(.x, 'activity')
+      ),
+      .names = '{fn}'
+    ),
+    round_id = sprintf('%s-%s-%s', year, map_id, round),
+    symmetric_engagement_id = sprintf('%s-%s-%sv%s-%s', round_id, ifelse(side == 'd', 'o', 'd'), n_opponent_remaining, n_team_remaining, activity),
+  ) |> 
+  select(
+    engagement_id,
+    symmetric_engagement_id
   )
 
 long_participation |> 
+  inner_join(
+    symmetrics_engagement_ids,
+    by = 'engagement_id'
+  )
+
+wide_participation |> 
+  inner_join(
+    symmetrics_engagement_ids,
+    by = 'engagement_id'
+  ) |> 
+  left_join(
+    wide_participation
+  )
+
+
+both_pbp |> 
   filter(
     engagement_id == '2021-SND-011-01-d-0v2-Kill'
   )
 
-both_pbp |> 
-  anti_join(
-    wide_participation
+wide_participation |> 
+  filter(
+    engagement_id == '2021-SND-011-01-d-0v2-Kill'
   ) |> 
-  head(1) |> 
   glimpse()
 
-filter(!(team_players_remaining == '-' | opponent_players_remaining == '-'))
-
-participation
-group_by(game, map_id, round_id, team) |> 
-  mutate(
-    player_rn = row_number(player)
+wide_participation |> 
+  filter(
+    engagement_id == '2021-SND-011-01-o-2v0-Kill'
   ) |> 
-  ungroup() |> 
-  # filter(map_id == 'SND-011', game == 'Cold War (2021)')
-  pivot_wider(
-    names_sort = TRUE,
-    names_from = player_rn,
-    names_prefix = 'player_',
-    values_from = player
-  )
+  glimpse()
 
 both_pbp |> 
-  filter(pbp_side == 'a') |> 
-  distinct(round_id, team, player = team_players_remaining) |> 
-  separate_rows(player, sep = '-') |> 
-  filter(player != '') |> 
-  distinct(round_id, team, player) |> 
-  arrange(round_id, team, player) |> 
-  group_by(round_id)
+  distinct(engagement_id, seconds_elapsed) |> 
+  inner_join(
+    wide_participation
+  ) |> 
+  filter(
+    engagement_id == '2021-SND-011-01-o-2v0-Kill'
+  )
 
-prefixed_init_raw_pbp |> 
-  select(round_id, offense_players_remaining) |> 
-  separate_rows(offense_players_remaining, sep = '-')
 
+## timing ----
 base <- both_pbp |> 
   # filter(round_id == first(round_id)) |> 
   filter(!is.na(pbp_side), activity %in% c('Kill', 'Kill Planter', 'Kill Defuser')) |> 
