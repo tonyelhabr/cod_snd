@@ -86,6 +86,12 @@ prefixed_init_raw_pbp <- 2021:2022 |>
   mutate(
     across(year, as.integer),
     round_id = sprintf('%s-%s-%02d', year, map_id, round)
+  ) |> 
+  mutate(
+    seconds_elapsed = case_when(
+      round_id == '2021-SND-012-04' & activity == 'Plant' ~ 88,
+      TRUE ~ seconds_elapsed
+    )
   )
 
 ## rows_patch was being inconsistent for me when joining with non-character keys (specifically seconds elapsed)
@@ -94,29 +100,39 @@ add_key <- function(df, .keep = 'all') {
     mutate(key = sprintf('%s-%s', round_id, seconds_elapsed), .keep = .keep)
 }
 
-changes <- bind_rows(
+changes <- list(
   ## activity = 'Kill' for 2021-SND-285-03 when it should be a plant
   tibble(
     round_id = '2021-SND-285-03',
     seconds_elapsed = 34,
     activity = 'Plant'
+    # ## not sure why, but these fields become NA with rows_patch
+    # offense_team = 'OC',
+    # defense_team = 'LAT'
   ),
   ## Issue with bomb timer left for 2021-SND-126-03 (bomb is never planted) + seconds elapsed is 20 seconds ahead of what it should be: https://youtu.be/3guxnrsIulQ?t=13387
   tibble(
     round_id = '2021-SND-126-03',
     seconds_elapsed = c(71.4, 75.4, 94.3, 96.2, 98.9)
+    
+    # offense_team = rep('DAL', 5),
+    # defense_team = rep('ATL', 5),
+    # activity = rep('Kill', 5)
   ) |> 
     mutate(
       actual_seconds_elapsed = seconds_elapsed - 20
     ),
   ## this is a last kill tied with a plant, so increment by 0.1 to make it non-problematic
   tibble(
-    round_id = '2021-SND-012-04',
-    seconds_elapsed = 88.6
-  ) |> 
-    mutate(
-      actual_seconds_elapsed = seconds_elapsed + 0.1
-    ),
+    round_id = rep('2021-SND-012-04', 2),
+    seconds_elapsed = c(88, 88.6),
+    round_time_left = c(2L, NA_integer_),
+    bomb_timer_left = c(45L, 44L)
+    
+    # offense_team = rep('DAL', 2),
+    # defense_team = rep('SEA', 2),
+    # activity = c('Plant', 'Kill')
+  ),
   ## defuse happens 7 seconds after implied last second, so assume that plant happens 10 seconds later than indicated
   tibble(
     round_id = '2021-SND-247-01',
@@ -124,14 +140,30 @@ changes <- bind_rows(
   ) |> 
     mutate(
       actual_seconds_elapsed = seconds_elapsed + 10
-    )
+    ),
+  ## sides should be inversed
+  tibble(
+    round_id = '2022-SND-279-10',
+    seconds_elapsed = c(9, 33, 42, 46),
+    offense_team = rep('ATL', 4),
+    defense_team = rep('LAT', 4),
+    offense_players_remaining = c('Cellium-Arcitys-Simp', 'Cellium-Arcitys-', 'Cellium-', '-'),
+    defense_players_remaining = rep('Octane-Drazah-Kenny-Envoy', 4)
+  )
 )
 
-fixed_init_raw_pbp <- rows_update(
-  prefixed_init_raw_pbp |> add_key() |> mutate(actual_seconds_elapsed = NA_real_),
-  changes |> add_key(.keep = 'unused'),
-  by = 'key'
-) |> 
+## maybe there's a way to do this with accumulate, but whatev
+fixed_init_raw_pbp <- prefixed_init_raw_pbp
+for(change in changes) {
+  print(change)
+  fixed_init_raw_pbp <- rows_update(
+    fixed_init_raw_pbp |> add_key() |> mutate(actual_seconds_elapsed = NA_real_),
+    change |> add_key(.keep = 'unused'),
+    by = 'key'
+  )
+}
+
+fixed_init_raw_pbp <- fixed_init_raw_pbp |> 
   mutate(
     across(seconds_elapsed, ~coalesce(actual_seconds_elapsed, .x))
   ) |> 
@@ -149,6 +181,10 @@ init_raw_pbp <- fixed_init_raw_pbp |>
     across(
       c(killer_team, killer_player, victim_player),
       ~na_if(.x, 'n/a')
+    ),
+    across(
+      c(offense_players_remaining, defense_players_remaining, initial_bomb_carrier_killed),
+      ~na_if(.x, '#REF!')
     ),
     is_traded_out = case_when(
       traded_out == 'Y' ~ TRUE,
@@ -306,7 +342,9 @@ one_pbp <- bind_rows(
       team = offense_team,
       opponent = defense_team,
       n_team_remaining = offense_remaining,
-      n_opponent_remaining = defense_remaining
+      n_opponent_remaining = defense_remaining,
+      team_players_remaining = offense_players_remaining,
+      opponent_players_remaining = defense_players_remaining
     ),
   raw_pbp |> 
     filter(side == 'd') |> 
@@ -314,7 +352,9 @@ one_pbp <- bind_rows(
       team = defense_team,
       opponent = offense_team,
       n_team_remaining = defense_remaining,
-      n_opponent_remaining = offense_remaining
+      n_opponent_remaining = offense_remaining,
+      team_players_remaining = defense_players_remaining,
+      opponent_players_remaining = offense_players_remaining
     )
 ) |> 
   mutate(
@@ -356,6 +396,28 @@ one_pbp_teams <- one_pbp |>
     round_has_plant
   )
 
+all_team_players <- one_pbp |> 
+  distinct(game, map_id, team, player = team_players_remaining) |> 
+  separate_rows(player, sep = '-') |> 
+  filter(player != '') |> 
+  distinct(game, map_id, team, player) |> 
+  arrange(game, map_id, team, player)
+
+all_opponent_players <- one_pbp |> 
+  distinct(game, map_id, team = opponent, player = opponent_players_remaining) |> 
+  separate_rows(player, sep = '-') |> 
+  filter(player != '') |> 
+  distinct(game, map_id, team, player) |> 
+  arrange(game, map_id, team, player)
+
+all_players <- bind_rows(
+  all_team_players,
+  all_opponent_players
+) |> 
+  distinct(game, map_id, team, player) |> 
+  arrange(game, map_id, team, player)
+
+
 ## fill in for when we only have one side (i.e. all kills from one team)
 one_pbp_padded_side <- one_pbp_teams |> 
   rename(old_team = team, old_opponent = opponent, old_side = side) |> 
@@ -372,6 +434,7 @@ one_pbp_padded_side <- one_pbp_teams |>
     side = ifelse(old_side == 'o', 'd', 'o')
   ) |> 
   select(-starts_with('old'))
+one_pbp_padded_side
 
 one_pbp_round_begin_events <- bind_rows(
   one_pbp_teams,
@@ -400,6 +463,20 @@ one_pbp_round_begin_events <- bind_rows(
       is_kill_traded = NA,
       is_negative_action = FALSE
     )
+  ) |> 
+  inner_join(
+    all_players |> 
+      group_by(game, map_id, team) |> 
+      summarize(team_players_remaining = paste0(player, collapse = '-')) |> 
+      ungroup(),
+    by = c('game', 'map_id', 'team')
+  ) |> 
+  inner_join(
+    all_players |> 
+      group_by(game, map_id, opponent = team) |> 
+      summarize(opponent_players_remaining = paste0(player, collapse = '-')) |> 
+      ungroup(),
+    by = c('game', 'map_id', 'opponent')
   )
 
 round_records <- one_pbp_round_begin_events |> 
@@ -427,7 +504,7 @@ round_records <- one_pbp_round_begin_events |>
   ) |> 
   group_by(map_id, team) |> 
   mutate(
-    prev_team_round_wl_diff = dplyr::lag(team_round_wl_diff, n = 1L, default = 0L)
+    prev_team_round_wl_diff = lag(team_round_wl_diff, n = 1L, default = 0L)
   ) |> 
   ungroup() |> 
   select(-c(map_id, round, win_round, lose_round))
@@ -440,15 +517,35 @@ padded_one_pbp <- bind_rows(
     round_records,
     by = c('round_id', 'team', 'opponent')
   ) |> 
-  arrange(round_id, seconds_elapsed, side)
+  arrange(round_id, seconds_elapsed, side) |> 
+  group_by(round_id, side) |> 
+  mutate(
+    team_players_pre_activity = lag(team_players_remaining, n = 1L),
+    opponent_players_pre_activity = lag(opponent_players_remaining, n = 1L)
+  ) |> 
+  ungroup() |> 
+  mutate(
+    across(team_players_pre_activity, ~coalesce(.x, team_players_remaining)),
+    across(opponent_players_pre_activity, ~coalesce(.x, opponent_players_remaining))
+  ) |> 
+  select(
+    -ends_with('players_remaining')
+  )
 
 both_pbp <- bind_rows(
   padded_one_pbp |> mutate(pbp_side = 'a', .before = 1),
   padded_one_pbp |> 
     mutate(
       across(
-        c(n_team_remaining, n_opponent_remaining, team, opponent),
-        list(orig = ~.x),
+        c(
+          team,
+          opponent,
+          n_team_remaining,
+          n_opponent_remaining,
+          team_players_pre_activity,
+          opponent_players_pre_activity
+        ),
+        list(orig = ~ .x),
         .names = '{.fn}_{.col}'
       )
     ) |> 
@@ -458,7 +555,9 @@ both_pbp <- bind_rows(
       n_team_remaining = orig_n_opponent_remaining,
       n_opponent_remaining = orig_n_team_remaining,
       team = orig_opponent,
-      opponent = orig_team
+      opponent = orig_team,
+      team_players_pre_activity = orig_opponent_players_pre_activity,
+      opponent_players_pre_activity = orig_opponent_players_pre_activity
     ) |> 
     select(-starts_with('orig'))
 ) |> 
@@ -487,3 +586,189 @@ both_pbp <- bind_rows(
   select(-prev_opponent_diff)
 
 write_csv(both_pbp, 'data/cod_snd_pbp.csv')
+
+numbered_players <- both_pbp |> 
+  distinct(game, map_id, team, player = team_players_pre_activity) |> 
+  separate_rows(player, sep = '-') |> 
+  filter(player != '') |> 
+  distinct(game, map_id, team, player) |> 
+  group_by(game, map_id, team) |> 
+  mutate(
+    player_rn = row_number(player)
+  ) |> 
+  ungroup()
+
+round_map_team_mapping <- both_pbp |> 
+  distinct(game, map_id, round_id, team)
+
+round_engagement_mapping <- both_pbp |> 
+  distinct(round_id, engagement_id)
+
+round_team_player_mapping <- round_map_team_mapping |> 
+  left_join(
+    numbered_players,
+    by = c('game', 'map_id', 'team'),
+    multiple = 'all'
+  )
+
+round_side_mapping <- both_pbp |> 
+  distinct(round_id, team, side)
+
+## missing rows where one team is all dead
+grid <- round_engagement_mapping |> 
+  # filter(
+  #   # engagement_id == '2021-SND-011-01-d-1v2-Kill'
+  #   engagement_id == '2021-SND-011-01-o-2v0-Kill'
+  #   # round_id == '2021-SND-011-01'
+  # ) |> 
+  left_join(
+    round_team_player_mapping,
+    by = 'round_id',
+    multiple = 'all'
+  ) |> 
+  left_join(
+    round_side_mapping,
+    by = c('round_id', 'team')
+  ) # |> 
+  # mutate(
+  #   engagement_side = str_replace_all(engagement_id, '(^[0-2]{4}-SND-[0-9]{3}-[0-9]{2}-)([od])(-[0-4]v[0-4]-.*$)', '\\2')
+  # ) |> 
+  # filter(side == engagement_side)
+
+init <- both_pbp |> 
+  distinct(game, map_id, engagement_id, round_id, team, player = team_players_pre_activity) |> 
+  separate_rows(player, sep = '-') |> 
+  # filter(player != '') |> 
+  distinct(game, map_id, engagement_id, round_id, team, player) |> 
+  left_join(
+    numbered_players,
+    by = c('game', 'map_id', 'team', 'player')
+  ) |> 
+  mutate(value = 1)
+
+long_participation <- grid |> 
+  filter(
+    engagement_id == '2021-SND-011-01-d-0v2-Kill'
+    # round_id == '2021-SND-011-01'
+  ) |> 
+  left_join(
+    init,
+    by = c('game', 'map_id', 'engagement_id', 'round_id', 'team', 'player', 'player_rn')
+  ) |> 
+  filter(
+    # engagement_id == '2021-SND-011-01-d-0v2-Kill'
+    round_id == '2021-SND-011-01'
+  ) |> 
+  # distinct(game, map_id, team, engagement_id, round_id, seconds_elapsed) |> 
+  # right_join(
+  #   round_map_team_id_mapping |> filter(round_id == '2021-SND-011-01'),
+  #   by = c('game', 'map_id', 'round_id', 'team'),
+  #   multiple = 'all'
+  # ) |> 
+  # left_join(
+  #   numbered_players,
+  #   by = c('game', 'map_id', 'team'),
+  #   multiple = 'all'
+  # ) |> 
+  # full_join(
+  #   init,
+  #   by = c('game', 'map_id', 'engagement_id', 'round_id', 'seconds_elapsed', 'team', 'player', 'player_rn')
+  # ) |> 
+  filter(
+    engagement_id == '2021-SND-011-01-d-0v2-Kill'
+    # round_id == '2021-SND-011-01'
+  ) |> 
+  mutate(
+    across(value, ~coalesce(.x, 0))
+  )
+
+wide_participation <- long_participation |> 
+  pivot_wider(
+    names_sort = TRUE,
+    names_from = player_rn,
+    values_from = c(player, value)
+  )
+wide_participation
+
+both_pbp |> 
+  filter(
+    engagement_id == '2021-SND-011-01-d-0v2-Kill'
+  )
+
+long_participation |> 
+  filter(
+    engagement_id == '2021-SND-011-01-d-0v2-Kill'
+  )
+
+both_pbp |> 
+  anti_join(
+    wide_participation
+  ) |> 
+  head(1) |> 
+  glimpse()
+
+filter(!(team_players_remaining == '-' | opponent_players_remaining == '-'))
+
+participation
+group_by(game, map_id, round_id, team) |> 
+  mutate(
+    player_rn = row_number(player)
+  ) |> 
+  ungroup() |> 
+  # filter(map_id == 'SND-011', game == 'Cold War (2021)')
+  pivot_wider(
+    names_sort = TRUE,
+    names_from = player_rn,
+    names_prefix = 'player_',
+    values_from = player
+  )
+
+both_pbp |> 
+  filter(pbp_side == 'a') |> 
+  distinct(round_id, team, player = team_players_remaining) |> 
+  separate_rows(player, sep = '-') |> 
+  filter(player != '') |> 
+  distinct(round_id, team, player) |> 
+  arrange(round_id, team, player) |> 
+  group_by(round_id)
+
+prefixed_init_raw_pbp |> 
+  select(round_id, offense_players_remaining) |> 
+  separate_rows(offense_players_remaining, sep = '-')
+
+base <- both_pbp |> 
+  # filter(round_id == first(round_id)) |> 
+  filter(!is.na(pbp_side), activity %in% c('Kill', 'Kill Planter', 'Kill Defuser')) |> 
+  filter(side == 'o') |> 
+  select(round_id, engagement_id, seconds_elapsed, activity_player, activity_opposer)
+
+
+overlaps <- base |> 
+  inner_join(
+    base |> 
+      transmute(
+        round_id, 
+        other_engagement_id = engagement_id,
+        other_seconds_elapsed = seconds_elapsed,
+        prev_seconds_elapsed = seconds_elapsed - 5, 
+        next_seconds_elapsed = seconds_elapsed + 5
+      ),
+    join_by(
+      round_id,
+      seconds_elapsed >= prev_seconds_elapsed, 
+      seconds_elapsed <= next_seconds_elapsed
+    )
+  ) |> 
+  filter(
+    engagement_id != other_engagement_id
+  ) |> 
+  mutate(
+    other_is_after = other_seconds_elapsed > seconds_elapsed
+  )
+
+nested_overlaps <- overlaps |> 
+  select(engagement_id, other_engagement_id) |> 
+  nest(other_engagement_ids = -c(engagement_id))
+
+count(engagement_id) |> 
+  count(n)
