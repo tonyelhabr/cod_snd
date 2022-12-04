@@ -478,7 +478,7 @@ plot_wp_grid <- function(data, feature_name, ...) {
   }
   
   p +
-    ggplot2::facet_wrap(~.data[['feature']], dir = 'v', nrow = 2)
+    ggplot2::facet_wrap(~.data[['feature']])
 }
 
 

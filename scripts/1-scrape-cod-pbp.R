@@ -95,6 +95,7 @@ prefixed_init_raw_pbp <- 2021:2022 |>
     ## need to break tie on seconds elapsed prior to changes
     seconds_elapsed = case_when(
       round_id == '2021-SND-012-04' & activity == 'Plant' ~ 88,
+      round_id == '2021-SND-018-05' & activity == 'Plant' ~ 80.5,
       TRUE ~ seconds_elapsed
     )
   )
@@ -135,8 +136,20 @@ changes <- list(
     seconds_elapsed = c(9, 33, 42, 46),
     offense_team = rep('ATL', 4),
     defense_team = rep('LAT', 4),
+    offense_remaining = c(3L, 2L, 1L, 0L),
+    defense_remaining = rep(4L, 4L),
     offense_players_remaining = c('Cellium-Arcitys-Simp', 'Cellium-Arcitys-', 'Cellium-', '-'),
     defense_players_remaining = rep('Octane-Drazah-Kenny-Envoy', 4)
+  ),
+  tibble(
+    round_id ='2021-SND-018-05',
+    seconds_elapsed = c(80.5, 81.5),
+    round_time_left = c(10, 81),
+    bomb_timer_left = c(45, 44),
+    defense_players_remaining = c('-SlasheR-', '-'),
+    offense_remaining = rep(2L, 2L),
+    defense_remaining = c(1L, 0L),
+    last_round_activity = c(0L, 1L)
   )
 )
 
@@ -592,7 +605,7 @@ both_pbp <- bind_rows(
   filter(!(abs(prev_opponent_diff) == 4 & activity != 'Defuse')) |> 
   select(-prev_opponent_diff)
 
-write_csv(both_pbp, 'data/cod_snd_pbp.csv')
+qs::qsave(both_pbp, file.path('data', 'cod_snd_pbp.qs'))
 
 ## participation ----
 numbered_players <- both_pbp |> 
@@ -634,6 +647,7 @@ init_participation <- both_pbp |>
   distinct(game, map_id, offense_engagement_id, team, player) |> 
   mutate(indicator = 1)
 
+# `%notin%` <- Negate(`%in%`)
 long_participation <- grid_participation |> 
   left_join(
     init_participation,
@@ -646,7 +660,9 @@ long_participation <- grid_participation |>
   left_join(
     both_pbp |>
       select(
+        engagement_id,
         offense_engagement_id,
+        round_id,
         team,
         side,
         activity,
@@ -655,93 +671,262 @@ long_participation <- grid_participation |>
         activity_team,
         activity_opponent,
         n_team_pre_activity,
-        n_opponent_pre_activity
+        n_opponent_pre_activity,
+        is_negative_action
       ),
-    by = c('offense_engagement_id', 'team', 'side')
+    by = c('offense_engagement_id', 'round_id', 'team', 'side')
   ) |>
   mutate(
+    ## i think this system is probably fine for every engagement, except for perhaps self kills or team kills
     wt = case_when(
+      activity == 'Start' ~ NA_real_,
+      is_negative_action & player == activity_player ~ -1,
+      is_negative_action & player != activity_player ~ 0,
+      
+      
       player == activity_player & n_team_pre_activity > 1 ~ 0.6,
-      player == activity_player & n_team_pre_activity == 1 ~ -1,
-      player == activity_opposer & n_opponent_pre_activity > 1 ~ -0.6,
-      player == activity_opposer & n_opponent_pre_activity == 1 ~ -1,
-      team == activity_team ~ 0.4 / (n_team_pre_activity - 1),
-      team == activity_opponent ~ -0.4 / (n_opponent_pre_activity - 1)
+      player == activity_player & n_team_pre_activity == 1 ~ 1,
+      !is.na(activity_opposer) & player == activity_opposer & n_team_pre_activity > 1 ~ -0.6,
+      !is.na(activity_opposer) & player == activity_opposer & n_team_pre_activity == 1 ~ -1,
+      
+      activity %in% c('Plant', 'Defuse') & team == activity_team & n_team_pre_activity > 1  ~ 0.4 / n_team_pre_activity,
+      activity %in% c('Plant', 'Defuse') & team == activity_team & n_team_pre_activity == 1  ~ 0.4,
+      
+      activity == 'Defuse' & team != activity_team & n_team_pre_activity > 1 ~ -0.4 / n_team_pre_activity,
+      activity == 'Defuse' & team != activity_team & n_team_pre_activity == 1  ~ -0.4,
+      activity == 'Defuse' & n_team_pre_activity == 0  ~ 0,
+      
+      activity == 'Plant' & team != activity_team & n_team_pre_activity > 1 ~ -0.4 / n_team_pre_activity,
+      activity == 'Plant' & team != activity_team & n_team_pre_activity == 1  ~ -0.4,
+      
+      team == activity_team & n_team_pre_activity > 1  ~ 0.4 / (n_team_pre_activity - 1),
+      team == activity_team & n_team_pre_activity == 1  ~ 0.4,
+      !is.na(activity_opposer) & team == activity_opponent & n_team_pre_activity > 1 ~ -0.4 / (n_team_pre_activity - 1),
+      !is.na(activity_opposer) & team == activity_opponent & n_team_pre_activity == 1  ~ -0.4
     ),
     across(wt, ~.x * indicator)
   ) |> 
   relocate(indicator, .after = wt)
 
-wide_participation <- inner_join(
-  long_participation |> 
-    filter(side == 'o') |> 
-    select(
-      offense_engagement_id,
-      offense_team = team,
-      player_rn,
-      player,
-      indicator,
-      wt
-    ) |> 
-    pivot_wider(
-      names_sort = TRUE,
-      names_prefix = 'o_',
-      names_from = player_rn,
-      values_from = c(player, indicator, wt)
-    ),
-  long_participation |> 
-    filter(side == 'd') |> 
-    select(
-      offense_engagement_id,
-      defense_team = team,
-      player_rn,
-      player,
-      indicator,
-      wt
-    ) |> 
-    pivot_wider(
-      names_sort = TRUE,
-      names_prefix = 'd_',
-      names_from = player_rn,
-      values_from = c(player, indicator, wt)
-    ),
-  by = 'offense_engagement_id'
-)
+both_pbp |> 
+  filter(
+    # side == 'o',
+    round_id == '2021-SND-018-05'
+  )
+
+long_participation |> 
+  filter(activity != 'Start') |> 
+  filter(is.na(wt))
+
+long_participation |> 
+  filter(activity != 'Start') |> 
+  count(wt) |> 
+  mutate(prop = n / sum(n))
+
+long_participation |> 
+  filter(activity != 'Start') |> 
+  pull(wt) |> 
+  sum()
+
+# long_participation |> 
+#   filter(activity != 'Start') |> 
+#   mutate(
+#     indicator_sign = ifelse(activity_team == team, 1L, -1L) * indicator
+#   ) |> 
+#   pull(indicator) |> 
+#   sum()
+long_participation |> 
+  filter(activity != 'Start') |> 
+  group_by(offense_engagement_id, activity) |> 
+  summarize(
+    across(wt, sum)
+  ) |> 
+  ungroup() |> 
+  arrange(desc(wt)) |> 
+  # filter(wt == 1) |> 
+  mutate(across(wt, round, 2)) |> 
+  count(wt, activity, sort = TRUE) |> 
+  view()
+
+long_participation |> 
+  filter(offense_engagement_id == '2021-SND-011-01-3v1-Kill')
+
+qs::qsave(long_participation, file.path('data', 'long_cod_snd_participation.qs'))
 
 ## timing ----
-base <- both_pbp |> 
-  # filter(round_id == first(round_id)) |> 
-  filter(!is.na(pbp_side), activity %in% c('Kill', 'Kill Planter', 'Kill Defuser')) |> 
-  filter(side == 'o') |> 
-  select(round_id, engagement_id, seconds_elapsed, activity_player, activity_opposer)
+d <- tibble(
+  seconds_elapsed = c(1, 3, 6, 12, 13, 14),
+  player = c('a', 'x', 'b', 'b', 'z', 'b'),
+  opposer = c('w', 'a', 'x', 'y', 'c', 'z'),
+  team = c(1, 2, 1, 1, 2, 1),
+  opponent = c(2, 1, 2, 2, 1, 2),
+  is_chain = c(FALSE, TRUE, TRUE, FALSE, FALSE, TRUE),
+  chain_id = c(
+    list(NULL), 
+    list('1'),
+    list(c('1', '2')),
+    list(NULL), 
+    list(NULL), 
+    list('5')
+  )
+) |>
+  mutate(
+    id = as.character(row_number()),
+    .before = 1
+  )
+d
 
+dd <- bind_rows(
+  d |> mutate(flipped = FALSE),
+  d |> 
+    mutate(
+      across(
+        c(
+          player,
+          opposer,
+          team,
+          opponent
+        ),
+        list(orig = ~ .x),
+        .names = '{.fn}_{.col}'
+        
+      )
+    ) |> 
+    mutate(
+      flipped = TRUE,
+      player = orig_opposer,
+      opposer = orig_player,
+      team = orig_opponent,
+      opponent = orig_team
+    ) |> 
+    select(-starts_with('orig'))
+) |> 
+  arrange(id, flipped)
 
-overlaps <- base |> 
+pc <- dd |>
+  filter(flipped) |> 
   inner_join(
-    base |> 
+    dd |>
+      filter(!flipped) |> 
       transmute(
+        past_id = id,
+        past_seconds_elapsed = seconds_elapsed,
+        next_seconds_elapsed = seconds_elapsed + 5,
+        player,
+        past_opposer = opposer
+      ),
+    join_by(
+      player,
+      seconds_elapsed > past_seconds_elapsed,
+      seconds_elapsed <= next_seconds_elapsed
+    )
+  )
+pc |> 
+  group_by(id)
+
+pc <- d |>
+  inner_join(
+    d |>
+      transmute(
+        past_id = id,
+        past_seconds_elapsed = seconds_elapsed,
+        next_seconds_elapsed = seconds_elapsed + 5,
+        past_player = player,
+        past_opposer = opposer
+      ),
+    join_by(
+      seconds_elapsed > past_seconds_elapsed,
+      seconds_elapsed <= next_seconds_elapsed
+    )
+  ) |>
+  filter(
+    id != past_id
+  )
+
+d |>
+  left_join(
+    pc |>
+      group_by(id) |>
+      summarize(
+        past_id = list(past_id),
+        past_players = list(past_player),
+        past_opposers = list(past_opposer)
+      ),
+    by = c('id')
+  ) |>
+  filter(
+    opposer %in% c(past_players)
+  )
+
+
+init_chained <- both_pbp |> 
+  ## i think this only works when viewing things from one side
+  # filter(pbp_side == 'a') |> 
+  filter(activity %in% c('Kill', 'Kill Planter', 'Kill Defuser')) |> 
+  select(pbp_side, round_id, engagement_id, seconds_elapsed, activity_player, activity_opposer)
+
+# https://doug-liebe.medium.com/exploring-win-probability-added-a-framework-for-measuring-impact-in-call-of-duty-d360f733ff6
+past_chained <- init_chained |> 
+  inner_join(
+    init_chained |> 
+      transmute(
+        pbp_side,
         round_id, 
-        other_engagement_id = engagement_id,
-        other_seconds_elapsed = seconds_elapsed,
-        prev_seconds_elapsed = seconds_elapsed - 5, 
-        next_seconds_elapsed = seconds_elapsed + 5
+        past_engagement_id = engagement_id,
+        past_seconds_elapsed = seconds_elapsed,
+        next_seconds_elapsed = seconds_elapsed + 5,
+        past_activity_player = activity_player,
+        past_activity_opposer = activity_opposer
       ),
     join_by(
       round_id,
-      seconds_elapsed >= prev_seconds_elapsed, 
+      pbp_side,
+      seconds_elapsed > past_seconds_elapsed,
       seconds_elapsed <= next_seconds_elapsed
     )
   ) |> 
   filter(
-    engagement_id != other_engagement_id
+    engagement_id != past_engagement_id
   ) |> 
-  mutate(
-    other_is_after = other_seconds_elapsed > seconds_elapsed
+  select(-next_seconds_elapsed)
+
+# past_chained |> count(engagement_id, sort = TRUE)
+chained <- init_chained |> 
+  left_join(
+    past_chained |> 
+      ## we don't actually need the past engagement ids! we just need to know how many
+      group_by(round_id, engagement_id) |> 
+      summarize(
+        past_engagement_id = list(engagement_id),
+        past_activity_players = list(activity_player)
+      ),
+    by = c('round_id', 'engagement_id')
+  ) |> 
+  filter(
+    activity_opposer %in% past_activity_players
   )
 
-nested_overlaps <- overlaps |> 
-  select(engagement_id, other_engagement_id) |> 
-  nest(other_engagement_ids = -c(engagement_id))
+chained |> 
+  mutate(
+    n = map_int(past_activity_players, length)
+  ) |> 
+  filter(n == 6)
+both_pbp |> 
+  filter(round_id == '2021-SND-117-09', team == 'SEA')
+past_chained |> 
+  filter(round_id == '2021-SND-117-09') |> 
+  group_by(round_id, engagement_id) |> 
+  summarize(
+    past_engagement_id = list(engagement_id),
+    past_activity_players = list(activity_player)
+  )
 
-count(engagement_id) |> 
-  count(n)
+both_pbp |> 
+  filter(round_id == '2021-SND-117-09') |> 
+  filter(activity_player == 'Slacked')
+
+both_pbp |> 
+  filter(round_id == '2021-SND-117-09') |> 
+  filter(activity_opposer == 'Slacked')
+
+qs::qsave(chained, file.path('data', 'cod_snd_chains.qs'))

@@ -14,7 +14,7 @@ library(qs)
 source('scripts/helpers-plot.R')
 source('scripts/helpers-wp.R')
 
-both_pbp <- read_csv('data/cod_snd_pbp.csv', show_col_types = FALSE)
+both_pbp <- qs::qread('data/cod_snd_pbp.qs')
 
 ## model data prep ----
 init_model_pbp <- both_pbp |> 
@@ -36,6 +36,7 @@ init_model_pbp <- both_pbp |>
   select(
     ## ids
     engagement_id,
+    offense_engagement_id,
     round_id,
     
     ## contextual
@@ -57,6 +58,8 @@ init_model_pbp <- both_pbp |>
     win_round,
     
     ## extra
+    n_team_pre_activity,
+    n_opponent_pre_activity,
     n_team_remaining,
     n_opponent_remaining,
     activity,
