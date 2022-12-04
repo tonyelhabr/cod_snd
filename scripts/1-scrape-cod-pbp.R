@@ -87,18 +87,17 @@ prefixed_init_raw_pbp <- 2021:2022 |>
     across(year, as.integer),
     round_id = sprintf('%s-%s-%02d', year, map_id, round)
   ) |> 
+  ## seconds elapsed are completely busted for this round
+  filter(
+    round_id != '2022-SND-120-01'
+  ) |> 
   mutate(
+    ## need to break tie on seconds elapsed prior to changes
     seconds_elapsed = case_when(
       round_id == '2021-SND-012-04' & activity == 'Plant' ~ 88,
       TRUE ~ seconds_elapsed
     )
   )
-
-## rows_patch was being inconsistent for me when joining with non-character keys (specifically seconds elapsed)
-add_key <- function(df, .keep = 'all') {
-  df |> 
-    mutate(key = sprintf('%s-%s', round_id, seconds_elapsed), .keep = .keep)
-}
 
 changes <- list(
   ## activity = 'Kill' for 2021-SND-285-03 when it should be a plant
@@ -106,18 +105,11 @@ changes <- list(
     round_id = '2021-SND-285-03',
     seconds_elapsed = 34,
     activity = 'Plant'
-    # ## not sure why, but these fields become NA with rows_patch
-    # offense_team = 'OC',
-    # defense_team = 'LAT'
   ),
   ## Issue with bomb timer left for 2021-SND-126-03 (bomb is never planted) + seconds elapsed is 20 seconds ahead of what it should be: https://youtu.be/3guxnrsIulQ?t=13387
   tibble(
     round_id = '2021-SND-126-03',
     seconds_elapsed = c(71.4, 75.4, 94.3, 96.2, 98.9)
-    
-    # offense_team = rep('DAL', 5),
-    # defense_team = rep('ATL', 5),
-    # activity = rep('Kill', 5)
   ) |> 
     mutate(
       actual_seconds_elapsed = seconds_elapsed - 20
@@ -128,10 +120,6 @@ changes <- list(
     seconds_elapsed = c(88, 88.6),
     round_time_left = c(2L, NA_integer_),
     bomb_timer_left = c(45L, 44L)
-    
-    # offense_team = rep('DAL', 2),
-    # defense_team = rep('SEA', 2),
-    # activity = c('Plant', 'Kill')
   ),
   ## defuse happens 7 seconds after implied last second, so assume that plant happens 10 seconds later than indicated
   tibble(
@@ -152,6 +140,13 @@ changes <- list(
   )
 )
 
+## rows_patch was being inconsistent for me when joining with non-character keys (specifically seconds elapsed)
+add_key <- function(df, .keep = 'all') {
+  df |> 
+    mutate(key = sprintf('%s-%s', round_id, seconds_elapsed), .keep = .keep)
+}
+
+## we'd need something in between rows_update and rows_patch to do this all with one df
 ## maybe there's a way to do this with accumulate, but whatev
 fixed_init_raw_pbp <- prefixed_init_raw_pbp
 for(change in changes) {
@@ -520,6 +515,8 @@ padded_one_pbp <- bind_rows(
   arrange(round_id, seconds_elapsed, side) |> 
   group_by(round_id, side) |> 
   mutate(
+    n_team_pre_activity = lag(n_team_remaining, n = 1L, default = 4L),
+    n_opponent_pre_activity = lag(n_opponent_remaining, n = 1L, default = 4L),
     team_players_pre_activity = lag(team_players_remaining, n = 1L),
     opponent_players_pre_activity = lag(opponent_players_remaining, n = 1L)
   ) |> 
@@ -542,6 +539,8 @@ both_pbp <- bind_rows(
           opponent,
           n_team_remaining,
           n_opponent_remaining,
+          n_team_pre_activity,
+          n_opponent_pre_activity,
           team_players_pre_activity,
           opponent_players_pre_activity
         ),
@@ -552,10 +551,12 @@ both_pbp <- bind_rows(
     mutate(
       pbp_side = 'b',
       side = ifelse(side == 'd', 'o', 'd'),
-      n_team_remaining = orig_n_opponent_remaining,
-      n_opponent_remaining = orig_n_team_remaining,
       team = orig_opponent,
       opponent = orig_team,
+      n_team_remaining = orig_n_opponent_remaining,
+      n_opponent_remaining = orig_n_team_remaining,
+      n_team_pre_activity = orig_n_opponent_pre_activity,
+      n_opponent_pre_activity = orig_n_team_pre_activity,
       team_players_pre_activity = orig_opponent_players_pre_activity,
       opponent_players_pre_activity = orig_opponent_players_pre_activity
     ) |> 
@@ -568,6 +569,13 @@ both_pbp <- bind_rows(
   ) |> 
   mutate(
     across(pbp_side, ~ifelse(activity == 'Start', NA_character_, .x)),
+    offense_engagement_id = sprintf(
+      '%s-%sv%s-%s', 
+      round_id, 
+      ifelse(side == 'o', n_team_remaining, n_opponent_remaining),
+      ifelse(side == 'o', n_opponent_remaining, n_team_remaining),
+      activity
+    ),
     engagement_id = sprintf('%s-%s-%sv%s-%s', round_id, side, n_team_remaining, n_opponent_remaining, activity),
     .before = round_id
   ) |> 
@@ -575,7 +583,6 @@ both_pbp <- bind_rows(
     opponent_diff = n_team_remaining - n_opponent_remaining
   ) |> 
   arrange(round_id, seconds_elapsed, pbp_side, side) |> 
-  # arrange(round_id, pre_plant_seconds_elapsed, post_plant_seconds_elapsed) |> 
   group_by(round_id, side) |> 
   mutate(
     prev_opponent_diff = lag(opponent_diff, n = 1, default = 0L)
@@ -587,6 +594,7 @@ both_pbp <- bind_rows(
 
 write_csv(both_pbp, 'data/cod_snd_pbp.csv')
 
+## participation ----
 numbered_players <- both_pbp |> 
   distinct(game, map_id, team, player = team_players_pre_activity) |> 
   separate_rows(player, sep = '-') |> 
@@ -602,7 +610,7 @@ round_map_team_mapping <- both_pbp |>
   distinct(game, map_id, round_id, team, side)
 
 round_engagement_mapping <- both_pbp |> 
-  distinct(round_id, engagement_id, side)
+  distinct(round_id, offense_engagement_id)
 
 round_team_player_mapping <- round_map_team_mapping |> 
   left_join(
@@ -611,124 +619,94 @@ round_team_player_mapping <- round_map_team_mapping |>
     multiple = 'all'
   )
 
-# 649,544
-grid <- round_engagement_mapping |> 
+# 324,776
+grid_participation <- round_engagement_mapping |> 
   left_join(
     round_team_player_mapping,
-    by = c('round_id', 'side'),
+    by = 'round_id',
     multiple = 'all'
   )
 
-init <- both_pbp |> 
-  distinct(game, map_id, engagement_id, round_id, team, player = team_players_pre_activity) |> 
+init_participation <- both_pbp |> 
+  distinct(game, map_id, offense_engagement_id, team, player = team_players_pre_activity) |> 
   separate_rows(player, sep = '-') |> 
   filter(player != '') |> 
-  distinct(game, map_id, engagement_id, round_id, team, player) |> 
-  left_join(
-    numbered_players,
-    by = c('game', 'map_id', 'team', 'player')
-  ) |> 
-  mutate(value = 1)
+  distinct(game, map_id, offense_engagement_id, team, player) |> 
+  mutate(indicator = 1)
 
-long_participation <- grid |> 
+long_participation <- grid_participation |> 
   left_join(
-    init,
-    by = c('game', 'map_id', 'engagement_id', 'round_id', 'team', 'player', 'player_rn')
+    init_participation,
+    by = c('game', 'map_id', 'offense_engagement_id', 'team', 'player')
   ) |> 
   mutate(
-    across(value, ~coalesce(.x, 0))
-  )
-
-wide_participation <- long_participation |> 
-  filter(side == 'o') |> 
-  pivot_wider(
-    names_sort = TRUE,
-    names_from = player_rn,
-    values_from = c(player, value),
-    names_glue = 'o_{.value}_{player_rn}'
-  )
-
-str_extract_engagement_id <- function(engagement_id, field) {
-  i <- switch(
-    field,
-    'year' = 1,
-    'map_id' = 2,
-    'round' = 3,
-    'side' = 4,
-    'n_team_remaining' = 5,
-    'n_opponent_remaining' = 6,
-    'activity' = 7
-  )
-  str_replace(engagement_id, '(^[0-2]{4})-(SND-[0-9]{3})-([0-9]{2})-([od])-([0-4])v([0-4])-(.*$)', sprintf('\\%d', i))
-}
-
-
-symmetrics_engagement_ids <- wide_participation |> 
-  select(engagement_id) |> 
-  mutate(
-    across(
-      engagement_id,
-      list(
-        year = ~str_extract_engagement_id(.x, 'year'),
-        map_id = ~str_extract_engagement_id(.x, 'map_id'),
-        round = ~str_extract_engagement_id(.x, 'round'),
-        side = ~str_extract_engagement_id(.x, 'side'),
-        n_team_remaining = ~str_extract_engagement_id(.x, 'n_team_remaining'),
-        n_opponent_remaining = ~str_extract_engagement_id(.x, 'n_opponent_remaining'),
-        activity = ~str_extract_engagement_id(.x, 'activity')
+    across(indicator, ~coalesce(.x, 0))
+  ) |> 
+  ## TODO: Calculate value weightings
+  left_join(
+    both_pbp |>
+      select(
+        offense_engagement_id,
+        team,
+        side,
+        activity,
+        activity_player,
+        activity_opposer,
+        activity_team,
+        activity_opponent,
+        n_team_pre_activity,
+        n_opponent_pre_activity
       ),
-      .names = '{fn}'
+    by = c('offense_engagement_id', 'team', 'side')
+  ) |>
+  mutate(
+    wt = case_when(
+      player == activity_player & n_team_pre_activity > 1 ~ 0.6,
+      player == activity_player & n_team_pre_activity == 1 ~ -1,
+      player == activity_opposer & n_opponent_pre_activity > 1 ~ -0.6,
+      player == activity_opposer & n_opponent_pre_activity == 1 ~ -1,
+      team == activity_team ~ 0.4 / (n_team_pre_activity - 1),
+      team == activity_opponent ~ -0.4 / (n_opponent_pre_activity - 1)
     ),
-    round_id = sprintf('%s-%s-%s', year, map_id, round),
-    symmetric_engagement_id = sprintf('%s-%s-%sv%s-%s', round_id, ifelse(side == 'd', 'o', 'd'), n_opponent_remaining, n_team_remaining, activity),
+    across(wt, ~.x * indicator)
   ) |> 
-  select(
-    engagement_id,
-    symmetric_engagement_id
-  )
+  relocate(indicator, .after = wt)
 
-long_participation |> 
-  inner_join(
-    symmetrics_engagement_ids,
-    by = 'engagement_id'
-  )
-
-wide_participation |> 
-  inner_join(
-    symmetrics_engagement_ids,
-    by = 'engagement_id'
-  ) |> 
-  left_join(
-    wide_participation
-  )
-
-
-both_pbp |> 
-  filter(
-    engagement_id == '2021-SND-011-01-d-0v2-Kill'
-  )
-
-wide_participation |> 
-  filter(
-    engagement_id == '2021-SND-011-01-d-0v2-Kill'
-  ) |> 
-  glimpse()
-
-wide_participation |> 
-  filter(
-    engagement_id == '2021-SND-011-01-o-2v0-Kill'
-  ) |> 
-  glimpse()
-
-both_pbp |> 
-  distinct(engagement_id, seconds_elapsed) |> 
-  inner_join(
-    wide_participation
-  ) |> 
-  filter(
-    engagement_id == '2021-SND-011-01-o-2v0-Kill'
-  )
-
+wide_participation <- inner_join(
+  long_participation |> 
+    filter(side == 'o') |> 
+    select(
+      offense_engagement_id,
+      offense_team = team,
+      player_rn,
+      player,
+      indicator,
+      wt
+    ) |> 
+    pivot_wider(
+      names_sort = TRUE,
+      names_prefix = 'o_',
+      names_from = player_rn,
+      values_from = c(player, indicator, wt)
+    ),
+  long_participation |> 
+    filter(side == 'd') |> 
+    select(
+      offense_engagement_id,
+      defense_team = team,
+      player_rn,
+      player,
+      indicator,
+      wt
+    ) |> 
+    pivot_wider(
+      names_sort = TRUE,
+      names_prefix = 'd_',
+      names_from = player_rn,
+      values_from = c(player, indicator, wt)
+    ),
+  by = 'offense_engagement_id'
+)
 
 ## timing ----
 base <- both_pbp |> 
