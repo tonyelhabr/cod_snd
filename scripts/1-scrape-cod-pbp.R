@@ -883,6 +883,67 @@ past_chained <- init_chained |>
   ) |> 
   select(-next_seconds_elapsed)
 
+actual_chains <- past_chained |> 
+  select(round_id, engagement_id, past_engagement_id, past_activity_player) |> 
+  nest(past_engagements = c(past_engagement_id, past_activity_player)) |> 
+  mutate(past_engagements = map(past_engagements, deframe)) |> 
+  inner_join(
+    init_chained,
+    by = c('round_id', 'engagement_id')
+  ) |> 
+  mutate(
+    keep_data = map2_lgl(past_engagements, activity_opposer, ~..2 %in% ..1)
+  ) |> 
+  filter(keep_data) |> 
+  select(-keep_data) |> 
+  mutate(
+    actual_past_engagements = map2(
+      past_engagements,
+      activity_opposer,
+      ~which(..1 == ..2)
+    ),
+    past_engagement_id = map(actual_past_engagements, names)
+  ) |> 
+  select(
+    round_id,
+    engagement_id,
+    pbp_side,
+    seconds_elapsed,
+    activity_player,
+    activity_opposer,
+    past_engagement_id
+  ) |> 
+  unnest(past_engagement_id)
+actual_chains |> 
+  distinct(
+    past_engagement_id = engagement_id
+  ) |> 
+  inner_join(
+    actual_chains |> 
+      distinct(past_engagement_id),
+    by = 'past_engagement_id'
+  )
+
+
+actual_chains |> 
+  count(
+    round_id,
+    engagement_id,
+    pbp_side,
+    sort = TRUE
+  ) |> 
+  count(n)
+actual_chains |> 
+  filter(engagement_id == '2021-SND-039-02-d-2v1-Kill')
+one_pbp |> 
+  filter(round_id == '2021-SND-039-02') |> 
+  glimpse()
+actual_chains |> 
+  mutate(z = map_int(past_engagement_id, length)) |> count(z)
+both_pbp |> 
+  filter(round_id == '2021-SND-117-09', team == 'SEA')
+
+
 # past_chained |> count(engagement_id, sort = TRUE)
 chained <- init_chained |> 
   left_join(
@@ -890,20 +951,24 @@ chained <- init_chained |>
       ## we don't actually need the past engagement ids! we just need to know how many
       group_by(round_id, engagement_id) |> 
       summarize(
-        past_engagement_id = list(engagement_id),
-        past_activity_players = list(activity_player)
+        past_engagement_ids = list(past_engagement_id),
+        past_activity_players = list(past_activity_player)
       ),
     by = c('round_id', 'engagement_id')
   ) |> 
   filter(
     activity_opposer %in% past_activity_players
-  )
-
-chained |> 
-  mutate(
-    n = map_int(past_activity_players, length)
   ) |> 
-  filter(n == 6)
+  mutate(
+    n_past_engagements = map_int(past_engagement_id, length)
+  )
+chained |> arrange(desc(n_past_engagements))
+chained |> 
+  filter(
+    engagement_id == '2021-SND-117-09-d-1v0-Kill'
+  ) |> 
+  select(engagement_id, past_engagement_id, activity_opposer, past_activity_players) |> 
+  unnest(past_engagement_id, past_activity_players)
 both_pbp |> 
   filter(round_id == '2021-SND-117-09', team == 'SEA')
 past_chained |> 
