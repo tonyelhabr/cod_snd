@@ -13,8 +13,6 @@ all_model_pbp <- augment(
   data = all_model_pbp
 )
 
-wide_participation <- qs::qread(file.path('data', 'cod_snd_participation.qs'))
-
 team_wpa <- all_model_pbp |> 
   group_by(round_id, side) |> 
   mutate(
@@ -23,7 +21,7 @@ team_wpa <- all_model_pbp |>
   ungroup() |> 
   relocate(wp, team_wpa, .after = wp)
 
-long_participation <- qs::qread(file.path('data', 'long_cod_snd_participation.qs'))
+long_participation <- qs::qread(file.path('data', 'cod_snd_participation.qs'))
 long_wpa <- team_wpa |> 
   left_join(
     long_participation |> 
@@ -42,8 +40,6 @@ long_wpa <- team_wpa |>
     ## team wpa will already be negative for negative actions, so abs wt to prevent double negatives
     wpa = team_wpa * abs(wt)
   )
-hist(long_participation$wt)
-sum(long_participation$wt, na.rm = TRUE)
 
 long_wpa |> 
   filter(activity != 'Start') |>
@@ -58,13 +54,13 @@ long_wpa |>
 wpa_by_side_player <- long_wpa |> 
   filter(!is.na(pbp_side)) |> 
   # filter(wpa < 0) |> 
-  group_by(side, player) |> 
+  group_by(game, side, player) |> 
   summarize(
     n = n(),
     across(wpa, sum, na.rm = TRUE)
   ) |> 
   ungroup() |> 
-  group_by(player) |> 
+  group_by(game, player) |> 
   mutate(
     n = sum(n),
     total_wpa = sum(wpa)
@@ -73,7 +69,7 @@ wpa_by_side_player <- long_wpa |>
   pivot_wider(
     names_glue = '{side}{.value}',
     names_from = side,
-    values_from = c(wpa, n)
+    values_from = wpa
   ) |> 
   arrange(desc(abs(total_wpa)))
 wpa_by_side_player

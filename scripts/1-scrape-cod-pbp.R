@@ -43,24 +43,6 @@ game_mapping <- c(
   '2021' = 'Cold War'
 )
 
-# team_mapping <- c(
-#   'ATL' = 'FaZe',
-#   'BOS' = 'Breach',
-#   'DAL' = 'Empire',
-#   'FLA' = 'Mutineers',
-#   'LAG' = 'Guerrillas',
-#   'LAT' = 'Thieves',
-#   'LDN' = 'Royal Ravens',
-#   'LON' = 'Royal Ravens',
-#   'MIN' = 'Rokkr',
-#   'NYSL' = 'Subliners',
-#   'OC' = 'Optic',
-#   'OPTX' = 'Optic',
-#   'PAR' = 'Legion',
-#   'SEA' = 'Surge',
-#   'TOR' = 'Ultra'
-# )
-
 team_mapping <- c(
   'ATL' = 'ATL',
   'BOS' = 'BOS',
@@ -150,6 +132,12 @@ changes <- list(
     offense_remaining = rep(2L, 2L),
     defense_remaining = c(1L, 0L),
     last_round_activity = c(0L, 1L)
+  ),
+  tibble(
+    round_id ='2021-SND-042-05',
+    seconds_elapsed = 70.8,
+    ## guessing that it's shotzzy who planted... mack couldn't be the planter since he's on the other team
+    initiating_player = 'Shotzzy' 
   )
 )
 
@@ -404,6 +392,11 @@ one_pbp_teams <- one_pbp |>
     round_has_plant
   )
 
+
+## Create all_players to use for the dummy starting events. This helps a lot when
+##   it comes to participation, since it helps identify players in rounds when
+##   one side eliminates all opponent players without being eliminated themselves
+##   (pivot_wider NAs).
 all_team_players <- one_pbp |> 
   distinct(game, map_id, team, player = team_players_remaining) |> 
   separate_rows(player, sep = '-') |> 
@@ -425,6 +418,37 @@ all_players <- bind_rows(
   distinct(game, map_id, team, player) |> 
   arrange(game, map_id, team, player)
 
+## players that played on more than one team
+all_players |> 
+  distinct(game, team, player) |> 
+  count(game, player) |> 
+  filter(n > 1)
+
+## TODO: Somehow fix these weird situations where a player is assigned to the wrong team
+##   or an incorrect player is credited.
+##   Each case should be treated on an individual basis. Perhaps the safer assumption is that
+##   the player is correct (see below).
+##   This creates issues with the participation weights, leading to engagement sums not equal to 0
+##   (or 1, in the case that there's a defuse after all offense players are eliminated).
+one_pbp |> 
+  inner_join(
+    all_players |> 
+      select(game, map_id, activity_player = player, activity_team2 = team),
+    by = c('game', 'map_id', 'activity_player')
+  ) |> 
+  filter(
+    activity_team != activity_team2
+  )
+
+one_pbp |> 
+  inner_join(
+    all_players |> 
+      select(game, map_id, activity_opposer = player, activity_opponent2 = team),
+    by = c('game', 'map_id', 'activity_opposer')
+  ) |> 
+  filter(
+    activity_opponent != activity_opponent2
+  )
 
 ## fill in for when we only have one side (i.e. all kills from one team)
 one_pbp_padded_side <- one_pbp_teams |> 
@@ -442,7 +466,6 @@ one_pbp_padded_side <- one_pbp_teams |>
     side = ifelse(old_side == 'o', 'd', 'o')
   ) |> 
   select(-starts_with('old'))
-one_pbp_padded_side
 
 one_pbp_round_begin_events <- bind_rows(
   one_pbp_teams,
@@ -604,7 +627,6 @@ both_pbp <- bind_rows(
   ## 2022-SND-223-07 has simultaneous kills to clinch
   filter(!(abs(prev_opponent_diff) == 4 & activity != 'Defuse')) |> 
   select(-prev_opponent_diff)
-
 qs::qsave(both_pbp, file.path('data', 'cod_snd_pbp.qs'))
 
 ## participation ----
@@ -632,7 +654,7 @@ round_team_player_mapping <- round_map_team_mapping |>
     multiple = 'all'
   )
 
-# 324,776
+# 324k
 grid_participation <- round_engagement_mapping |> 
   left_join(
     round_team_player_mapping,
@@ -647,7 +669,6 @@ init_participation <- both_pbp |>
   distinct(game, map_id, offense_engagement_id, team, player) |> 
   mutate(indicator = 1)
 
-# `%notin%` <- Negate(`%in%`)
 long_participation <- grid_participation |> 
   left_join(
     init_participation,
@@ -656,7 +677,6 @@ long_participation <- grid_participation |>
   mutate(
     across(indicator, ~coalesce(.x, 0))
   ) |> 
-  ## TODO: Calculate value weightings
   left_join(
     both_pbp |>
       select(
@@ -683,21 +703,23 @@ long_participation <- grid_participation |>
       is_negative_action & player == activity_player ~ -1,
       is_negative_action & player != activity_player ~ 0,
       
-      
       player == activity_player & n_team_pre_activity > 1 ~ 0.6,
       player == activity_player & n_team_pre_activity == 1 ~ 1,
       !is.na(activity_opposer) & player == activity_opposer & n_team_pre_activity > 1 ~ -0.6,
       !is.na(activity_opposer) & player == activity_opposer & n_team_pre_activity == 1 ~ -1,
       
-      activity %in% c('Plant', 'Defuse') & team == activity_team & n_team_pre_activity > 1  ~ 0.4 / n_team_pre_activity,
-      activity %in% c('Plant', 'Defuse') & team == activity_team & n_team_pre_activity == 1  ~ 0.4,
+      activity == 'Plant' & team == activity_team & n_team_pre_activity > 1  ~ 0.4 / (n_team_pre_activity - 1),
+      activity == 'Plant' & team == activity_team & n_team_pre_activity == 1  ~ 0.4,
       
-      activity == 'Defuse' & team != activity_team & n_team_pre_activity > 1 ~ -0.4 / n_team_pre_activity,
-      activity == 'Defuse' & team != activity_team & n_team_pre_activity == 1  ~ -0.4,
+      activity == 'Defuse' & team == activity_team & n_team_pre_activity > 1  ~ 0.4 / (n_team_pre_activity - 1),
+      activity == 'Defuse' & team == activity_team & n_team_pre_activity == 1  ~ 0.4,
+      
+      activity == 'Defuse' & team != activity_team & n_team_pre_activity > 1 ~ -1 / n_team_pre_activity,
+      activity == 'Defuse' & team != activity_team & n_team_pre_activity == 1  ~ -1,
       activity == 'Defuse' & n_team_pre_activity == 0  ~ 0,
       
-      activity == 'Plant' & team != activity_team & n_team_pre_activity > 1 ~ -0.4 / n_team_pre_activity,
-      activity == 'Plant' & team != activity_team & n_team_pre_activity == 1  ~ -0.4,
+      activity == 'Plant' & team != activity_team & n_team_pre_activity > 1 ~ -1 / n_team_pre_activity,
+      activity == 'Plant' & team != activity_team & n_team_pre_activity == 1  ~ -1,
       
       team == activity_team & n_team_pre_activity > 1  ~ 0.4 / (n_team_pre_activity - 1),
       team == activity_team & n_team_pre_activity == 1  ~ 0.4,
@@ -708,155 +730,126 @@ long_participation <- grid_participation |>
   ) |> 
   relocate(indicator, .after = wt)
 
-both_pbp |> 
-  filter(
-    # side == 'o',
-    round_id == '2021-SND-018-05'
-  )
-
-long_participation |> 
-  filter(activity != 'Start') |> 
-  filter(is.na(wt))
-
-long_participation |> 
-  filter(activity != 'Start') |> 
-  count(wt) |> 
-  mutate(prop = n / sum(n))
-
-long_participation |> 
-  filter(activity != 'Start') |> 
-  pull(wt) |> 
-  sum()
-
+## should it always equal 1?
+## should be equal to 1 for defuses with no defense
+## also equal to 1 for activity='Kill' for '2022-SND-223-07', where there is a trade-out on the last kill at the exact same time
 # long_participation |> 
 #   filter(activity != 'Start') |> 
-#   mutate(
-#     indicator_sign = ifelse(activity_team == team, 1L, -1L) * indicator
+#   group_by(offense_engagement_id, activity) |> 
+#   summarize(
+#     across(wt, sum)
 #   ) |> 
-#   pull(indicator) |> 
-#   sum()
-long_participation |> 
-  filter(activity != 'Start') |> 
-  group_by(offense_engagement_id, activity) |> 
-  summarize(
-    across(wt, sum)
-  ) |> 
-  ungroup() |> 
-  arrange(desc(wt)) |> 
-  # filter(wt == 1) |> 
-  mutate(across(wt, round, 2)) |> 
-  count(wt, activity, sort = TRUE) |> 
-  view()
+#   ungroup() |> 
+#   arrange(desc(wt)) |> 
+#   # filter(wt == 1) |> 
+#   mutate(across(wt, round, 2))
 
-long_participation |> 
-  filter(offense_engagement_id == '2021-SND-011-01-3v1-Kill')
-
-qs::qsave(long_participation, file.path('data', 'long_cod_snd_participation.qs'))
+qs::qsave(long_participation, file.path('data', 'cod_snd_participation.qs'))
 
 ## timing ----
-d <- tibble(
-  seconds_elapsed = c(1, 3, 6, 12, 13, 14),
-  player = c('a', 'x', 'b', 'b', 'z', 'b'),
-  opposer = c('w', 'a', 'x', 'y', 'c', 'z'),
-  team = c(1, 2, 1, 1, 2, 1),
-  opponent = c(2, 1, 2, 2, 1, 2),
-  is_chain = c(FALSE, TRUE, TRUE, FALSE, FALSE, TRUE),
-  chain_id = c(
-    list(NULL), 
-    list('1'),
-    list(c('1', '2')),
-    list(NULL), 
-    list(NULL), 
-    list('5')
-  )
-) |>
-  mutate(
-    id = as.character(row_number()),
-    .before = 1
-  )
-d
-
-dd <- bind_rows(
-  d |> mutate(flipped = FALSE),
-  d |> 
-    mutate(
-      across(
-        c(
-          player,
-          opposer,
-          team,
-          opponent
-        ),
-        list(orig = ~ .x),
-        .names = '{.fn}_{.col}'
-        
-      )
-    ) |> 
-    mutate(
-      flipped = TRUE,
-      player = orig_opposer,
-      opposer = orig_player,
-      team = orig_opponent,
-      opponent = orig_team
-    ) |> 
-    select(-starts_with('orig'))
-) |> 
-  arrange(id, flipped)
-
-pc <- dd |>
-  filter(flipped) |> 
-  inner_join(
-    dd |>
-      filter(!flipped) |> 
-      transmute(
-        past_id = id,
-        past_seconds_elapsed = seconds_elapsed,
-        next_seconds_elapsed = seconds_elapsed + 5,
-        player,
-        past_opposer = opposer
-      ),
-    join_by(
-      player,
-      seconds_elapsed > past_seconds_elapsed,
-      seconds_elapsed <= next_seconds_elapsed
-    )
-  )
-pc |> 
-  group_by(id)
-
-pc <- d |>
-  inner_join(
-    d |>
-      transmute(
-        past_id = id,
-        past_seconds_elapsed = seconds_elapsed,
-        next_seconds_elapsed = seconds_elapsed + 5,
-        past_player = player,
-        past_opposer = opposer
-      ),
-    join_by(
-      seconds_elapsed > past_seconds_elapsed,
-      seconds_elapsed <= next_seconds_elapsed
-    )
-  ) |>
-  filter(
-    id != past_id
-  )
-
-d |>
-  left_join(
-    pc |>
-      group_by(id) |>
-      summarize(
-        past_id = list(past_id),
-        past_players = list(past_player),
-        past_opposers = list(past_opposer)
-      ),
-    by = c('id')
-  ) |>
-  filter(
-    opposer %in% c(past_players)
-  )
+# d <- tibble(
+#   seconds_elapsed = c(1, 3, 6, 12, 13, 14),
+#   player = c('a', 'x', 'b', 'b', 'z', 'b'),
+#   opposer = c('w', 'a', 'x', 'y', 'c', 'z'),
+#   team = c(1, 2, 1, 1, 2, 1),
+#   opponent = c(2, 1, 2, 2, 1, 2),
+#   is_chain = c(FALSE, TRUE, TRUE, FALSE, FALSE, TRUE),
+#   chain_id = c(
+#     list(NULL), 
+#     list('1'),
+#     list(c('1', '2')),
+#     list(NULL), 
+#     list(NULL), 
+#     list('5')
+#   )
+# ) |>
+#   mutate(
+#     id = as.character(row_number()),
+#     .before = 1
+#   )
+# d
+# 
+# dd <- bind_rows(
+#   d |> mutate(flipped = FALSE),
+#   d |> 
+#     mutate(
+#       across(
+#         c(
+#           player,
+#           opposer,
+#           team,
+#           opponent
+#         ),
+#         list(orig = ~ .x),
+#         .names = '{.fn}_{.col}'
+#         
+#       )
+#     ) |> 
+#     mutate(
+#       flipped = TRUE,
+#       player = orig_opposer,
+#       opposer = orig_player,
+#       team = orig_opponent,
+#       opponent = orig_team
+#     ) |> 
+#     select(-starts_with('orig'))
+# ) |> 
+#   arrange(id, flipped)
+# 
+# pc <- dd |>
+#   filter(flipped) |> 
+#   inner_join(
+#     dd |>
+#       filter(!flipped) |> 
+#       transmute(
+#         past_id = id,
+#         past_seconds_elapsed = seconds_elapsed,
+#         next_seconds_elapsed = seconds_elapsed + 5,
+#         player,
+#         past_opposer = opposer
+#       ),
+#     join_by(
+#       player,
+#       seconds_elapsed > past_seconds_elapsed,
+#       seconds_elapsed <= next_seconds_elapsed
+#     )
+#   )
+# pc |> 
+#   group_by(id)
+# 
+# pc <- d |>
+#   inner_join(
+#     d |>
+#       transmute(
+#         past_id = id,
+#         past_seconds_elapsed = seconds_elapsed,
+#         next_seconds_elapsed = seconds_elapsed + 5,
+#         past_player = player,
+#         past_opposer = opposer
+#       ),
+#     join_by(
+#       seconds_elapsed > past_seconds_elapsed,
+#       seconds_elapsed <= next_seconds_elapsed
+#     )
+#   ) |>
+#   filter(
+#     id != past_id
+#   )
+# 
+# d |>
+#   left_join(
+#     pc |>
+#       group_by(id) |>
+#       summarize(
+#         past_id = list(past_id),
+#         past_players = list(past_player),
+#         past_opposers = list(past_opposer)
+#       ),
+#     by = c('id')
+#   ) |>
+#   filter(
+#     opposer %in% c(past_players)
+#   )
 
 
 init_chained <- both_pbp |> 

@@ -58,6 +58,7 @@ init_model_pbp <- both_pbp |>
     win_round,
     
     ## extra
+    game,
     n_team_pre_activity,
     n_opponent_pre_activity,
     n_team_remaining,
