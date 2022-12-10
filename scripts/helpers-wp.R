@@ -277,6 +277,12 @@ generate_pred_grid <- function(is_pre_plant) {
     )
 }
 
+## TODO: Could fit a model for the specific situation of a post-plant 1v0 defuse, for which the defense should be given 0 WP if the seconds remaining is less than 7.5, but something between 0 and 1 if there are between 15 and 7.5 seconds remaining.
+## Could even allow for 2v0, 3v0, and 4v0 predictions. These would not have a hard rule for the last 7.5 seconds since a person could be defusing while a teammate eliminates an opponent with less than 7.5 seconds remaining.
+# d <- all_model_pbp |> filter(side == 'o', !is_pre_plant, n_team_pre_activity == 1, n_team_remaining == 0, n_opponent_remaining == 1)
+# fit <- glm(win_round ~ model_seconds_elapsed, d, family = 'binomial')
+# round(predict(fit, tibble(model_seconds_elapsed = c(0:45)), type = 'response'), 2)
+
 predict.wp_model <- function(object, new_data, ...) {
   
   validate_colnames(data = new_data)
@@ -287,11 +293,38 @@ predict.wp_model <- function(object, new_data, ...) {
     predict(object[['post']], new_data, ...)
   )
   
-  hi <- rep(0.9999, nrow(new_data))
-  lo <- rep(0.0001, nrow(new_data))
-  case_when(
-    new_data[['n_opponent_remaining']] == 0 & new_data[['model_seconds_remaining']] >= 10 ~ hi,
-    new_data[['n_team_remaining']] == 0 & new_data[['model_seconds_remaining']] >= 10 ~ lo,
+  rep_data <- function(x) {
+    rep(x, nrow(new_data))
+  }
+  
+  is_1v0_post_plant <- !new_data[['is_pre_plant']] & (new_data[['n_team_remaining']] == 1) & (new_data[['n_opponent_remaining']] == 0)
+  is_0v1_post_plant <- !new_data[['is_pre_plant']] & (new_data[['n_team_remaining']] == 0) & (new_data[['n_opponent_remaining']] == 1)
+  is_Nv0_post_plant <- !new_data[['is_pre_plant']] & (new_data[['n_team_remaining']] > 1) & (new_data[['n_opponent_remaining']] == 0)
+  is_0vN_post_plant <- !new_data[['is_pre_plant']] & (new_data[['n_team_remaining']] == 0) & (new_data[['n_opponent_remaining']] > 1)
+  
+  dplyr::case_when(
+    is_1v0_post_plant & new_data[['model_seconds_remaining']] >= 15 ~ rep_data(1),
+    is_1v0_post_plant & new_data[['model_seconds_remaining']] >= 12.5 ~ rep_data(0.9),
+    is_1v0_post_plant & new_data[['model_seconds_remaining']] >= 10 ~ rep_data(0.65),
+    is_1v0_post_plant & new_data[['model_seconds_remaining']] >= 7.5 ~ rep_data(0.5),
+    is_1v0_post_plant & new_data[['model_seconds_remaining']] < 7.5  ~ rep_data(0),
+    
+    is_0v1_post_plant & new_data[['model_seconds_remaining']] >= 15 ~ rep_data(0),
+    is_0v1_post_plant & new_data[['model_seconds_remaining']] >= 12.5  ~ rep_data(0.1),
+    is_0v1_post_plant & new_data[['model_seconds_remaining']] >= 10 ~ rep_data(0.35),
+    is_0v1_post_plant & new_data[['model_seconds_remaining']] >= 7.5 ~ rep_data(0.5),
+    is_0v1_post_plant & new_data[['model_seconds_remaining']] < 7.5  ~ rep_data(1),
+    
+    is_Nv0_post_plant & new_data[['model_seconds_remaining']] >= 12.5 ~ rep_data(1),
+    is_Nv0_post_plant & new_data[['model_seconds_remaining']] >= 10 ~ rep_data(0.75),
+    is_Nv0_post_plant & new_data[['model_seconds_remaining']] >= 7.5 ~ rep_data(0.5),
+    is_Nv0_post_plant & new_data[['model_seconds_remaining']] < 7.5  ~ rep_data(0.25),
+    
+    is_0vN_post_plant & new_data[['model_seconds_remaining']] >= 12.5 ~ rep_data(0),
+    is_0vN_post_plant & new_data[['model_seconds_remaining']] >= 10 ~ rep_data(0.25),
+    is_0vN_post_plant & new_data[['model_seconds_remaining']] >= 7.5 ~ rep_data(0.5),
+    is_0vN_post_plant & new_data[['model_seconds_remaining']] < 7.5  ~ rep_data(0.75),
+    
     TRUE ~ pred
   )
   
@@ -393,7 +426,7 @@ scale_x_continuous_wp_states <- function(...) {
 #   dplyr::mutate('scaler' = .data[['n']] / max(.data[['n']]))
 # scaler_by_second <- \(x) x^(-0.5)
 plot_wp_grid <- function(data, feature_name, ...) {
-
+  
   filt <- dplyr::filter(
     data, 
     .data[['side']] == default_side
@@ -490,14 +523,33 @@ side_lab_switcher <- function(side) {
   )
 }
 
-plot_round <- function(model, data, round_id, side = 'o', expand = FALSE, save = TRUE, ...) {
+plot_round <- function(
+    model,
+    data,
+    round_id,
+    side = 'o',
+    expand = FALSE,
+    save = TRUE,
+    path = file.path('figs', sprintf('round_id=%s&side=%s&expand=%s.png', round_id, side, tolower(expand))),
+    ggsave.args = list(
+      height = 10,
+      width = 10,
+      units = 'in'
+    )
+) {
+  
   stopifnot(length(round_id) == 1)
   side <- rlang::arg_match(side, c('o', 'd'))
   
-  filt <- data |> 
+  filt <- data |>
     dplyr::filter(.data[['round_id']] == !!round_id, .data[['side']] == !!side)
   
-  last_row <- tail(filt, 1)
+  win_round <- as.character(unique(filt[['win_round']])) == 'yes'
+  labels_on_bottom <- win_round
+  
+  last_row <- filt |> 
+    dplyr::slice_max(.data[['seconds_elapsed']], n = 1, with_ties = FALSE)
+  
   filt <- dplyr::add_row(
     filt,
     last_row |> 
@@ -507,32 +559,62 @@ plot_round <- function(model, data, round_id, side = 'o', expand = FALSE, save =
       )
   )
   
+  round_has_plant <- unique(filt$round_has_plant)
+  # round_has_plant <- isTRUE(any(filt[['is_pre_plant']] == FALSE))
+  
   if (isTRUE(expand)) {
     f_line <- ggplot2::geom_line
+    
     seconds_elapsed_range <- range(filt[['seconds_elapsed']])
     pre_plant_seconds_elapsed_range <- filt |> 
       dplyr::filter(.data[['is_pre_plant']]) |> 
       dplyr::pull(.data[['model_seconds_elapsed']]) |> 
       range()
     
+    pre_plant_seconds <- filt |> 
+      dplyr::filter(.data[['is_pre_plant']]) |> 
+      dplyr::pull(.data[['model_seconds_elapsed']]) |> 
+      unique()
+    
+    pre_plant_seconds_seq <- c(
+      seq(pre_plant_seconds_elapsed_range[1], pre_plant_seconds_elapsed_range[2]),
+      pre_plant_seconds
+    ) |> 
+      unique() |> 
+      sort()
+    
     ## TODO: Does this work for non-integer seconds?
     grid <- tibble::tibble(
-      'model_seconds_elapsed' = seq(pre_plant_seconds_elapsed_range[1], pre_plant_seconds_elapsed_range[2]),
-      'is_pre_plant' = rep(TRUE, pre_plant_seconds_elapsed_range[2] + 1)
+      'model_seconds_elapsed' = pre_plant_seconds_seq,
+      'is_pre_plant' = rep(TRUE, length(pre_plant_seconds_seq))
     ) |> 
       dplyr::mutate('seconds_elapsed' = .data[['model_seconds_elapsed']])
     
-    if (isTRUE(any(filt[['is_pre_plant']] == FALSE))) {
+    if (isTRUE(round_has_plant)) {
+      
       post_plant_seconds_elapsed_range <- filt |> 
         dplyr::filter(!.data[['is_pre_plant']]) |> 
         dplyr::pull(.data[['model_seconds_elapsed']]) |> 
         range()
       
+      post_plant_seconds <- filt |> 
+        dplyr::filter(!.data[['is_pre_plant']]) |> 
+        dplyr::pull(.data[['model_seconds_elapsed']]) |> 
+        unique()
+      
+      
+      post_plant_seconds_seq <- c(
+        seq(pre_plant_seconds_elapsed_range[1], pre_plant_seconds_elapsed_range[2]),
+        pre_plant_seconds
+      ) |> 
+        unique() |> 
+        sort()
+      
       grid <- bind_rows(
         grid,
         tibble::tibble(
-          'model_seconds_elapsed' = seq(post_plant_seconds_elapsed_range[1], post_plant_seconds_elapsed_range[2]),
-          'is_pre_plant' = rep(TRUE, post_plant_seconds_elapsed_range[2] + 1)
+          'model_seconds_elapsed' = post_plant_seconds_seq,
+          'is_pre_plant' = rep(FALSE, length(post_plant_seconds_seq))
         ) |> 
           dplyr::mutate('seconds_elapsed' = pre_plant_seconds_elapsed_range[2] + .data[['model_seconds_elapsed']])
       )
@@ -541,7 +623,8 @@ plot_round <- function(model, data, round_id, side = 'o', expand = FALSE, save =
     df <- grid |> 
       dplyr::left_join(
         filt,
-        by = c('model_seconds_elapsed', 'seconds_elapsed', 'is_pre_plant')
+        by = c('model_seconds_elapsed', 'seconds_elapsed', 'is_pre_plant'),
+        multiple = 'all'
       ) |> 
       tidyr::fill(
         # tidyselect::vars_select_helpers$all_of(setdiff(colnames(filt), join_cols)),
@@ -554,6 +637,20 @@ plot_round <- function(model, data, round_id, side = 'o', expand = FALSE, save =
   }
   
   df$wp <- predict(model, df)
+  
+  df |> 
+    select(
+      seconds_elapsed,
+      model_seconds_elapsed,
+      is_pre_plant,
+      activity,
+      activity_player,
+      activity_opposer,
+      activity_team,
+      activity_opponent,
+      wp
+    ) |> 
+    tibble::view()
   
   if (nrow(filt) == 0) {
     stop(
@@ -570,13 +667,31 @@ plot_round <- function(model, data, round_id, side = 'o', expand = FALSE, save =
         .data[['activity']] == 'Start' ~ 'Start',
         .data[['activity']] == 'Plant' & .data[['is_pre_plant']] ~ sprintf('%s (%s) plants (pre-plant)', .data[['activity_player']], .data[['activity_team']]),
         .data[['activity']] == 'Plant' & !.data[['is_pre_plant']] ~ sprintf('%s (%s) plants (post-plant)', .data[['activity_player']], .data[['activity_team']]),
-        .data[['activity']] == 'Defuse' ~ sprintf('%s (%s) defuses', .data[['activity_opponent']], .data[['activity_player']]),
+        .data[['activity']] == 'Defuse' ~ sprintf('%s (%s) defuses', .data[['activity_player']], .data[['activity_team']]),
         .data[['activity']] == 'Kill' ~ sprintf('%s (%s) kills\n%s (%s)', .data[['activity_player']], .data[['activity_team']], .data[['activity_opposer']], .data[['activity_opponent']]),
         .data[['activity']] == 'Kill Planter' ~ sprintf('%s (%s) kills\n%s %s (planting)', .data[['activity_player']], .data[['activity_team']], .data[['activity_opposer']], .data[['activity_opponent']]),
         .data[['activity']] == 'Kill Defuser' ~ sprintf('%s (%s) kills\n%s (%s) (defusing)', .data[['activity_player']], .data[['activity_team']], .data[['activity_opposer']], .data[['activity_opponent']]),
         .data[['activity']] == 'Self Kill' ~ sprintf('%s (%s) self-kills', .data[['activity_player']], .data[['activity_team']]),
         .data[['activity']] == 'Team Kill' ~ sprintf('%s (%s)\nteam-kills %s', .data[['activity_player']], .data[['activity_team']], .data[['activity_opposer']])
       )
+    )
+  
+  df |> 
+    ggplot2::ggplot() +
+    ggplot2::aes(x = .data[['seconds_elapsed']], y = .data[['wp']]) +
+    ggplot2::geom_step() +
+    # f_line()  +
+    ggplot2::geom_point(
+      data = labels
+    ) +
+    ggplot2::scale_y_continuous(
+      limits = c(0, 1),
+      labels = scales::percent
+    ) +
+    ggplot2::labs(
+      title = sprintf('%s win probability', side_lab_switcher(side)),
+      y = 'Win probability',
+      x = 'Seconds elapsed'
     )
   
   p <- df |> 
@@ -620,15 +735,36 @@ plot_round <- function(model, data, round_id, side = 'o', expand = FALSE, save =
       x = 'Seconds elapsed'
     )
   
+  if (isTRUE(round_has_plant)) {
+    p <- p +
+      ggplot2::geom_vline(
+        ggplot2::aes(
+          x = unique(filt[['plant_second']])
+        ),
+        color = 'white',
+        linetype = 1,
+        size = 1
+      )
+  }
+  
   if (isFALSE(save)) {
     return(p)
   }
   
-  ggsave(
+  rlang::exec(
+    ggplot2::ggsave,
     plot = p,
-    filename = file.path('figs', sprintf('round_id=%s|side=%s.png', round_id, side)),
-    ...
+    filename = path,
+    !!!ggsave.args
   )
+  
+  # ggplot2::ggsave(
+  #   plot = p,
+  #   filename = file.path('figs', sprintf('round_id=%s&side=%s.png', round_id, side)),
+  #   units = 'in',
+  #   height = 7,
+  #   width = 7
+  # )
 }
 
 

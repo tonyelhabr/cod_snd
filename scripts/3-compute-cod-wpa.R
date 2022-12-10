@@ -2,11 +2,14 @@
 library(qs)
 library(dplyr)
 library(broom)
+library(tidyr)
 
 source('scripts/helpers-wp.R')
 source('scripts/helpers-plot.R')
-model_lb <- qs::qread(file.path('data', 'wp_model-lb.qs'))
-all_model_pbp <- qs::qread(file.path('data', 'wp_model_data.qs'))
+data_dir <- 'data'
+
+model_lb <- qs::qread(file.path(data_dir, 'wp_model-lb.qs'))
+all_model_pbp <- qs::qread(file.path(data_dir, 'wp_model_data.qs'))
 
 all_model_pbp <- augment(
   model_lb,
@@ -21,7 +24,7 @@ team_wpa <- all_model_pbp |>
   ungroup() |> 
   relocate(wp, team_wpa, .after = wp)
 
-long_participation <- qs::qread(file.path('data', 'cod_snd_participation.qs'))
+long_participation <- qs::qread(file.path(data_dir, 'cod_snd_participation.qs'))
 long_wpa <- team_wpa |> 
   left_join(
     long_participation |> 
@@ -101,22 +104,27 @@ hist(wpa_by_side_player$dwpa)
 #   distinct(engagement_id)
 # stopifnot(nrow(engagement_ids) == 0L)
 
+## second clutches play of Vanguard, done by Scump: https://youtu.be/WxowLIf6HuI?t=818
+example_round <- '2022-SND-177-01'
+
 autoplot(
   model_lb,
   type = 'round',
   data = all_model_pbp,
-  round_id = '2021-SND-011-02',
+  round_id = example_round,
   side = 'o',
-  expand = FALSE
+  expand = FALSE,
+  save = TRUE
 )
 
 autoplot(
   model_lb,
   type = 'round',
   data = all_model_pbp,
-  round_id = '2021-SND-011-02',
+  round_id = example_round,
   side = 'o',
-  expand = TRUE
+  expand = TRUE,
+  save = TRUE
 )
 
 

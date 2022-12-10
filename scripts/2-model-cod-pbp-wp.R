@@ -101,7 +101,26 @@ stopifnot(1 == (all_model_pbp |> filter(is_pre_plant, is_post_plant) |> count(ac
 # all_model_pbp |> filter(is_pre_plant, is_post_plant) |> count(is_initial_bomb_carrier_killed)
 # all_model_pbp |> filter(!is_pre_plant, is_post_plant) |> count(is_initial_bomb_carrier_killed)
 
+## TODO:
+all_model_pbp |> 
+  filter(model_seconds_remaining < 0)
+
 qs::qsave(all_model_pbp, file.path('data', 'wp_model_data.qs'))
+
+d <- all_model_pbp |> 
+  filter(side == 'o', !is_pre_plant, n_team_pre_activity == 1, n_team_remaining == 0, n_opponent_remaining == 1)
+fit <- glm(win_round ~ model_seconds_elapsed, d, family = 'binomial')
+round(predict(fit, tibble(model_seconds_elapsed = c(0:45)), type = 'response'), 2)
+
+all_model_pbp |> 
+  filter(side == 'o', !is_pre_plant, n_team_pre_activity == 1, n_team_remaining == 0, n_opponent_remaining == 1) |> 
+  count(last_7.5sec = model_seconds_elapsed > 37.5, win_round) |> 
+  tail(20)
+
+all_model_pbp |> 
+  filter(side == 'o', !is_pre_plant, n_team_pre_activity == 1, n_team_remaining == 0, n_opponent_remaining == 1) |> 
+  filter(model_seconds_elapsed > 37.5, win_round == 'no')
+  count(last_5sec = model_seconds_elapsed > 40, win_round)
 
 ## model ----
 model_lb <- all_model_pbp |> fit_wp_model_lb()
