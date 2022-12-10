@@ -202,11 +202,11 @@ initial_bomb_carrier_killed_times <- init_raw_pbp |>
   filter(initial_bomb_carrier_killed == 'Y') |> 
   select(round_id, initial_bomb_carrier_killed_second = seconds_elapsed)
 
-plant_times <- init_raw_pbp |> 
+init_plant_times <- init_raw_pbp |> 
   filter(activity == 'Plant') |> 
   select(round_id, plant_second = seconds_elapsed)
 
-defuse_times <- init_raw_pbp |> 
+init_defuse_times <- init_raw_pbp |> 
   filter(activity == 'Defuse') |> 
   select(round_id, defuse_second = seconds_elapsed)
 
@@ -253,7 +253,7 @@ raw_pbp <- init_raw_pbp |>
     by = 'round_id'
   ) |> 
   left_join(
-    plant_times,
+    init_plant_times,
     by = 'round_id'
   ) |> 
   mutate(
@@ -271,7 +271,7 @@ raw_pbp <- init_raw_pbp |>
     )
   ) |> 
   left_join(
-    defuse_times,
+    init_defuse_times,
     by = 'round_id'
   ) |> 
   mutate(
@@ -292,6 +292,28 @@ raw_pbp <- init_raw_pbp |>
     .before = 1
   )
 # raw_pbp |> select(round_id, activity, seconds_elapsed, round_has_plant, is_post_plant, pre_plant_seconds_elapsed, post_plant_seconds_elapsed, bomb_timer_left)
+
+plant_times <- one_pbp |>
+  filter(activity == 'Plant') |>
+  select(
+    round_id,
+    plant_second = seconds_elapsed,
+    activity_player,
+    activity_team,
+    activity_opposer,
+    weapon_or_bomb_site
+  )
+
+defuse_times <- raw_pbp |>
+  filter(activity == 'Defuse') |>
+  select(
+    round_id,
+    defuse_second = seconds_elapsed,
+    activity_player,
+    activity_team,
+    activity_opposer,
+    weapon_or_bomb_site
+  )
 
 select_pbp_side <- function(df, ...) {
   df |> 
@@ -380,6 +402,7 @@ one_pbp <- bind_rows(
 one_pbp_teams <- one_pbp |> 
   distinct(
     game,
+    map,
     map_id,
     round,
     round_id,
@@ -450,7 +473,12 @@ one_pbp |>
     activity_opponent != activity_opponent2
   )
 
-## fill in for when we only have one side (i.e. all kills from one team)
+one_pbp_teams |> 
+  inner_join(
+    defuse_times,
+    by = 'round_id'
+  )
+
 one_pbp_padded_side <- one_pbp_teams |> 
   rename(old_team = team, old_opponent = opponent, old_side = side) |> 
   inner_join(
@@ -475,17 +503,12 @@ one_pbp_round_begin_events <- bind_rows(
     tibble(
       seconds_elapsed = 0L,
       pre_plant_seconds_elapsed = 0L,
-      post_plant_seconds_elapsed = NA_real_,
-      
+
       n_team_remaining = 4L,
       n_opponent_remaining = 4L,
       
       activity = 'Start',
-      weapon_or_bomb_site = NA_character_,
-      killer_player = NA_character_,
-      victim_player = NA_character_,
-      killer_team = NA_character_,
-      
+
       is_post_plant = FALSE,
       is_kill_on_attempted_clinch = FALSE,
       is_initial_bomb_carrier_killed = FALSE,
@@ -513,6 +536,7 @@ one_pbp_round_begin_events <- bind_rows(
 round_records <- one_pbp_round_begin_events |> 
   distinct(
     round_id, 
+    game,
     map_id, 
     round,
     team, 
@@ -520,8 +544,8 @@ round_records <- one_pbp_round_begin_events |>
     win_round = team == round_winner, 
     lose_round = team != round_winner
   ) |> 
-  arrange(map_id, round_id, team) |> 
-  group_by(map_id, team) |> 
+  arrange(game, map_id, round_id, team) |> 
+  group_by(game, map_id, team) |> 
   mutate(
     team_round_wins = cumsum(win_round),
     opponent_round_wins = cumsum(lose_round),
@@ -533,24 +557,149 @@ round_records <- one_pbp_round_begin_events |>
   mutate(
     team_round_wl_diff = team_round_wins - opponent_round_wins
   ) |> 
-  group_by(map_id, team) |> 
+  group_by(game, map_id, team) |> 
   mutate(
     prev_team_round_wl_diff = lag(team_round_wl_diff, n = 1L, default = 0L)
   ) |> 
   ungroup() |> 
   select(-c(map_id, round, win_round, lose_round))
 
+one_pbp_start_events <-  bind_rows(
+  one_pbp |>
+    filter(activity == 'Plant') |>
+    select(
+      round_id,
+      plant_second = seconds_elapsed,
+      pre_plant_seconds_elapsed,
+      activity_player,
+      activity_team,
+      activity_opposer,
+      weapon_or_bomb_site
+    ) |> 
+    inner_join(
+      one_pbp_teams |> 
+        mutate(activity_team = team, activity_opponent = opponent) |> 
+        filter(!is.na(plant_second)),
+      by = c('round_id', 'plant_second', 'activity_team')
+    ) |> 
+    mutate(
+      activity = 'Start Plant',
+      seconds_elapsed = plant_second - 5,
+      pre_plant_seconds_elapsed = pre_plant_seconds_elapsed - 5,
+      
+      is_post_plant = FALSE,
+      is_kill_on_attempted_clinch = FALSE,
+      is_negative_action = FALSE
+    ),
+  one_pbp |>
+    filter(activity == 'Kill Planter') |>
+    select(
+      round_id,
+      seconds_elapsed,
+      pre_plant_seconds_elapsed,
+      activity_player = activity_opposer,
+      activity_team = activity_opponent
+    ) |> 
+    inner_join(
+      one_pbp_teams |> 
+        mutate(activity_team = team, activity_opponent = opponent),
+      by = c('round_id', 'activity_team')
+    ) |> 
+    mutate(
+      activity = 'Start Plant',
+      ## -3 is just a guess
+      seconds_elapsed = seconds_elapsed - 3,
+      pre_plant_seconds_elapsed = pre_plant_seconds_elapsed - 3,
+      
+      is_post_plant = FALSE,
+      is_kill_on_attempted_clinch = FALSE,
+      is_negative_action = FALSE
+    ),
+  one_pbp |>
+    filter(activity == 'Defuse') |>
+    select(
+      round_id,
+      defuse_second = seconds_elapsed,
+      post_plant_seconds_elapsed,
+      activity_player,
+      activity_team,
+      activity_opposer,
+      weapon_or_bomb_site
+    ) |> 
+    inner_join(
+      one_pbp_teams |> 
+        mutate(activity_team = team, activity_opponent = opponent) |> 
+        filter(!is.na(defuse_second)),
+      by = c('round_id', 'defuse_second', 'activity_team')
+    ) |> 
+    mutate(
+      activity = 'Start Defuse',
+      seconds_elapsed = defuse_second - 7.5,
+      post_plant_seconds_elapsed = post_plant_seconds_elapsed - 7.5,
+      
+      is_post_plant = TRUE,
+      is_kill_on_attempted_clinch = FALSE,
+      is_initial_bomb_carrier_killed = FALSE,
+      is_negative_action = FALSE
+    ),
+  one_pbp |>
+    filter(activity == 'Kill Defuser') |>
+    select(
+      round_id,
+      seconds_elapsed,
+      post_plant_seconds_elapsed,
+      activity_player = activity_opposer,
+      activity_team = activity_opponent
+    ) |> 
+    inner_join(
+      one_pbp_teams |> 
+        mutate(activity_team = team, activity_opponent = opponent),
+      by = c('round_id', 'activity_team')
+    ) |> 
+    mutate(
+      activity = 'Start Defuse',
+      ## -5 just a guess
+      seconds_elapsed = seconds_elapsed - 5,
+      post_plant_seconds_elapsed = case_when(
+        post_plant_seconds_elapsed > 42.5 ~ 48, ## last 7.5 seconds
+        post_plant_seconds_elapsed < 5 ~ 1, ## corner case with ninja defuse
+        TRUE ~ post_plant_seconds_elapsed - 5
+      ),
+      
+      is_post_plant = TRUE,
+      is_kill_on_attempted_clinch = FALSE,
+      is_initial_bomb_carrier_killed = FALSE,
+      is_negative_action = FALSE
+    )
+)
+
 padded_one_pbp <- bind_rows(
   one_pbp,
-  one_pbp_round_begin_events
+  one_pbp_round_begin_events,
+  one_pbp_start_events
 ) |> 
   inner_join(
     round_records,
-    by = c('round_id', 'team', 'opponent')
+    by = c('round_id', 'game', 'team', 'opponent')
   ) |> 
   arrange(round_id, seconds_elapsed, side) |> 
   group_by(round_id, side) |> 
+  fill(n_team_remaining, n_opponent_remaining, is_initial_bomb_carrier_killed) |> 
   mutate(
+    across(
+      c(
+        n_team_remaining,
+        n_opponent_remaining
+      ),
+      ~lag(.x, n = 1, default = 4L)
+    ),
+    across(
+      c(
+        team_players_remaining,
+        opponent_players_remaining
+      ),
+      ~lag(.x, n = 1)
+    ),
     n_team_pre_activity = lag(n_team_remaining, n = 1L, default = 4L),
     n_opponent_pre_activity = lag(n_opponent_remaining, n = 1L, default = 4L),
     team_players_pre_activity = lag(team_players_remaining, n = 1L),
@@ -564,6 +713,36 @@ padded_one_pbp <- bind_rows(
   select(
     -ends_with('players_remaining')
   )
+
+padded_one_pbp |> 
+  group_by(round_id) |> 
+  filter(
+    any(activity == 'Plant'),
+    any(activity == 'Defuse')
+  ) |> 
+  ungroup()
+
+padded_one_pbp |> 
+  group_by(round_id) |> 
+  filter(
+    any(activity == 'Plant'),
+    any(activity == 'Defuse'),
+    any(activity == 'Kill Planter'),
+    any(activity == 'Kill Defuser')
+  ) |> 
+  ungroup()
+
+padded_one_pbp |> 
+  filter(activity == 'Start Plant') |> 
+  count(n_team_remaining, n_opponent_remaining)
+
+padded_one_pbp |> 
+  filter(activity == 'Start Defuse') |> 
+  count(n_team_remaining, n_opponent_remaining)
+
+padded_one_pbp |> 
+  filter(activity == 'Kill Defuser') |> 
+  count(n_team_remaining, n_opponent_remaining)
 
 both_pbp <- bind_rows(
   padded_one_pbp |> mutate(pbp_side = 'a', .before = 1),
@@ -914,6 +1093,7 @@ actual_chains <- past_chained |>
     past_engagement_id
   ) |> 
   unnest(past_engagement_id)
+
 actual_chains |> 
   distinct(
     past_engagement_id = engagement_id
