@@ -475,12 +475,12 @@ one_pbp_round_begin_events <- bind_rows(
     tibble(
       seconds_elapsed = 0L,
       pre_plant_seconds_elapsed = 0L,
-
+      
       n_team_remaining = 4L,
       n_opponent_remaining = 4L,
       
       activity = 'Start',
-
+      
       is_post_plant = FALSE,
       is_kill_on_attempted_clinch = FALSE,
       is_initial_bomb_carrier_killed = FALSE,
@@ -1005,7 +1005,7 @@ init_chains <- both_pbp |>
   # filter(pbp_side == 'a') |> 
   filter(
     (activity == 'Kill') |
-    (activity |> str_detect('Kill (Planter|Defuser)'))
+      (activity |> str_detect('Kill (Planter|Defuser)'))
   ) |> 
   select(pbp_side, round_id, engagement_id, seconds_elapsed, activity_player, activity_opposer)
 
@@ -1034,6 +1034,54 @@ past_chains <- init_chains |>
   ) |> 
   select(-next_seconds_elapsed)
 
+# get_init_future_chain <- function(df, round_id, engagement_ids) {
+#   
+#   next_engagement_id <- engagement_ids[1]
+#   n_engagement_ids <- length(engagement_ids)
+#   
+#   if (n_engagement_ids > 8) {
+#     stop('Infinite loop')
+#   }
+#   message(
+#     sprintf(
+#       'Searching for %s.%s', 
+#       next_engagement_id,
+#       ifelse(
+#         n_engagement_ids > 1L,
+#         sprintf(' (First engagement_id: %s. Chain length: %s.)', n_engagement_ids, rev(engagement_ids)[1]),
+#         ''
+#       )
+#     )
+#   )
+#   
+#   row <- df |> 
+#     filter(
+#       engagement_id == next_engagement_id,
+#       !(engagement_id %in% !!engagement_ids[2:n_engagement_ids]),
+#       activity_opposer == activity_opposer,
+#       past_engagement_id == !!next_engagement_id
+#     )
+#   
+#   n_row <- nrow(row)
+#   if (n_row == 0L) {
+#     if (n_engagement_ids == 1) {
+#       return(NULL)
+#     } else {
+#       return(
+#         engagement_ids
+#       )
+#     }
+#   } else if (n_row == 1L) {
+#     return(
+#       get_future_chain(
+#         df,
+#         c(row$engagement_id, engagement_ids)
+#       )
+#     )
+#   } else if (n_row > 1L) {
+#     stop(sprintf('More rows than expected at %s.', next_engagement_id))
+#   }
+# }
 
 chains <- past_chains |> 
   select(round_id, engagement_id, past_engagement_id, past_activity_player) |> 
@@ -1073,6 +1121,10 @@ get_future_chain <- function(df, engagement_ids) {
   
   next_engagement_id <- engagement_ids[1]
   n_engagement_ids <- length(engagement_ids)
+  
+  if (n_engagement_ids > 8) {
+    stop('Infinite loop')
+  }
   message(
     sprintf(
       'Searching for %s.%s', 
@@ -1087,8 +1139,10 @@ get_future_chain <- function(df, engagement_ids) {
   
   row <- df |> 
     filter(
+      !(engagement_id %in% !!engagement_ids),
       past_engagement_id == !!next_engagement_id
-    )
+    ) |> 
+    head(1)
   
   n_row <- nrow(row)
   if (n_row == 0L) {
@@ -1097,9 +1151,9 @@ get_future_chain <- function(df, engagement_ids) {
     )
   } else if (n_row == 1L) {
     return(
-      future_chain(
+      get_future_chain(
         df,
-        c(row$past_engagement_id, engagement_ids)
+        c(row$engagement_id, engagement_ids)
       )
     )
   } else if (n_row > 1L) {
@@ -1107,43 +1161,36 @@ get_future_chain <- function(df, engagement_ids) {
   }
 }
 
-future_chains <- chains |> 
-  mutate(
-    future_engagement_ids = map(engagement_id, ~get_future_chain(chains, .x))
+new_future_chains <- chains |> 
+  distinct(engagement_id) |> 
+  pull(engagement_id) |> 
+  set_names() |> 
+  map(
+    ~get_future_chain(
+      ## use this instead of chains since we want to consider any set of kills within 5 seconds of one another
+      past_chains |> distinct(engagement_id, past_engagement_id),
+      .x
+    )
   )
 
-future_chains |> 
-  mutate(
-    n_future_engagement_ids = map_int(future_engagement_ids, length)
-  ) |> 
-  filter(n_future_engagement_ids > 1L) |> 
-  unnest(future_engagement_ids) |> 
-  arrange(desc(n_future_engagement_ids))
-
-future_chains |> 
-  filter(
-    map_int(future_engagement_ids, length) > 1
-  )
-
-future_chains |> 
-  filter(engagement_id == '2021-SND-011-09-o-3v3-Kill') |> 
-  unnest(future_engagement_ids) |> 
-  distinct()
-
-chains |> 
-  distinct(
-    past_engagement_id = engagement_id
-  ) |> 
+all_chains <- chains |> 
   inner_join(
-    chains |> 
-      distinct(past_engagement_id),
-    by = 'past_engagement_id'
+    new_future_chains |> 
+      enframe('engagement_id', 'future_engagement_id'),
+    by = 'engagement_id'
+  ) |> 
+  unnest(future_engagement_id) |> 
+  filter(engagement_id != future_engagement_id)
+
+long_chains <- bind_rows(
+  all_chains |> transmute(group_engagement_id = engagement_id, engagement_id = past_engagement_id),
+  all_chains |> transmute(group_engagement_id = engagement_id, engagement_id = engagement_id),
+  all_chains |> transmute(group_engagement_id = engagement_id, engagement_id = future_engagement_id)
+) |> 
+  distinct() |> 
+  arrange(
+    group_engagement_id,
+    engagement_id
   )
 
-chains |> 
-  mutate(
-    n_past_engagements = map_int(past_engagement_id, length)
-  ) |> 
-  count(n_past_engagements)
-
-qs::qsave(chains, file.path('data', 'cod_snd_chains.qs'))
+qs::qsave(long_chains, file.path('data', 'cod_snd_chains.qs'))
