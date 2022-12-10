@@ -1030,17 +1030,16 @@ qs::qsave(long_participation, file.path('data', 'cod_snd_participation.qs'))
 #     opposer %in% c(past_players)
 #   )
 
-
-init_chained <- both_pbp |> 
+init_chains <- both_pbp |> 
   ## i think this only works when viewing things from one side
   # filter(pbp_side == 'a') |> 
   filter(activity %in% c('Kill', 'Kill Planter', 'Kill Defuser')) |> 
   select(pbp_side, round_id, engagement_id, seconds_elapsed, activity_player, activity_opposer)
 
 # https://doug-liebe.medium.com/exploring-win-probability-added-a-framework-for-measuring-impact-in-call-of-duty-d360f733ff6
-past_chained <- init_chained |> 
+past_chains <- init_chains |> 
   inner_join(
-    init_chained |> 
+    init_chains |> 
       transmute(
         pbp_side,
         round_id, 
@@ -1062,12 +1061,12 @@ past_chained <- init_chained |>
   ) |> 
   select(-next_seconds_elapsed)
 
-actual_chains <- past_chained |> 
+chains <- past_chains |> 
   select(round_id, engagement_id, past_engagement_id, past_activity_player) |> 
   nest(past_engagements = c(past_engagement_id, past_activity_player)) |> 
   mutate(past_engagements = map(past_engagements, deframe)) |> 
   inner_join(
-    init_chained,
+    init_chains,
     by = c('round_id', 'engagement_id')
   ) |> 
   mutate(
@@ -1094,18 +1093,18 @@ actual_chains <- past_chained |>
   ) |> 
   unnest(past_engagement_id)
 
-actual_chains |> 
+chains |> 
   distinct(
     past_engagement_id = engagement_id
   ) |> 
   inner_join(
-    actual_chains |> 
+    chains |> 
       distinct(past_engagement_id),
     by = 'past_engagement_id'
   )
 
 
-actual_chains |> 
+chains |> 
   count(
     round_id,
     engagement_id,
@@ -1113,58 +1112,14 @@ actual_chains |>
     sort = TRUE
   ) |> 
   count(n)
-actual_chains |> 
+chains |> 
   filter(engagement_id == '2021-SND-039-02-d-2v1-Kill')
 one_pbp |> 
   filter(round_id == '2021-SND-039-02') |> 
   glimpse()
-actual_chains |> 
+chains |> 
   mutate(z = map_int(past_engagement_id, length)) |> count(z)
 both_pbp |> 
   filter(round_id == '2021-SND-117-09', team == 'SEA')
 
-
-# past_chained |> count(engagement_id, sort = TRUE)
-chained <- init_chained |> 
-  left_join(
-    past_chained |> 
-      ## we don't actually need the past engagement ids! we just need to know how many
-      group_by(round_id, engagement_id) |> 
-      summarize(
-        past_engagement_ids = list(past_engagement_id),
-        past_activity_players = list(past_activity_player)
-      ),
-    by = c('round_id', 'engagement_id')
-  ) |> 
-  filter(
-    activity_opposer %in% past_activity_players
-  ) |> 
-  mutate(
-    n_past_engagements = map_int(past_engagement_id, length)
-  )
-chained |> arrange(desc(n_past_engagements))
-chained |> 
-  filter(
-    engagement_id == '2021-SND-117-09-d-1v0-Kill'
-  ) |> 
-  select(engagement_id, past_engagement_id, activity_opposer, past_activity_players) |> 
-  unnest(past_engagement_id, past_activity_players)
-both_pbp |> 
-  filter(round_id == '2021-SND-117-09', team == 'SEA')
-past_chained |> 
-  filter(round_id == '2021-SND-117-09') |> 
-  group_by(round_id, engagement_id) |> 
-  summarize(
-    past_engagement_id = list(engagement_id),
-    past_activity_players = list(activity_player)
-  )
-
-both_pbp |> 
-  filter(round_id == '2021-SND-117-09') |> 
-  filter(activity_player == 'Slacked')
-
-both_pbp |> 
-  filter(round_id == '2021-SND-117-09') |> 
-  filter(activity_opposer == 'Slacked')
-
-qs::qsave(chained, file.path('data', 'cod_snd_chains.qs'))
+qs::qsave(chains, file.path('data', 'cod_snd_chains.qs'))
