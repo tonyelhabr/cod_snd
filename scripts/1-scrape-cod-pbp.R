@@ -216,7 +216,7 @@ init_defuse_times <- init_raw_pbp |>
 ##   These activities are meaningless for win probability.
 engagements_to_drop <- init_raw_pbp |> 
   inner_join(
-    defuse_times,
+    init_defuse_times,
     by = 'round_id'
   ) |> 
   filter(seconds_elapsed > defuse_second) |> 
@@ -292,28 +292,6 @@ raw_pbp <- init_raw_pbp |>
     .before = 1
   )
 # raw_pbp |> select(round_id, activity, seconds_elapsed, round_has_plant, is_post_plant, pre_plant_seconds_elapsed, post_plant_seconds_elapsed, bomb_timer_left)
-
-plant_times <- one_pbp |>
-  filter(activity == 'Plant') |>
-  select(
-    round_id,
-    plant_second = seconds_elapsed,
-    activity_player,
-    activity_team,
-    activity_opposer,
-    weapon_or_bomb_site
-  )
-
-defuse_times <- raw_pbp |>
-  filter(activity == 'Defuse') |>
-  select(
-    round_id,
-    defuse_second = seconds_elapsed,
-    activity_player,
-    activity_team,
-    activity_opposer,
-    weapon_or_bomb_site
-  )
 
 select_pbp_side <- function(df, ...) {
   df |> 
@@ -473,12 +451,6 @@ one_pbp |>
     activity_opponent != activity_opponent2
   )
 
-one_pbp_teams |> 
-  inner_join(
-    defuse_times,
-    by = 'round_id'
-  )
-
 one_pbp_padded_side <- one_pbp_teams |> 
   rename(old_team = team, old_opponent = opponent, old_side = side) |> 
   inner_join(
@@ -606,7 +578,8 @@ one_pbp_start_events <-  bind_rows(
       by = c('round_id', 'activity_team')
     ) |> 
     mutate(
-      activity = 'Start Plant',
+      ## specify the player so that engagement_id will be unique
+      activity = sprintf('Start Plant (%s killed)', activity_player),
       ## -3 is just a guess
       seconds_elapsed = seconds_elapsed - 3,
       pre_plant_seconds_elapsed = pre_plant_seconds_elapsed - 3,
@@ -657,11 +630,11 @@ one_pbp_start_events <-  bind_rows(
       by = c('round_id', 'activity_team')
     ) |> 
     mutate(
-      activity = 'Start Defuse',
+      activity = sprintf('Start Defuse (%s killed)', activity_player),
       ## -5 just a guess
       seconds_elapsed = seconds_elapsed - 5,
       post_plant_seconds_elapsed = case_when(
-        post_plant_seconds_elapsed > 42.5 ~ 48, ## last 7.5 seconds
+        post_plant_seconds_elapsed > 42.5 ~ 37.5, ## last 7.5 seconds, so assume that they were trying before 37.5 seconds
         post_plant_seconds_elapsed < 5 ~ 1, ## corner case with ninja defuse
         TRUE ~ post_plant_seconds_elapsed - 5
       ),
@@ -686,20 +659,6 @@ padded_one_pbp <- bind_rows(
   group_by(round_id, side) |> 
   fill(n_team_remaining, n_opponent_remaining, is_initial_bomb_carrier_killed) |> 
   mutate(
-    across(
-      c(
-        n_team_remaining,
-        n_opponent_remaining
-      ),
-      ~lag(.x, n = 1, default = 4L)
-    ),
-    across(
-      c(
-        team_players_remaining,
-        opponent_players_remaining
-      ),
-      ~lag(.x, n = 1)
-    ),
     n_team_pre_activity = lag(n_team_remaining, n = 1L, default = 4L),
     n_opponent_pre_activity = lag(n_opponent_remaining, n = 1L, default = 4L),
     team_players_pre_activity = lag(team_players_remaining, n = 1L),
@@ -709,9 +668,15 @@ padded_one_pbp <- bind_rows(
   mutate(
     across(team_players_pre_activity, ~coalesce(.x, team_players_remaining)),
     across(opponent_players_pre_activity, ~coalesce(.x, opponent_players_remaining))
-  ) |> 
+  ) |>
   select(
     -ends_with('players_remaining')
+  )
+
+padded_one_pbp |> 
+  filter(
+    round_id == '2021-SND-017-02',
+    !is.na(post_plant_seconds_elapsed)
   )
 
 padded_one_pbp |> 
@@ -773,7 +738,7 @@ both_pbp <- bind_rows(
       n_team_pre_activity = orig_n_opponent_pre_activity,
       n_opponent_pre_activity = orig_n_team_pre_activity,
       team_players_pre_activity = orig_opponent_players_pre_activity,
-      opponent_players_pre_activity = orig_opponent_players_pre_activity
+      opponent_players_pre_activity = orig_team_players_pre_activity
     ) |> 
     select(-starts_with('orig'))
 ) |> 
@@ -806,6 +771,13 @@ both_pbp <- bind_rows(
   ## 2022-SND-223-07 has simultaneous kills to clinch
   filter(!(abs(prev_opponent_diff) == 4 & activity != 'Defuse')) |> 
   select(-prev_opponent_diff)
+
+both_pbp |> 
+  count(engagement_id) |> 
+  filter(n > 1) |> 
+  nrow() |> 
+  testthat::expect_equal(0)
+
 qs::qsave(both_pbp, file.path('data', 'cod_snd_pbp.qs'))
 
 ## participation ----
@@ -833,7 +805,7 @@ round_team_player_mapping <- round_map_team_mapping |>
     multiple = 'all'
   )
 
-# 324k
+# 359,584 x 8
 grid_participation <- round_engagement_mapping |> 
   left_join(
     round_team_player_mapping,
@@ -922,7 +894,6 @@ long_participation <- grid_participation |>
 #   arrange(desc(wt)) |> 
 #   # filter(wt == 1) |> 
 #   mutate(across(wt, round, 2))
-
 qs::qsave(long_participation, file.path('data', 'cod_snd_participation.qs'))
 
 ## timing ----
@@ -1029,11 +1000,13 @@ qs::qsave(long_participation, file.path('data', 'cod_snd_participation.qs'))
 #   filter(
 #     opposer %in% c(past_players)
 #   )
-
 init_chains <- both_pbp |> 
   ## i think this only works when viewing things from one side
   # filter(pbp_side == 'a') |> 
-  filter(activity %in% c('Kill', 'Kill Planter', 'Kill Defuser')) |> 
+  filter(
+    (activity == 'Kill') |
+    (activity |> str_detect('Kill (Planter|Defuser)'))
+  ) |> 
   select(pbp_side, round_id, engagement_id, seconds_elapsed, activity_player, activity_opposer)
 
 # https://doug-liebe.medium.com/exploring-win-probability-added-a-framework-for-measuring-impact-in-call-of-duty-d360f733ff6
@@ -1060,6 +1033,7 @@ past_chains <- init_chains |>
     engagement_id != past_engagement_id
   ) |> 
   select(-next_seconds_elapsed)
+
 
 chains <- past_chains |> 
   select(round_id, engagement_id, past_engagement_id, past_activity_player) |> 
@@ -1093,6 +1067,69 @@ chains <- past_chains |>
   ) |> 
   unnest(past_engagement_id)
 
+chains |> distinct(engagement_id)
+
+get_future_chain <- function(df, engagement_ids) {
+  
+  next_engagement_id <- engagement_ids[1]
+  n_engagement_ids <- length(engagement_ids)
+  message(
+    sprintf(
+      'Searching for %s.%s', 
+      next_engagement_id,
+      ifelse(
+        n_engagement_ids > 1L,
+        sprintf(' (First engagement_id: %s. Chain length: %s.)', n_engagement_ids, rev(engagement_ids)[1]),
+        ''
+      )
+    )
+  )
+  
+  row <- df |> 
+    filter(
+      past_engagement_id == !!next_engagement_id
+    )
+  
+  n_row <- nrow(row)
+  if (n_row == 0L) {
+    return(
+      engagement_ids
+    )
+  } else if (n_row == 1L) {
+    return(
+      future_chain(
+        df,
+        c(row$past_engagement_id, engagement_ids)
+      )
+    )
+  } else if (n_row > 1L) {
+    stop(sprintf('More rows than expected at %s.', next_engagement_id))
+  }
+}
+
+future_chains <- chains |> 
+  mutate(
+    future_engagement_ids = map(engagement_id, ~get_future_chain(chains, .x))
+  )
+
+future_chains |> 
+  mutate(
+    n_future_engagement_ids = map_int(future_engagement_ids, length)
+  ) |> 
+  filter(n_future_engagement_ids > 1L) |> 
+  unnest(future_engagement_ids) |> 
+  arrange(desc(n_future_engagement_ids))
+
+future_chains |> 
+  filter(
+    map_int(future_engagement_ids, length) > 1
+  )
+
+future_chains |> 
+  filter(engagement_id == '2021-SND-011-09-o-3v3-Kill') |> 
+  unnest(future_engagement_ids) |> 
+  distinct()
+
 chains |> 
   distinct(
     past_engagement_id = engagement_id
@@ -1103,23 +1140,10 @@ chains |>
     by = 'past_engagement_id'
   )
 
-
 chains |> 
-  count(
-    round_id,
-    engagement_id,
-    pbp_side,
-    sort = TRUE
+  mutate(
+    n_past_engagements = map_int(past_engagement_id, length)
   ) |> 
-  count(n)
-chains |> 
-  filter(engagement_id == '2021-SND-039-02-d-2v1-Kill')
-one_pbp |> 
-  filter(round_id == '2021-SND-039-02') |> 
-  glimpse()
-chains |> 
-  mutate(z = map_int(past_engagement_id, length)) |> count(z)
-both_pbp |> 
-  filter(round_id == '2021-SND-117-09', team == 'SEA')
+  count(n_past_engagements)
 
 qs::qsave(chains, file.path('data', 'cod_snd_chains.qs'))
