@@ -40,13 +40,42 @@ breakingpointgg_team_logo_urls_mapping <- c(
   'New York Subliners' = file.path(logos_dir, 'New-York-Subliners-Logo-1-103x128_cropped.png')
 )
 
+team_color_mapping <- c(
+  'ATL' = '#e43d30',
+  'BOS' = '#02FF5B',
+  'DAL' = '#B5A26A',
+  'FLA' = '#025157',
+  'LAG' = '#60269e',
+  'LAT' = '#ef3232',
+  'LDN' = '#CF152D',
+  'MIN' = '#351f68',
+  'NYSL' = '#FEE306',
+  'OPTX' = '#9dc73b',
+  'PAR' = '#EE7623',
+  'SEA' = '#16667D',
+  'TOR' = '#773dbd'
+)
+
 all_model_pbp <- qs::qread(file.path(data_dir, 'wp_model_data.qs')) |> 
   mutate(
     'team_label' = breakingpointgg_team_mapping[.data[['team']]],
     'opponent_label' = breakingpointgg_team_mapping[.data[['opponent']]],
     'team_logo_url' = breakingpointgg_team_logo_urls_mapping[.data[['team_label']]],
-    'opponent_logo_url' = breakingpointgg_team_logo_urls_mapping[.data[['opponent_label']]]
+    'opponent_logo_url' = breakingpointgg_team_logo_urls_mapping[.data[['opponent_label']]],
+    'team_color' = team_color_mapping[.data[['team']]],
+    'opponent_color' = team_color_mapping[.data[['opponent']]],
+    'activity_team_color' = case_when(
+      team == activity_team ~ team_color,
+      team == activity_opponent ~ opponent_color,
+      TRUE ~ NA_character_
+    ),
+    'activity_opponent_color' = case_when(
+      opponent == activity_opponent ~ opponent_color,
+      opponent == activity_team ~ team_color,
+      TRUE ~ NA_character_
+    )
   )
+ 
 model_lb <- qs::qread(file.path(data_dir, 'wp_model-lb.qs'))
 long_participation <- qs::qread(file.path(data_dir, 'cod_snd_participation.qs'))
 chains <- qs::qread(file.path('data', 'cod_snd_chains.qs'))
@@ -221,5 +250,3 @@ autoplot(
   expand = TRUE,
   save = TRUE
 )
-
-

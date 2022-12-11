@@ -352,19 +352,7 @@ plot_round <- function(
     dplyr::mutate(
       'wp' = ifelse(.data[['activity']] == 'End', dplyr::lag(.data[['wp']], n = 1), .data[['wp']])
     )
-  
-  # df |> 
-  #   select(
-  #     seconds_elapsed,
-  #     model_seconds_elapsed,
-  #     is_pre_plant,
-  #     activity,
-  #     activity_player,
-  #     activity_opposer,
-  #     activity_team,
-  #     activity_opponent,
-  #     wp
-  #   )
+
   
   if (nrow(filt) == 0) {
     stop(
@@ -379,13 +367,13 @@ plot_round <- function(
         is.na(.data[['activity']]) ~ '???',
         .data[['activity']] %in% c('Start', 'End') ~ NA_character_,
         .data[['activity']] == 'Plant' & .data[['is_pre_plant']] ~ NA_character_, # sprintf('%s (%s) plants (pre-plant)', .data[['activity_player']], .data[['activity_team']]),
-        .data[['activity']] == 'Plant' & !.data[['is_pre_plant']] ~ sprintf('%s (%s) plants', .data[['activity_player']], .data[['activity_team']]),
-        .data[['activity']] == 'Defuse' ~ sprintf('%s (%s) defuses', .data[['activity_player']], .data[['activity_team']]),
-        .data[['activity']] == 'Kill' ~ sprintf('%s (%s)  kills %s (%s)', .data[['activity_player']], .data[['activity_team']], .data[['activity_opposer']], .data[['activity_opponent']]),
-        .data[['activity']] == 'Kill Planter' ~ sprintf('%s (%s)  kills %s %s (planting)', .data[['activity_player']], .data[['activity_team']], .data[['activity_opposer']], .data[['activity_opponent']]),
-        .data[['activity']] == 'Kill Defuser' ~ sprintf('%s (%s) kills %s (%s) (defusing)', .data[['activity_player']], .data[['activity_team']], .data[['activity_opposer']], .data[['activity_opponent']]),
-        .data[['activity']] == 'Self Kill' ~ sprintf('%s (%s) self-kills', .data[['activity_player']], .data[['activity_team']]),
-        .data[['activity']] == 'Team Kill' ~ sprintf('%s (%s) team-kills %s', .data[['activity_player']], .data[['activity_team']], .data[['activity_opposer']])
+        .data[['activity']] == 'Plant' & !.data[['is_pre_plant']] ~ sprintf('%s (<span style="color:%s"><b>%s</b></span>) plants', .data[['activity_player']], .data[['activity_team_color']], .data[['activity_team']]),
+        .data[['activity']] == 'Defuse' ~ sprintf('%s (<span style="color:%s"><b>%s</b></span>) defuses', .data[['activity_player']], .data[['activity_team_color']], .data[['activity_team']]),
+        .data[['activity']] == 'Kill' ~ sprintf('%s (<span style="color:%s"><b>%s</b></span>) kills %s (<span style="color:%s"><b>%s</b></span>)', .data[['activity_player']], .data[['activity_team_color']], .data[['activity_team']], .data[['activity_opposer']], .data[['activity_opponent_color']], .data[['activity_opponent']]),
+        .data[['activity']] == 'Kill Planter' ~ sprintf('%s (<span style="color:%s"><b>%s</b></span>)  kills %s (<span style="color:%s"><b>%s</b></span>) (planting)', .data[['activity_player']], .data[['activity_team_color']], .data[['activity_team']], .data[['activity_opposer']],.data[['activity_opponent_color']], .data[['activity_opponent']]),
+        .data[['activity']] == 'Kill Defuser' ~ sprintf('%s (<span style="color:%s"><b>%s</b></span>) kills %s (<span style="color:%s"><b>%s</b></span>) (defusing)', .data[['activity_player']], .data[['activity_team_color']], .data[['activity_team']], .data[['activity_opposer']], .data[['activity_opponent_color']], .data[['activity_opponent']]),
+        .data[['activity']] == 'Self Kill' ~ sprintf('%s (<span style="color:%s"><b>%s</b></span>) self-kills', .data[['activity_player']], .data[['activity_team_color']], .data[['activity_team']]),
+        .data[['activity']] == 'Team Kill' ~ sprintf('%s (<span style="color:%s"><b>%s</b></span>) team-kills %s', .data[['activity_player']], .data[['activity_team_color']], .data[['activity_team']], .data[['activity_opposer']])
       )
     ) |> 
     dplyr::mutate(
@@ -406,10 +394,6 @@ plot_round <- function(
     !is.na(.data[['label']])
   ) |> 
     dplyr::mutate(
-      # 'seconds_elapsed',
-      # 'model_seconds_remaining',
-      # 'label',
-      # 'wp',
       'rn' = dplyr::row_number(),
       'y_base' = ifelse(.data[['rn']] %% 2, 1, 0),
       'max_rn' = max(.data[['rn']] ),
@@ -433,8 +417,8 @@ plot_round <- function(
         ggplot2::aes(
           xintercept = unique(filt[['plant_second']])
         ),
-        alpha = 0.5,
-        # color = 'white',
+        # alpha = 0.5,
+        color = 'white',
         color = gray_text,
         linetype = 1,
         size = 1
@@ -462,9 +446,10 @@ plot_round <- function(
         <span style='color:{team_color}; font-size=18pt'>{side_meta$team_label} ({side_meta$team})
         <img src='{side_meta$team_logo_url}' width='15'/>
         </span> <span style='color:{team_color}; font-size=12pt'>{side_meta$team_round_wins + as.integer(win_round)}</span> 
-        <span style='color:{non_white_color}; font-size=12pt'>-</span> <span style='color:{opponent_color}; font-size=12pt'>{side_meta$opponent_round_wins + (1 - as.integer(win_round))}</span>
+        <span style='color:{non_white_color}; font-size=12pt'>-</span>
         <span style='color:{opponent_color}; font-size=18pt'>{side_meta$opponent_label} ({side_meta$opponent})</span>
         <img src='{side_meta$opponent_logo_url}' width='15'/>
+        <span style='color:{opponent_color}; font-size=12pt'>{side_meta$opponent_round_wins + (1 - as.integer(win_round))}</span>
         "
     ),
       subtitle = sprintf(
@@ -504,14 +489,6 @@ plot_round <- function(
     filename = path,
     !!!ggsave.args
   )
-  
-  # ggplot2::ggsave(
-  #   plot = p,
-  #   filename = file.path('figs', sprintf('round_id=%s&side=%s.png', round_id, side)),
-  #   units = 'in',
-  #   height = 7,
-  #   width = 7
-  # )
 }
 
 add_lb_plot_caption <- function(...) {
