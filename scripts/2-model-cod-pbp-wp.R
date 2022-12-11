@@ -28,7 +28,11 @@ init_model_pbp <- both_pbp |>
       )
     ),
     across(
-      c(is_initial_bomb_carrier_killed, is_kill_on_attempted_clinch), 
+      c(
+        is_initial_bomb_carrier_killed, 
+        is_kill_on_attempted_clinch,
+        is_attempted_clinch
+      ), 
       as.integer
     ),
     win_round = ifelse(team == round_winner, 'yes', 'no') |> factor()
@@ -53,12 +57,16 @@ init_model_pbp <- both_pbp |>
     opponent_diff,
     is_initial_bomb_carrier_killed,
     is_kill_on_attempted_clinch,
+    is_attempted_clinch,
 
     ## outcome
     win_round,
     
     ## extra
     game,
+    team_round_wins,
+    opponent_round_wins,
+    
     n_team_pre_activity,
     n_opponent_pre_activity,
     n_team_remaining,
@@ -102,25 +110,9 @@ stopifnot(1 == (all_model_pbp |> filter(is_pre_plant, is_post_plant) |> count(ac
 # all_model_pbp |> filter(!is_pre_plant, is_post_plant) |> count(is_initial_bomb_carrier_killed)
 
 ## TODO:
-all_model_pbp |> 
-  filter(model_seconds_remaining < 0)
+all_model_pbp |> filter(model_seconds_remaining < 0)
 
 qs::qsave(all_model_pbp, file.path('data', 'wp_model_data.qs'))
-
-d <- all_model_pbp |> 
-  filter(side == 'o', !is_pre_plant, n_team_pre_activity == 1, n_team_remaining == 0, n_opponent_remaining == 1)
-fit <- glm(win_round ~ model_seconds_elapsed, d, family = 'binomial')
-round(predict(fit, tibble(model_seconds_elapsed = c(0:45)), type = 'response'), 2)
-
-all_model_pbp |> 
-  filter(side == 'o', !is_pre_plant, n_team_pre_activity == 1, n_team_remaining == 0, n_opponent_remaining == 1) |> 
-  count(last_7.5sec = model_seconds_elapsed > 37.5, win_round) |> 
-  tail(20)
-
-all_model_pbp |> 
-  filter(side == 'o', !is_pre_plant, n_team_pre_activity == 1, n_team_remaining == 0, n_opponent_remaining == 1) |> 
-  filter(model_seconds_elapsed > 37.5, win_round == 'no')
-  count(last_5sec = model_seconds_elapsed > 40, win_round)
 
 ## model ----
 model_lb <- all_model_pbp |> fit_wp_model_lb()
@@ -134,8 +126,8 @@ ggsave(
   height = 8
 )
 
-model_xgb <- all_model_pbp |> fit_wp_model_xgb(tune = FALSE)
-qs::qsave(model_xgb, file.path('data', 'wp_model-xgb.qs'))
+# model_xgb <- all_model_pbp |> fit_wp_model_xgb(tune = FALSE)
+# qs::qsave(model_xgb, file.path('data', 'wp_model-xgb.qs'))
 
 plot_and_save_wp_by_feature <- function(model, method, feature_name = NULL) {
   p <- autoplot(model, type = 'grid', feature_name = feature_name)
@@ -163,6 +155,7 @@ plot_and_save_wp_by_feature <- function(model, method, feature_name = NULL) {
 plot_and_save_wp_by_all_discrete_features <- function(model, method) {
   ps <- c(
     'is_kill_on_attempted_clinch',
+    'is_attempted_clinch',
     'is_initial_bomb_carrier_killed'
   ) |> 
     set_names() |> 
@@ -192,3 +185,4 @@ list(
       method = .y
     )
   )
+
