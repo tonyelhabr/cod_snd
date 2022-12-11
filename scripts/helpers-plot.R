@@ -361,13 +361,18 @@ plot_round <- function(
   }
   
   labels <- df |> 
-    # dplyr::distinct(.data[['engagement_id']], .keep_all = TRUE) |> 
+    dplyr::filter(
+      !is.na(.data[['activity']])
+    ) |> 
     dplyr::mutate(
       'label' = dplyr::case_when(
-        is.na(.data[['activity']]) ~ '???',
         .data[['activity']] %in% c('Start', 'End') ~ NA_character_,
         .data[['activity']] == 'Plant' & .data[['is_pre_plant']] ~ NA_character_, # sprintf('%s (%s) plants (pre-plant)', .data[['activity_player']], .data[['activity_team']]),
+        
+        stringr::str_detect(.data[['activity']], 'Start (Defuse|Plant)') & !.data[['is_pre_plant']] ~ sprintf('%s (<span style="color:%s"><b>%s</b></span>) starts %sing', .data[['activity_player']], .data[['activity_team_color']], .data[['activity_team']], tolower(stringr::str_replace(.data[['activity']], '(Defus|Plant)', '\\1'))),
+        
         .data[['activity']] == 'Plant' & !.data[['is_pre_plant']] ~ sprintf('%s (<span style="color:%s"><b>%s</b></span>) plants', .data[['activity_player']], .data[['activity_team_color']], .data[['activity_team']]),
+
         .data[['activity']] == 'Defuse' ~ sprintf('%s (<span style="color:%s"><b>%s</b></span>) defuses', .data[['activity_player']], .data[['activity_team_color']], .data[['activity_team']]),
         .data[['activity']] == 'Kill' ~ sprintf('%s (<span style="color:%s"><b>%s</b></span>) kills %s (<span style="color:%s"><b>%s</b></span>)', .data[['activity_player']], .data[['activity_team_color']], .data[['activity_team']], .data[['activity_opposer']], .data[['activity_opponent_color']], .data[['activity_opponent']]),
         .data[['activity']] == 'Kill Planter' ~ sprintf('%s (<span style="color:%s"><b>%s</b></span>)  kills %s (<span style="color:%s"><b>%s</b></span>) (planting)', .data[['activity_player']], .data[['activity_team_color']], .data[['activity_team']], .data[['activity_opposer']],.data[['activity_opponent_color']], .data[['activity_opponent']]),
@@ -397,13 +402,17 @@ plot_round <- function(
       'rn' = dplyr::row_number(),
       'y_base' = ifelse(.data[['rn']] %% 2, 1, 0),
       'max_rn' = max(.data[['rn']] ),
-      'hjust' = ifelse(.data[['rn']]  >= (.data[['max_rn']] / 2), 1.05, -0.05),
-      'y_buffer' = (.data[['rn']] - 1) %/% 2,
-      'y' = .data[['y_base']] + ifelse(.data[['y_base']] == 1, 1, -1) * .data[['y_buffer']] * 0.05 
+      'is_second_half' = .data[['rn']]  >= (.data[['max_rn']] / 2),
+      'hjust' = ifelse(.data[['is_second_half']], 1, 0),
+      'y_buffer' = 1 + (.data[['rn']] - 1) %/% 2,
+      'y' = .data[['y_base']] + ifelse(.data[['y_base']] == 1, 1, -1) * .data[['y_buffer']] * 0.05,
+      'x1' = ifelse(!is_second_half, .data[['seconds_elapsed']] + 0.5, .data[['seconds_elapsed']] - 0.5),
+      'x2' = ifelse(!is_second_half, .data[['seconds_elapsed']] + 2.5, .data[['seconds_elapsed']] - 2.5)
     )
   
   max_abs_label_y <- max(abs(non_na_labels[['y']]))
-  rng_y <- c(-max_abs_label_y, max_abs_label_y)
+  rng_y <- c(1-max_abs_label_y, max_abs_label_y)
+  rng_x <- c(0, max(df[['seconds_elapsed']]))
 
   non_white_color <- gray_text # '#7F7F7F'
   team_color <- ifelse(win_round, 'white', non_white_color)
@@ -417,8 +426,7 @@ plot_round <- function(
         ggplot2::aes(
           xintercept = unique(filt[['plant_second']])
         ),
-        # alpha = 0.5,
-        color = 'white',
+        # color = 'white',
         color = gray_text,
         linetype = 1,
         size = 1
@@ -436,9 +444,14 @@ plot_round <- function(
     ) +
     f_line()  +
     ggplot2::scale_y_continuous(
-      limits = c(-0.2, 1.2),
+      limits = rng_y,
       labels = scales::percent,
       breaks = c(0, 0.25, 0.5, 0.75, 1)
+    ) +
+    ggplot2::scale_x_continuous(
+      # limits = rng_x,
+      # labels = NULL,
+      expand = c(+0.1, +0.1)
     ) +
     ggplot2::labs(
       title = glue::glue(
@@ -462,8 +475,19 @@ plot_round <- function(
     ) +
     ggplot2::theme(
       plot.title = ggtext::element_markdown(),
+      # panel.grid.minor.x = ggplot2::element_blank(),
       panel.grid.major.x = ggplot2::element_blank()
     ) + 
+    ggplot2::geom_segment(
+      data = non_na_labels,
+      color = 'white',
+      ggplot2::aes(
+        x = .data[['x1']], 
+        xend= .data[['x2']],
+        y = .data[['y']],
+        yend = .data[['y']]
+      )
+    ) +
     ggtext::geom_richtext(
       data = non_na_labels,
       family = font,
@@ -473,12 +497,13 @@ plot_round <- function(
       fill = blackish_background,
       ggplot2::aes(
         hjust = .data[['hjust']],
-        x = .data[['seconds_elapsed']], 
+        x = .data[['x2']], 
         y = .data[['y']],
         label = .data[['label']]
       )
     )
 
+  print(p)
   if (isFALSE(save)) {
     return(p)
   }

@@ -241,7 +241,7 @@ autoplot(
   save = TRUE
 )
 
-autoplot(
+ autoplot(
   model_lb,
   type = 'round',
   data = all_model_pbp,
