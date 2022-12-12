@@ -231,16 +231,6 @@ plot_round <- function(
     is.na(.data[['pbp_side']])
   )
   
-  # o_team <- dplyr::filter(
-  #   meta,
-  #   .data[['side']] == 'o'
-  # )
-  # 
-  # d_team <- dplyr::filter(
-  #   meta,
-  #   .data[['side']] == 'd'
-  # )
-  
   filt <- dplyr::filter(
     round, 
     .data[['side']] == !!side
@@ -292,12 +282,14 @@ plot_round <- function(
       unique() |> 
       sort()
     
-    ## TODO: Does this work for non-integer seconds?
     grid <- tibble::tibble(
       'model_seconds_elapsed' = pre_plant_seconds_seq,
       'is_pre_plant' = rep(TRUE, length(pre_plant_seconds_seq))
     ) |> 
-      dplyr::mutate('seconds_elapsed' = .data[['model_seconds_elapsed']])
+      dplyr::mutate(
+        'seconds_elapsed' = .data[['model_seconds_elapsed']],
+        'model_seconds_remaining' = 90L - .data[['seconds_elapsed']]
+      )
     
     if (isTRUE(round_has_plant)) {
       
@@ -313,36 +305,88 @@ plot_round <- function(
       
       
       post_plant_seconds_seq <- c(
-        seq(pre_plant_seconds_elapsed_range[1], pre_plant_seconds_elapsed_range[2]),
-        pre_plant_seconds
+        seq(post_plant_seconds_elapsed_range[1], post_plant_seconds_elapsed_range[2]),
+        post_plant_seconds
       ) |> 
         unique() |> 
         sort()
       
-      grid <- bind_rows(
+      grid <- dplyr::bind_rows(
         grid,
         tibble::tibble(
           'model_seconds_elapsed' = post_plant_seconds_seq,
           'is_pre_plant' = rep(FALSE, length(post_plant_seconds_seq))
         ) |> 
-          dplyr::mutate('seconds_elapsed' = pre_plant_seconds_elapsed_range[2] + .data[['model_seconds_elapsed']])
+          dplyr::mutate(
+            'seconds_elapsed' = pre_plant_seconds_elapsed_range[2] + .data[['model_seconds_elapsed']],
+            'model_seconds_remaining' = 45L - .data[['model_seconds_elapsed']],
+          )
       )
     }
     
+    feature_cols <- get_all_features(is_pre_plant = TRUE, named = FALSE, method = 'lb')
+    extra_grid_cols <- c(
+      'model_seconds_remaining'
+    )
+    extra_filt_cols <- c(
+      'side',
+      'n_team_remaining',
+      'n_opponent_remaining'
+    )
+    id_cols <- c(
+      'seconds_elapsed',
+      'is_pre_plant'
+    )
+    activity_cols <- stringr::str_subset(names(filt), '^activity')
+    
     df <- grid |> 
       dplyr::left_join(
-        filt,
-        by = c('model_seconds_elapsed', 'seconds_elapsed', 'is_pre_plant'),
+        filt |> 
+          dplyr::select(
+            tidyselect::vars_select_helpers$all_of(
+              c(
+                id_cols,
+                feature_cols,
+                extra_filt_cols,
+                activity_cols
+              )
+            )
+          ),
+        by = id_cols,
         multiple = 'all'
       ) |> 
+      ## for prediction corrections
       tidyr::fill(
-        # tidyselect::vars_select_helpers$all_of(setdiff(colnames(filt), join_cols)),
-        get_all_features(is_pre_plant = TRUE, named = FALSE, method = 'lb'),
+        tidyselect::vars_select_helpers$all_of(
+          c(
+            feature_cols,
+            extra_grid_cols,
+            extra_filt_cols
+          )
+        ),
         .direction = 'down'
+      )
+    
+    init_labels <- dplyr::filter(
+      df,
+      !is.na(.data[['activity']])
+    )
+    
+    ## be careful to not fill this in before init_labels so that way we don't have an activity for every second
+    df <- df |> 
+      tidyr::fill(
+        tidyselect::vars_select_helpers$all_of(
+          activity_cols
+        ),
+        .direction = 'up'
       )
   } else {
     f_line <- ggplot2::geom_step
     df <- filt
+    init_labels <- dplyr::filter(
+      df,
+      !is.na(.data[['activity']])
+    )
   }
   
   df <- augment(
@@ -350,9 +394,12 @@ plot_round <- function(
     df
   ) |> 
     dplyr::mutate(
-      'wp' = ifelse(.data[['activity']] == 'End', dplyr::lag(.data[['wp']], n = 1), .data[['wp']])
+      'wp' = ifelse(
+        !is.na(.data[['activity']]) & .data[['activity']] == 'End', 
+        dplyr::lag(.data[['wp']], n = 1), 
+        .data[['wp']]
+      )
     )
-
   
   if (nrow(filt) == 0) {
     stop(
@@ -360,19 +407,18 @@ plot_round <- function(
     )
   }
   
-  labels <- df |> 
-    dplyr::filter(
-      !is.na(.data[['activity']])
-    ) |> 
+  labels <- init_labels |> 
     dplyr::mutate(
       'label' = dplyr::case_when(
         .data[['activity']] %in% c('Start', 'End') ~ NA_character_,
         .data[['activity']] == 'Plant' & .data[['is_pre_plant']] ~ NA_character_, # sprintf('%s (%s) plants (pre-plant)', .data[['activity_player']], .data[['activity_team']]),
         
-        stringr::str_detect(.data[['activity']], 'Start (Defuse|Plant)') & !.data[['is_pre_plant']] ~ sprintf('%s (<span style="color:%s"><b>%s</b></span>) starts %sing', .data[['activity_player']], .data[['activity_team_color']], .data[['activity_team']], tolower(stringr::str_replace(.data[['activity']], '(Defus|Plant)', '\\1'))),
+        stringr::str_detect(.data[['activity']], 'Start Plant') ~ sprintf('%s (<span style="color:%s"><b>%s</b></span>) starts planting', .data[['activity_player']], .data[['activity_team_color']], .data[['activity_team']]),
+        
+        stringr::str_detect(.data[['activity']], 'Start Defuse') & !.data[['is_pre_plant']] ~ sprintf('%s (<span style="color:%s"><b>%s</b></span>) starts defusing', .data[['activity_player']], .data[['activity_team_color']], .data[['activity_team']]),
         
         .data[['activity']] == 'Plant' & !.data[['is_pre_plant']] ~ sprintf('%s (<span style="color:%s"><b>%s</b></span>) plants', .data[['activity_player']], .data[['activity_team_color']], .data[['activity_team']]),
-
+        
         .data[['activity']] == 'Defuse' ~ sprintf('%s (<span style="color:%s"><b>%s</b></span>) defuses', .data[['activity_player']], .data[['activity_team_color']], .data[['activity_team']]),
         .data[['activity']] == 'Kill' ~ sprintf('%s (<span style="color:%s"><b>%s</b></span>) kills %s (<span style="color:%s"><b>%s</b></span>)', .data[['activity_player']], .data[['activity_team_color']], .data[['activity_team']], .data[['activity_opposer']], .data[['activity_opponent_color']], .data[['activity_opponent']]),
         .data[['activity']] == 'Kill Planter' ~ sprintf('%s (<span style="color:%s"><b>%s</b></span>)  kills %s (<span style="color:%s"><b>%s</b></span>) (planting)', .data[['activity_player']], .data[['activity_team_color']], .data[['activity_team']], .data[['activity_opposer']],.data[['activity_opponent_color']], .data[['activity_opponent']]),
@@ -382,38 +428,43 @@ plot_round <- function(
       )
     ) |> 
     dplyr::mutate(
-      'wpa' = .data[['wp']] - lag(.data[['wp']]),
+      # 'wpa' = .data[['wp']] - lag(.data[['wp']]),
       across(
         .data[['label']],
         ~ifelse(
           !is.na(.x),
-          sprintf('(%ss left): %s: <b>%+.0f</b>', .data[['model_seconds_remaining']], .x, 100 * .data[['wpa']]),
+          # sprintf('(%ss left): %s: <b>%+.0f</b>', .data[['model_seconds_remaining']], .x, 100 * .data[['wpa']]),
+          sprintf('(%ss left): %s', .data[['model_seconds_remaining']], .x),
           .x
         )
       )
     )
   
+  max_wp <- max(df[['wp']])
+  min_wp <- min(df[['wp']])
   
   non_na_labels <- labels |> 
     dplyr::filter(
-    !is.na(.data[['label']])
-  ) |> 
+      !is.na(.data[['label']])
+    ) |> 
     dplyr::mutate(
       'rn' = dplyr::row_number(),
-      'y_base' = ifelse(.data[['rn']] %% 2, 1, 0),
-      'max_rn' = max(.data[['rn']] ),
+      'y_base' = ifelse(.data[['rn']] %% 2, max_wp, min_wp),
+      'max_rn' = max(.data[['rn']]),
       'is_second_half' = .data[['rn']]  >= (.data[['max_rn']] / 2),
       'hjust' = ifelse(.data[['is_second_half']], 1, 0),
       'y_buffer' = 1 + (.data[['rn']] - 1) %/% 2,
-      'y' = .data[['y_base']] + ifelse(.data[['y_base']] == 1, 1, -1) * .data[['y_buffer']] * 0.05,
-      'x1' = ifelse(!is_second_half, .data[['seconds_elapsed']] + 0.5, .data[['seconds_elapsed']] - 0.5),
-      'x2' = ifelse(!is_second_half, .data[['seconds_elapsed']] + 2.5, .data[['seconds_elapsed']] - 2.5)
+      'y' = .data[['y_base']] + ifelse(.data[['y_base']] >= max_wp, 1, -1) * .data[['y_buffer']] * 0.05,
+      'x1' = ifelse(!is_second_half, .data[['seconds_elapsed']] + 0.1, .data[['seconds_elapsed']] - 0.1),
+      'x2' = ifelse(!is_second_half, .data[['seconds_elapsed']] + 2, .data[['seconds_elapsed']] - 2)
     )
   
-  max_abs_label_y <- max(abs(non_na_labels[['y']]))
-  rng_y <- c(1-max_abs_label_y, max_abs_label_y)
+  max_label_y <- max(non_na_labels[['y']])
+  min_label_y <-  min(non_na_labels[['y']])
+  abs_max_label_y <- abs(pmax(max_label_y, 1 - min_label_y))
+  rng_y <- c(1-abs_max_label_y, abs_max_label_y)
   rng_x <- c(0, max(df[['seconds_elapsed']]))
-
+  
   non_white_color <- gray_text # '#7F7F7F'
   team_color <- ifelse(win_round, 'white', non_white_color)
   opponent_color <- ifelse(!win_round, 'white', non_white_color)
@@ -445,6 +496,7 @@ plot_round <- function(
     f_line()  +
     ggplot2::scale_y_continuous(
       limits = rng_y,
+      # expand = c(0.1, 0.1),
       labels = scales::percent,
       breaks = c(0, 0.25, 0.5, 0.75, 1)
     ) +
@@ -456,18 +508,18 @@ plot_round <- function(
     ggplot2::labs(
       title = glue::glue(
         "
-        <span style='color:{team_color}; font-size=18pt'>{side_meta$team_label} ({side_meta$team})
+        <span style='color:{team_color}; font-size=18pt'>{side_meta$team_label} (<span style='color:{side_meta[['team_color']]}; font-size=18pt'>{side_meta$team}</span>)</span>
         <img src='{side_meta$team_logo_url}' width='15'/>
-        </span> <span style='color:{team_color}; font-size=12pt'>{side_meta$team_round_wins + as.integer(win_round)}</span> 
+        <span style='color:{team_color}; font-size=12pt'>{sprintf('%8.0f', side_meta$team_round_wins)}</span> 
         <span style='color:{non_white_color}; font-size=12pt'>-</span>
-        <span style='color:{opponent_color}; font-size=18pt'>{side_meta$opponent_label} ({side_meta$opponent})</span>
+        <span style='color:{opponent_color}; font-size=18pt'>{side_meta$opponent_label} (<span style='color:{side_meta[['opponent_color']]}; font-size=18pt'>{side_meta$opponent}</span>)</span>
         <img src='{side_meta$opponent_logo_url}' width='15'/>
-        <span style='color:{opponent_color}; font-size=12pt'>{side_meta$opponent_round_wins + (1 - as.integer(win_round))}</span>
+        <span style='color:{opponent_color}; font-size=12pt'>{sprintf('%8.0f', side_meta$opponent_round_wins)}</span>
         "
-    ),
+      ),
       subtitle = sprintf(
         '%s (%s) win probability',
-        side_meta[['team']],
+        side_meta[['team_label']],
         side_labs_mapping[side]
       ),
       y = 'Win probability',
@@ -502,7 +554,7 @@ plot_round <- function(
         label = .data[['label']]
       )
     )
-
+  
   print(p)
   if (isFALSE(save)) {
     return(p)

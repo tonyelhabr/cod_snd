@@ -75,7 +75,7 @@ all_model_pbp <- qs::qread(file.path(data_dir, 'wp_model_data.qs')) |>
       TRUE ~ NA_character_
     )
   )
- 
+
 model_lb <- qs::qread(file.path(data_dir, 'wp_model-lb.qs'))
 long_participation <- qs::qread(file.path(data_dir, 'cod_snd_participation.qs'))
 chains <- qs::qread(file.path('data', 'cod_snd_chains.qs'))
@@ -115,11 +115,11 @@ long_participation |>
     indicator,
     wt
   ) # |> 
-  # left_join(
-  #   chains,
-  #   by = 'engagement_id',
-  #   multiple = 'all'
-  # )
+# left_join(
+#   chains,
+#   by = 'engagement_id',
+#   multiple = 'all'
+# )
 
 long_wpa <- team_wpa |> 
   left_join(
@@ -229,24 +229,47 @@ stats_by_player |>
 # stopifnot(nrow(engagement_ids) == 0L)
 
 ## second clutches play of Vanguard, done by Scump: https://youtu.be/WxowLIf6HuI?t=818
-example_round <- '2022-SND-177-01'
+example_round_id <- '2022-SND-177-01'
+
+library(purrr)
+
+crossing(
+  round_id = sprintf('2022-SND-177-%02d', 1:7),
+  side = c('o', 'd'),
+  expand = c(TRUE, FALSE)
+) |> 
+  mutate( 
+    res = pmap(
+      list(round_id, side, expand),
+      ~autoplot(
+        model_lb,
+        type = 'round',
+        data = all_model_pbp,
+        round_id = ..1,
+        side = ..2,
+        expand = ..3,
+        save = TRUE
+      )
+    )
+  )
+
 
 autoplot(
   model_lb,
   type = 'round',
   data = all_model_pbp,
-  round_id = example_round,
-  side = 'o',
+  round_id = example_round_id,
+  side = 'd',
   expand = FALSE,
   save = TRUE
 )
 
- autoplot(
+autoplot(
   model_lb,
   type = 'round',
   data = all_model_pbp,
-  round_id = example_round,
-  side = 'o',
+  round_id = example_round_id,
+  side = 'd',
   expand = TRUE,
   save = TRUE
 )

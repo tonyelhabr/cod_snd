@@ -290,6 +290,7 @@ predict.wp_model <- function(object, new_data, ...) {
   
   validate_colnames(data = new_data)
   
+  
   pred <- ifelse(
     new_data[['is_pre_plant']],
     predict(object[['pre']], new_data, ...),
@@ -306,8 +307,8 @@ predict.wp_model <- function(object, new_data, ...) {
   is_0vN_post_plant <- !new_data[['is_pre_plant']] & (new_data[['n_team_remaining']] == 0) & (new_data[['n_opponent_remaining']] > 1)
   
   dplyr::case_when(
-    new_data[['side']] == 'o' & new_data[['activity']] %in% c('Defuse') ~ rep_data(0),
-    new_data[['side']] == 'd' & new_data[['activity']] %in% c('Defuse') ~ rep_data(1),
+    new_data[['side']] == 'o' & new_data[['activity']] == 'Defuse' ~ rep_data(0),
+    new_data[['side']] == 'd' & new_data[['activity']] == 'Defuse' ~ rep_data(1),
     
     new_data[['side']] == 'o' & !new_data[['is_pre_plant']] & (new_data[['n_team_remaining']] == 0) & new_data[['model_seconds_remaining']] >= 7.5 & new_data[['activity']] == 'Start Defuse' ~ rep_data(0),
     new_data[['side']] == 'd' & !new_data[['is_pre_plant']] & (new_data[['n_opponent_remaining']] == 0) & new_data[['model_seconds_remaining']] >= 7.5 & new_data[['activity']] == 'Start Defuse' ~ rep_data(1),
