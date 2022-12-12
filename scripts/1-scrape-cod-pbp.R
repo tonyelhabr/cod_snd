@@ -978,8 +978,6 @@ get_chain_engagement_ids <- function(candidate_chain_engagements, engagement_ids
   
   init_candidates <- candidate_chain_engagements |> 
     filter(
-      # pbp_side == most_recent_engagement$pbp_side[1] &
-      # round_id == most_recent_engagement$round_id[1] &
       seconds_elapsed <= min_seconds_elapsed & 
         seconds_elapsed >= (min_seconds_elapsed - 5) & 
         !(engagement_id %in% most_recent_engagement_id)
@@ -1017,30 +1015,7 @@ get_chain_engagement_ids <- function(candidate_chain_engagements, engagement_ids
   }
 }
 
-t1 <- Sys.time()
-chain_engagement_ids <- candidate_chain_engagements |>
-  distinct(engagement_id) |>
-  pull(engagement_id) |>
-  set_names() |>
-  map(
-    ~get_chain_engagement_ids(
-      candidate_chain_engagements,
-      engagement_ids = .x
-    )
-  )
-t2 <- Sys.time()
-as.numeric(t2 - t1)
-
-chain_engagement_ids |>
-  enframe(
-    'engagement_id',
-    'past_engagement_id'
-  ) |>
-  unnest(past_engagement_id) |>
-  filter(engagement_id != past_engagement_id) |>
-  qs::qsave(file.path('data', 'cod_snd_chains.qs'))
-
-t1 <- Sys.time()
+## about 2 hours
 chain_engagement_ids <- candidate_chain_engagements |> 
   nest(data = -c(round_id, pbp_side)) |> 
   mutate(
@@ -1067,4 +1042,3 @@ chain_engagement_ids <- candidate_chain_engagements |>
   ) |> 
   unnest(data)
 qs::qsave(chain_engagement_ids, file.path('data', 'cod_snd_chains.qs'))
-nrow(chain_engagement_ids2)
