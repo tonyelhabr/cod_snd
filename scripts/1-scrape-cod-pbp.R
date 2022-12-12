@@ -1041,7 +1041,7 @@ chain_engagement_ids |>
   qs::qsave(file.path('data', 'cod_snd_chains.qs'))
 
 t1 <- Sys.time()
-chain_engagement_ids2 <- candidate_chain_engagements |> 
+chain_engagement_ids <- candidate_chain_engagements |> 
   nest(data = -c(round_id, pbp_side)) |> 
   mutate(
     data = map(
@@ -1066,7 +1066,5 @@ chain_engagement_ids2 <- candidate_chain_engagements |>
     )
   ) |> 
   unnest(data)
-t2 <- Sys.time()
-as.numeric(t2 - t1)
-
+qs::qsave(chain_engagement_ids, file.path('data', 'cod_snd_chains.qs'))
 nrow(chain_engagement_ids2)
