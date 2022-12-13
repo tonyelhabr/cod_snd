@@ -54,6 +54,7 @@ summarize_pred_grid_across_features <- function(df, binary_feature_name) {
     ) |> 
     ungroup()
 }
+max_pre_plant_second_buffer <- 0L ## for plot
 
 # RColorBrewer::brewer.pal(7, 'PRGn') |> datapasta::vector_paste_vertical()
 player_diff_pal <- c(
@@ -91,21 +92,7 @@ scale_x_continuous_wp_states <- function(...) {
   )
 }
 
-# weights_by_second <- seconds_grid |>
-#   dplyr::transmute(
-#     'model_seconds_elapsed' = .data[['min_second']],
-#     'n' = purrr::map2_int(
-#       .data[['min_second']], 
-#       .data[['max_second']], 
-#       ~dplyr::filter(
-#         all_model_pbp,
-#         .data[['model_seconds_elapsed']] >= ..1, 
-#         .data[['model_seconds_elapsed']] <= ..2
-#       ) |> nrow()
-#     )
-#   ) |> 
-#   dplyr::mutate('scaler' = .data[['n']] / max(.data[['n']]))
-# scaler_by_second <- \(x) x^(-0.5)
+
 plot_wp_grid <- function(data, feature_name, ...) {
   
   filt <- dplyr::filter(
@@ -153,7 +140,7 @@ plot_wp_grid <- function(data, feature_name, ...) {
         'model_seconds_elapsed' = .data[['model_seconds_elapsed']] + max_pre_plant_second + max_pre_plant_second_buffer
       )
   )
-  
+
   p <- df |> 
     ggplot2::ggplot() +
     ggplot2::aes(x = .data[['model_seconds_elapsed']], y = .data[['wp']]) +
@@ -163,8 +150,11 @@ plot_wp_grid <- function(data, feature_name, ...) {
     ) +
     ggplot2::geom_vline(
       color = 'white',
-      data = tibble::tibble(),
-      ggplot2::aes(xintercept = max_pre_plant_second)
+      data = tibble::tibble(
+        'is_pre_plant' = TRUE,
+        'x' = max_pre_plant_second
+      ),
+      ggplot2::aes(xintercept = x)
     ) +
     ggplot2::geom_step(
       size = 1,
@@ -192,8 +182,8 @@ plot_wp_grid <- function(data, feature_name, ...) {
     return(p)
   }
   
-  p +
-    ggplot2::facet_wrap(~.data[['feature']])
+  p + ggplot2::facet_wrap(~.data[['feature']])
+  
 }
 
 
@@ -312,7 +302,11 @@ plot_round <- function(
       )
     }
     
-    feature_cols <- get_all_features(is_pre_plant = TRUE, named = FALSE, method = 'lb')
+    feature_cols <- get_all_features(
+      is_pre_plant = TRUE, 
+      named = FALSE
+    )
+    
     extra_grid_cols <- c(
       'model_seconds_remaining'
     )
@@ -556,15 +550,6 @@ plot_round <- function(
   )
 }
 
-add_lb_plot_caption <- function(...) {
-  list(
-    ...,
-    ggplot2::labs(
-      caption = 'Method: LOESS glm models'
-    )
-  )
-}
-
 plot_coefs <- function(model, ...) {
   
   df <- dplyr::bind_rows(
@@ -580,8 +565,6 @@ plot_coefs <- function(model, ...) {
       names_to = 'feature',
       values_to = 'value'
     )
-  
-  df$weights <- convert_seconds_to_weights_lb(df[['model_seconds_elapsed']], df[['is_pre_plant']])
   
   df |> 
     ggplot2::ggplot() +
@@ -607,7 +590,9 @@ plot_coefs <- function(model, ...) {
     ) +
     scale_x_continuous_wp_states() +
     ggplot2::facet_wrap(~.data[['feature']], scales = 'free_y') +
-    add_lb_plot_caption() +
+    ggplot2::labs(
+      caption = 'Method: LOESS glm models'
+    ) +
     ggplot2::labs(
       title = 'Offensive win probability',
       y = 'Coefficient estimate'
@@ -616,16 +601,7 @@ plot_coefs <- function(model, ...) {
 
 autoplot.wp_model <- function(object, type = 'grid', ...) {
   type <- rlang::arg_match(type, c('grid', 'coefs', 'round'))
-  
-  cls <- class(object)
-  if (type == 'coefs' & !any(cls == 'wp_model_lb')) {
-    stop(
-      sprintf(
-        'Object must have class `wp_model_lb` for `type = "coefs"`. Object has class %s',
-        paste0(cls, collapse = ', ')
-      )
-    )
-  }
+
   switch(
     type,
     'grid' = plot_wp_grid(generate_wp_grid(object), ...),
@@ -693,13 +669,13 @@ add_aesthetic_cols <- function(df) {
       'team_color' = team_color_mapping[.data[['team']]],
       'opponent_color' = team_color_mapping[.data[['opponent']]],
       'activity_team_color' = dplyr::case_when(
-        team == activity_team ~ team_color,
-        team == activity_opponent ~ opponent_color,
+        .data[['team']] == .data[['activity_team']] ~ .data[['team_color']],
+        .data[['team']] == .data[['activity_opponent']] ~ .data[['opponent_color']],
         TRUE ~ NA_character_
       ),
       'activity_opponent_color' = dplyr::case_when(
-        opponent == activity_opponent ~ opponent_color,
-        opponent == activity_team ~ team_color,
+        .data[['opponent']] == .data[['activity_opponent']] ~ .data[['opponent_color']],
+        .data[['opponent']] == .data[['activity_team']] ~ .data[['team_color']],
         TRUE ~ NA_character_
       )
     )

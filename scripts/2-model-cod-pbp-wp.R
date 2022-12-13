@@ -61,7 +61,7 @@ init_model_pbp <- both_pbp |>
     is_initial_bomb_carrier_killed,
     is_kill_on_attempted_clinch,
     is_attempted_clinch,
-
+    
     ## outcome
     win_round,
     
@@ -104,7 +104,8 @@ all_model_pbp <- bind_rows(
       model_seconds_remaining = 45L - post_plant_seconds_elapsed
     ) |> 
     select(-post_plant_seconds_elapsed)
-)
+) |> 
+  add_hardcoded_wp_cols()
 
 ## should have 0 rows
 stopifnot(0 == (all_model_pbp |> filter(!is_pre_plant, !is_post_plant) |> distinct(round_id) |> nrow()))
@@ -119,74 +120,46 @@ all_model_pbp |> filter(model_seconds_remaining < 0)
 qs::qsave(all_model_pbp, file.path('data', 'wp_model_data.qs'))
 
 ## model ----
-model_lb <- fit_wp_model_lb(all_model_pbp)
-qs::qsave(model_lb, file.path('data', 'wp_model-lb.qs'))
+model <- fit_wp_model(all_model_pbp)
+qs::qsave(model, file.path('data', 'wp_model.qs'))
 
 coefs_plot <- autoplot(model_lb, type = 'coefs')
 ggsave(
   coefs_plot,
-  filename = file.path('figs', 'wp_coefs-lb.png'),
+  filename = file.path('figs', 'wp_coefs.png'),
   width = 12,
   height = 8
 )
 
-# model_xgb <- all_model_pbp |> fit_wp_model_xgb(tune = FALSE)
-# qs::qsave(model_xgb, file.path('data', 'wp_model-xgb.qs'))
-
-plot_and_save_wp_by_feature <- function(model, method, feature_name = NULL) {
+plot_and_save_wp_by_feature <- function(model, feature_name = NULL) {
   p <- autoplot(model, type = 'grid', feature_name = feature_name)
-  f_lab <- switch(
-    method,
-    'lb' = add_lb_plot_caption,
-    'xgb' = add_xgb_plot_caption
-  )
-  p <- p + f_lab()
-  
-  sep <- '-'
+
   if (is.null(feature_name)) {
-    sep <- ''
     feature_name <- ''
   }
+  print(p)
   ggsave(
     p,
-    filename = file.path('figs', sprintf('wp_grid-%s%s%s.png', method, sep, feature_name)),
+    filename = file.path('figs', sprintf('wp_grid-%s.png', feature_name)),
     width = 12,
     height = 8
   )
   invisible(p)
 }
 
-plot_and_save_wp_by_all_discrete_features <- function(model, method) {
-  ps <- c(
-    'is_kill_on_attempted_clinch',
-    'is_attempted_clinch',
-    'is_initial_bomb_carrier_killed'
-  ) |> 
-    set_names() |> 
-    map(
-      ~plot_and_save_wp_by_feature(
-        model = model,
-        method = method,
-        feature_name = .x
-      )
-    )
-  
-  agg_p <- plot_and_save_wp_by_feature(
-    model = model,
-    method = method
-  )
-  
-  append(ps, list('agg' = agg_p))
-}
-
-list(
-  # 'xgb' = model_xgb,
-  'lb' = model_lb
+c(
+  'is_kill_on_attempted_clinch',
+  'is_attempted_clinch',
+  'is_initial_bomb_carrier_killed'
 ) |> 
-  iwalk(
-    ~plot_and_save_wp_by_all_discrete_features(
-      model = .x,
-      method = .y
+  set_names() |> 
+  walk(
+    ~plot_and_save_wp_by_feature(
+      model = model,
+      feature_name = .x
     )
   )
 
+plot_and_save_wp_by_feature(
+  model = model
+)

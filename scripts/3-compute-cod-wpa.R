@@ -10,7 +10,6 @@ source('scripts/helpers-plot.R')
 data_dir <- 'data'
 
 all_model_pbp <- qs::qread(file.path(data_dir, 'wp_model_data.qs')) |> 
-  add_hardcoded_wp_cols() |> 
   add_aesthetic_cols()
 
 model_lb <- qs::qread(file.path(data_dir, 'wp_model-lb.qs'))
