@@ -298,6 +298,7 @@ plot_round <- function(
         by = 0.1
       )
       
+      
       grid <- dplyr::bind_rows(
         grid,
         tibble::tibble(
@@ -455,7 +456,15 @@ plot_round <- function(
   non_white_color <- gray_text # '#7F7F7F'
   team_color <- ifelse(win_round, 'white', non_white_color)
   opponent_color <- ifelse(!win_round, 'white', non_white_color)
-  base <- ggplot2::ggplot(df)
+  base <- ggplot2::ggplot(df) +
+    ggplot2::aes(x = .data[['seconds_elapsed']], y = .data[['wp']]) +
+    ggplot2::geom_vline(
+      data = non_na_labels,
+      linetype = 2,
+      color = 'white',
+      alpha = 0.5,
+      ggplot2::aes(xintercept = .data[['seconds_elapsed']])
+    )
   
   if (isTRUE(round_has_plant)) {
     base <- base +
@@ -472,14 +481,6 @@ plot_round <- function(
   }
   
   p <- base +
-    ggplot2::aes(x = .data[['seconds_elapsed']], y = .data[['wp']]) +
-    ggplot2::geom_vline(
-      data = non_na_labels,
-      linetype = 2,
-      color = 'white',
-      alpha = 0.5,
-      ggplot2::aes(xintercept = .data[['seconds_elapsed']])
-    ) +
     f_line()  +
     ggplot2::scale_y_continuous(
       limits = rng_y,

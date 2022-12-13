@@ -135,54 +135,6 @@ stats_by_player |>
 ## second clutches play of Vanguard, done by Scump: https://youtu.be/WxowLIf6HuI?t=818
 example_round_id <- '2022-SND-177-01'
 
-crossing(
-  round_id = sprintf('2022-SND-177-%02d', 1:7),
-  side = c('o', 'd'),
-  expand = c(TRUE, FALSE)
-) |> 
-  mutate( 
-    res = pmap(
-      list(round_id, side, expand),
-      ~autoplot(
-        model_lb,
-        type = 'round',
-        data = all_model_pbp,
-        round_id = ..1,
-        side = ..2,
-        expand = ..3,
-        save = TRUE
-      )
-    )
-  )
-
-d <- all_model_pbp |> 
-  filter(
-    round_id == example_round_id,
-    side == 'd'
-  ) |> 
-  mutate(
-    across(
-      c(opponent_diff),
-      ~case_when(
-        engagement_id %in% c(
-          '2022-SND-177-01-d-1v4-Kill',
-          '2022-SND-177-01-d-1v4-Start Plant',
-          '2022-SND-177-01-d-1v3-Plant',
-          '2022-SND-177-01-d-1v3-Plant'
-        ) ~ .x + 1,
-        TRUE ~ .x
-      )
-    )
-  )
-augment(model_lb, d) |> 
-  select(engagement_id, seconds_elapsed, is_pre_plant, matches('activity_(player|team$|opposer|opponent$)'), matches('n.*remaining'), wp)
-all_model_pbp |> 
-  filter(
-    round_id == example_round_id,
-    side == 'o'
-  ) |> 
-  select(engagement_id, seconds_elapsed, is_pre_plant, matches('activity_(player|team$|opposer|opponent$)'), matches('n.*remaining'),  wp)
-
 autoplot(
   model_lb,
   type = 'round',
@@ -193,35 +145,68 @@ autoplot(
   save = TRUE
 )
 
+## missing end
 autoplot(
   model_lb,
   type = 'round',
   data = all_model_pbp,
   round_id = '2022-SND-177-02',
-  side = 'o',
-  expand = FALSE,
+  side = 'd',
+  expand = TRUE,
   save = TRUE
-) 
+)
 
-
+## missing end
 autoplot(
   model_lb,
   type = 'round',
   data = all_model_pbp,
-  round_id = example_round_id,
+  round_id = '2022-SND-177-03',
   side = 'd',
-  expand = FALSE,
+  expand = TRUE,
   save = TRUE
 )
 
-debugonce(predict.wp_model)
-new_data <- all_model_pbp |> 
-  filter(
-    round_id == example_round_id
-  ) |> 
-  slice(3:4)
-options(tibble.print_min = 30)
-predict(
+## missing end
+autoplot(
   model_lb,
-  data
+  type = 'round',
+  data = all_model_pbp,
+  round_id = '2022-SND-177-04',
+  side = 'd',
+  expand = TRUE,
+  save = TRUE
+)
+
+## some text is removed?
+autoplot(
+  model_lb,
+  type = 'round',
+  data = all_model_pbp,
+  round_id = '2022-SND-177-05',
+  side = 'd',
+  expand = TRUE,
+  save = TRUE
+)
+
+## last point is off here
+autoplot(
+  model_lb,
+  type = 'round',
+  data = all_model_pbp,
+  round_id = '2022-SND-177-06',
+  side = 'd',
+  expand = TRUE,
+  save = TRUE
+)
+
+## missing end
+autoplot(
+  model_lb,
+  type = 'round',
+  data = all_model_pbp,
+  round_id = '2022-SND-177-07',
+  side = 'd',
+  expand = TRUE,
+  save = TRUE
 )
