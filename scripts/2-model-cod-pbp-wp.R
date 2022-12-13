@@ -19,6 +19,7 @@ both_pbp <- qs::qread('data/cod_snd_pbp.qs')
 ## model data prep ----
 init_model_pbp <- both_pbp |> 
   mutate(
+    is_offense = side == 'o',
     across(
       won_prior_round_side,
       ~case_when(
@@ -29,6 +30,7 @@ init_model_pbp <- both_pbp |>
     ),
     across(
       c(
+        is_offense,
         is_initial_bomb_carrier_killed, 
         is_kill_on_attempted_clinch,
         is_attempted_clinch
@@ -55,6 +57,7 @@ init_model_pbp <- both_pbp |>
     
     ## features
     opponent_diff,
+    is_offense,
     is_initial_bomb_carrier_killed,
     is_kill_on_attempted_clinch,
     is_attempted_clinch,
@@ -102,6 +105,7 @@ all_model_pbp <- bind_rows(
     ) |> 
     select(-post_plant_seconds_elapsed)
 )
+
 ## should have 0 rows
 stopifnot(0 == (all_model_pbp |> filter(!is_pre_plant, !is_post_plant) |> distinct(round_id) |> nrow()))
 ## should only be plant activities
@@ -115,7 +119,7 @@ all_model_pbp |> filter(model_seconds_remaining < 0)
 qs::qsave(all_model_pbp, file.path('data', 'wp_model_data.qs'))
 
 ## model ----
-model_lb <- all_model_pbp |> fit_wp_model_lb()
+model_lb <- fit_wp_model_lb(all_model_pbp)
 qs::qsave(model_lb, file.path('data', 'wp_model-lb.qs'))
 
 coefs_plot <- autoplot(model_lb, type = 'coefs')

@@ -110,7 +110,7 @@ plot_wp_grid <- function(data, feature_name, ...) {
   
   filt <- dplyr::filter(
     data, 
-    .data[['side']] == default_side
+    .data[['side']] == 'o'
   )
   
   agg <- if (!is.null(feature_name)) {
@@ -270,17 +270,11 @@ plot_round <- function(
       dplyr::pull(.data[['model_seconds_elapsed']]) |> 
       range()
     
-    pre_plant_seconds <- filt |> 
-      dplyr::filter(.data[['is_pre_plant']]) |> 
-      dplyr::pull(.data[['model_seconds_elapsed']]) |> 
-      unique()
-    
-    pre_plant_seconds_seq <- c(
-      seq(pre_plant_seconds_elapsed_range[1], pre_plant_seconds_elapsed_range[2]),
-      pre_plant_seconds
-    ) |> 
-      unique() |> 
-      sort()
+    pre_plant_seconds_seq <- seq(
+      pre_plant_seconds_elapsed_range[1], 
+      pre_plant_seconds_elapsed_range[2], 
+      by = 0.1
+    )
     
     grid <- tibble::tibble(
       'model_seconds_elapsed' = pre_plant_seconds_seq,
@@ -298,18 +292,11 @@ plot_round <- function(
         dplyr::pull(.data[['model_seconds_elapsed']]) |> 
         range()
       
-      post_plant_seconds <- filt |> 
-        dplyr::filter(!.data[['is_pre_plant']]) |> 
-        dplyr::pull(.data[['model_seconds_elapsed']]) |> 
-        unique()
-      
-      
-      post_plant_seconds_seq <- c(
-        seq(post_plant_seconds_elapsed_range[1], post_plant_seconds_elapsed_range[2]),
-        post_plant_seconds
-      ) |> 
-        unique() |> 
-        sort()
+      post_plant_seconds_seq <- seq(
+        post_plant_seconds_elapsed_range[1], 
+        post_plant_seconds_elapsed_range[2],
+        by = 0.1
+      )
       
       grid <- dplyr::bind_rows(
         grid,
@@ -330,8 +317,8 @@ plot_round <- function(
     )
     extra_filt_cols <- c(
       'side',
-      'n_team_remaining',
-      'n_opponent_remaining'
+      'is_wp_hardcoded',
+      'hardcoded_wp'
     )
     id_cols <- c(
       'seconds_elapsed',
@@ -644,4 +631,76 @@ autoplot.wp_model <- function(object, type = 'grid', ...) {
     'coefs' = plot_coefs(object, ...),
     'round' = plot_round(object, ...)
   )
+}
+
+logos_dir <- file.path('figs', 'img')
+
+breakingpointgg_team_mapping <- c(
+  'ATL' = 'Atlanta FaZe',
+  'BOS' = 'Boston Breach',
+  'DAL' = 'Dallas Empire',
+  'FLA' = 'Florida Mutineers',
+  'LAG' = 'Los Angeles Guerrillas',
+  'LAT' = 'Los Angeles Thieves',
+  'LDN' = 'London Royal Ravents',
+  'MIN' = 'Minnesota RØKKR',
+  'NYSL' = 'New York Subliners',
+  'OPTX' = 'OpTic Texas',
+  'PAR' = 'Las Vegas Legion',
+  'SEA' = 'Seattle Surge',
+  'TOR' = 'Toronto Ultra'
+)
+
+breakingpointgg_team_logo_urls_mapping <- c(
+  'Minnesota RØKKR' = file.path(logos_dir, 'Minnesota-Rokkr-Logo-119x128_cropped.png'),
+  'Boston Breach' = file.path(logos_dir, 'Boston-Breach-128x122_cropped.png'),
+  'London Royal Ravens' = file.path(logos_dir, 'London-Royal-Ravens-Logo-128x68_cropped.png'),
+  'OpTic Texas' = file.path(logos_dir, 'OpTic-Texas-Logo-128x72_cropped.png'),
+  'Los Angeles Guerrillas' = file.path(logos_dir, 'Los-Angeles-Guerrillas-Logo-93x128_cropped.png'),
+  'Toronto Ultra' = file.path(logos_dir, 'Toronto-Ultra-Logo-128x128_cropped.png'),
+  'Atlanta FaZe' = file.path(logos_dir, 'Atlanta-FaZe-Logo-128x62_cropped.png'),
+  'Los Angeles Thieves' = file.path(logos_dir, 'Los-Angeles-Thieves-Logo-128x128_cropped.png'),
+  'Florida Mutineers' = file.path(logos_dir, 'Florida-Mutineers-Logo-102x128_cropped.png'),
+  'Seattle Surge' = file.path(logos_dir, 'Seattle-Surge-Logo-99x128_cropped.png'),
+  'Las Vegas Legion' = file.path(logos_dir, 'Paris-Legion-Logo-104x128_cropped.png'),
+  'New York Subliners' = file.path(logos_dir, 'New-York-Subliners-Logo-1-103x128_cropped.png')
+)
+
+team_color_mapping <- c(
+  'ATL' = '#e43d30',
+  'BOS' = '#02FF5B',
+  'DAL' = '#B5A26A',
+  'FLA' = '#025157',
+  'LAG' = '#60269e',
+  'LAT' = '#ef3232',
+  'LDN' = '#CF152D',
+  'MIN' = '#351f68',
+  'NYSL' = '#FEE306',
+  'OPTX' = '#9dc73b',
+  'PAR' = '#EE7623',
+  'SEA' = '#16667D',
+  'TOR' = '#773dbd'
+)
+
+add_aesthetic_cols <- function(df) {
+  df |> 
+    dplyr::mutate(
+      'team_label' = breakingpointgg_team_mapping[.data[['team']]],
+      'opponent_label' = breakingpointgg_team_mapping[.data[['opponent']]],
+      'team_logo_url' = breakingpointgg_team_logo_urls_mapping[.data[['team_label']]],
+      'opponent_logo_url' = breakingpointgg_team_logo_urls_mapping[.data[['opponent_label']]],
+      'team_color' = team_color_mapping[.data[['team']]],
+      'opponent_color' = team_color_mapping[.data[['opponent']]],
+      'activity_team_color' = dplyr::case_when(
+        team == activity_team ~ team_color,
+        team == activity_opponent ~ opponent_color,
+        TRUE ~ NA_character_
+      ),
+      'activity_opponent_color' = dplyr::case_when(
+        opponent == activity_opponent ~ opponent_color,
+        opponent == activity_team ~ team_color,
+        TRUE ~ NA_character_
+      )
+    )
+  
 }

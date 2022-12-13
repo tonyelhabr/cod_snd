@@ -88,7 +88,7 @@ brier_skill_score_vec <- function(truth, estimate, ref_estimate, na_rm = TRUE, e
 
 ## generic ----
 target_name <- 'win_round'
-default_side <- 'o'
+# default_side <- 'o'
 max_pre_plant_second <- 90L
 max_post_plant_second <- 45L
 max_pre_plant_second_buffer <- 0L ## for plot
@@ -130,6 +130,7 @@ get_all_features <- function(is_pre_plant, named, method = 'xgb') {
   all_features <- c(
     'model_seconds_elapsed' = 0, # 1,
     'opponent_diff' = -1,
+    'is_offense' = 0,
     'is_kill_on_attempted_clinch' = 1,
     'is_attempted_clinch' = 1,
     'is_initial_bomb_carrier_killed' = -1
@@ -162,15 +163,29 @@ get_lb_window_feature_names <- function(is_pre_plant) {
   )
 }
 
-validate_colnames <- function(data) {
-  nms_diff <- setdiff(
+validate_colnames <- function(data, is_predict = FALSE) {
+  
+  base_cols <- c(
+    'is_pre_plant', 
+    'side'
+  )
+  base_cols <- if (isFALSE(is_predict)) {
     c(
-      'is_pre_plant', 
-      'side',
+      base_cols,
       'n_team_remaining',
       'n_opponent_remaining',
       'model_seconds_remaining'
-    ),
+    )
+  } else {
+    c(
+      base_cols,
+      'is_wp_hardcoded',
+      'hardcoded_wp'
+    )
+  }
+  
+  nms_diff <- setdiff(
+    base_cols,
     colnames(data)
   )
   
@@ -208,11 +223,11 @@ split_model_data <- function(data) {
   
   validate_colnames(data = data)
   
-  model_data <- dplyr::filter(data, .data[['side']] == default_side)
+  # model_data <- dplyr::filter(data, .data[['side']] == default_side)
   
   list(
-    'pre' = dplyr::filter(model_data, .data[['is_pre_plant']]),
-    'post' = dplyr::filter(model_data, !.data[['is_pre_plant']])
+    'pre' = dplyr::filter(data, .data[['is_pre_plant']]),
+    'post' = dplyr::filter(data, !.data[['is_pre_plant']])
   )
 }
 
@@ -271,12 +286,62 @@ generate_pred_grid <- function(is_pre_plant) {
     'is_initial_bomb_carrier_killed' = is_initial_bomb_carrier_killed
   ) |> 
     mutate(
+      'is_offense' = .data[['side']] == 'o',
       'opponent_diff' = .data[['n_team_remaining']] - .data[['n_opponent_remaining']],
       'model_seconds_remaining' = ifelse(
         .data[['is_pre_plant']],
         max_pre_plant_second - .data[['model_seconds_elapsed']],
         max_post_plant_second - .data[['model_seconds_elapsed']]
       )
+    )
+}
+
+add_hardcoded_wp_cols <- function(df) {
+  
+  df |> 
+    dplyr::mutate(
+      
+      is_1v0_post_plant = !.data[['is_pre_plant']] & (.data[['n_team_remaining']] == 1) & (.data[['n_opponent_remaining']] == 0),
+      is_0v1_post_plant = !.data[['is_pre_plant']] & (.data[['n_team_remaining']] == 0) & (.data[['n_opponent_remaining']] == 1),
+      is_Nv0_post_plant = !.data[['is_pre_plant']] & (.data[['n_team_remaining']] > 1) & (.data[['n_opponent_remaining']] == 0),
+      is_0vN_post_plant = !.data[['is_pre_plant']] & (.data[['n_team_remaining']] == 0) & (.data[['n_opponent_remaining']] > 1),
+      
+      hardcoded_wp = dplyr::case_when(
+        
+        .data[['side']] == 'o' & .data[['activity']] == 'Defuse' ~ 0,
+        .data[['side']] == 'd' & .data[['activity']] == 'Defuse' ~ 1,
+        
+        .data[['side']] == 'o' & !.data[['is_pre_plant']] & (.data[['n_team_remaining']] == 0) & .data[['model_seconds_remaining']] >= 7.5 & .data[['activity']] == 'Start Defuse' ~ 0,
+        .data[['side']] == 'd' & !.data[['is_pre_plant']] & (.data[['n_opponent_remaining']] == 0) & .data[['model_seconds_remaining']] >= 7.5 & .data[['activity']] == 'Start Defuse' ~ 1,
+        
+        is_1v0_post_plant & .data[['model_seconds_remaining']] >= 15 ~ 1,
+        is_1v0_post_plant & .data[['model_seconds_remaining']] >= 12.5 ~ 0.9,
+        is_1v0_post_plant & .data[['model_seconds_remaining']] >= 10 ~ 0.65,
+        is_1v0_post_plant & .data[['model_seconds_remaining']] >= 7.5 ~ 0.5,
+        is_1v0_post_plant & .data[['model_seconds_remaining']] < 7.5  ~ 0,
+        
+        is_0v1_post_plant & .data[['model_seconds_remaining']] >= 15 ~ 0,
+        is_0v1_post_plant & .data[['model_seconds_remaining']] >= 12.5  ~ 0.1,
+        is_0v1_post_plant & .data[['model_seconds_remaining']] >= 10 ~ 0.35,
+        is_0v1_post_plant & .data[['model_seconds_remaining']] >= 7.5 ~ 0.5,
+        is_0v1_post_plant & .data[['model_seconds_remaining']] < 7.5  ~ 1,
+        
+        is_Nv0_post_plant & .data[['model_seconds_remaining']] >= 12.5 ~ 1,
+        is_Nv0_post_plant & .data[['model_seconds_remaining']] >= 10 ~ 0.75,
+        is_Nv0_post_plant & .data[['model_seconds_remaining']] >= 7.5 ~ 0.5,
+        is_Nv0_post_plant & .data[['model_seconds_remaining']] < 7.5  ~ 0.25,
+        
+        is_0vN_post_plant & .data[['model_seconds_remaining']] >= 12.5 ~ 0,
+        is_0vN_post_plant & .data[['model_seconds_remaining']] >= 10 ~ 0.25,
+        is_0vN_post_plant & .data[['model_seconds_remaining']] >= 7.5 ~ 0.5,
+        is_0vN_post_plant & .data[['model_seconds_remaining']] < 7.5  ~ 0.75,
+        
+        TRUE ~ NA_real_
+      ),
+      is_wp_hardcoded = !is.na(.data[['hardcoded_wp']])
+    ) |> 
+    dplyr::select(
+      -tidyselect::vars_select_helpers$matches('is_[10N]v[10N]_post_plant')
     )
 }
 
@@ -288,8 +353,7 @@ generate_pred_grid <- function(is_pre_plant) {
 
 predict.wp_model <- function(object, new_data, ...) {
   
-  validate_colnames(data = new_data)
-  
+  validate_colnames(data = new_data, is_predict = TRUE)
   
   pred <- ifelse(
     new_data[['is_pre_plant']],
@@ -297,52 +361,12 @@ predict.wp_model <- function(object, new_data, ...) {
     predict(object[['post']], new_data, ...)
   )
   
-  rep_data <- function(x) {
-    rep(x, nrow(new_data))
-  }
-  
-  is_1v0_post_plant <- !new_data[['is_pre_plant']] & (new_data[['n_team_remaining']] == 1) & (new_data[['n_opponent_remaining']] == 0)
-  is_0v1_post_plant <- !new_data[['is_pre_plant']] & (new_data[['n_team_remaining']] == 0) & (new_data[['n_opponent_remaining']] == 1)
-  is_Nv0_post_plant <- !new_data[['is_pre_plant']] & (new_data[['n_team_remaining']] > 1) & (new_data[['n_opponent_remaining']] == 0)
-  is_0vN_post_plant <- !new_data[['is_pre_plant']] & (new_data[['n_team_remaining']] == 0) & (new_data[['n_opponent_remaining']] > 1)
-  
-  dplyr::case_when(
-    new_data[['side']] == 'o' & new_data[['activity']] == 'Defuse' ~ rep_data(0),
-    new_data[['side']] == 'd' & new_data[['activity']] == 'Defuse' ~ rep_data(1),
-    
-    new_data[['side']] == 'o' & !new_data[['is_pre_plant']] & (new_data[['n_team_remaining']] == 0) & new_data[['model_seconds_remaining']] >= 7.5 & new_data[['activity']] == 'Start Defuse' ~ rep_data(0),
-    new_data[['side']] == 'd' & !new_data[['is_pre_plant']] & (new_data[['n_opponent_remaining']] == 0) & new_data[['model_seconds_remaining']] >= 7.5 & new_data[['activity']] == 'Start Defuse' ~ rep_data(1),
-    
-    is_1v0_post_plant & new_data[['model_seconds_remaining']] >= 15 ~ rep_data(1),
-    is_1v0_post_plant & new_data[['model_seconds_remaining']] >= 12.5 ~ rep_data(0.9),
-    is_1v0_post_plant & new_data[['model_seconds_remaining']] >= 10 ~ rep_data(0.65),
-    is_1v0_post_plant & new_data[['model_seconds_remaining']] >= 7.5 ~ rep_data(0.5),
-    is_1v0_post_plant & new_data[['model_seconds_remaining']] < 7.5  ~ rep_data(0),
-    
-    is_0v1_post_plant & new_data[['model_seconds_remaining']] >= 15 ~ rep_data(0),
-    is_0v1_post_plant & new_data[['model_seconds_remaining']] >= 12.5  ~ rep_data(0.1),
-    is_0v1_post_plant & new_data[['model_seconds_remaining']] >= 10 ~ rep_data(0.35),
-    is_0v1_post_plant & new_data[['model_seconds_remaining']] >= 7.5 ~ rep_data(0.5),
-    is_0v1_post_plant & new_data[['model_seconds_remaining']] < 7.5  ~ rep_data(1),
-    
-    is_Nv0_post_plant & new_data[['model_seconds_remaining']] >= 12.5 ~ rep_data(1),
-    is_Nv0_post_plant & new_data[['model_seconds_remaining']] >= 10 ~ rep_data(0.75),
-    is_Nv0_post_plant & new_data[['model_seconds_remaining']] >= 7.5 ~ rep_data(0.5),
-    is_Nv0_post_plant & new_data[['model_seconds_remaining']] < 7.5  ~ rep_data(0.25),
-    
-    is_0vN_post_plant & new_data[['model_seconds_remaining']] >= 12.5 ~ rep_data(0),
-    is_0vN_post_plant & new_data[['model_seconds_remaining']] >= 10 ~ rep_data(0.25),
-    is_0vN_post_plant & new_data[['model_seconds_remaining']] >= 7.5 ~ rep_data(0.5),
-    is_0vN_post_plant & new_data[['model_seconds_remaining']] < 7.5  ~ rep_data(0.75),
-    
-    TRUE ~ pred
+  ifelse(
+    new_data[['is_wp_hardcoded']],
+    new_data[['hardcoded_wp']],
+    pred
   )
-  
-  # ifelse(
-  #   new_data[['side']] == 'o',
-  #   pred,
-  #   1 - pred
-  # )
+
 }
 
 augment.wp_model <- function(x, data, ...) {
