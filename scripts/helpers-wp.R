@@ -16,8 +16,8 @@ generate_seconds_grid <- function(is_pre_plant) {
     max_second <- c(seq(10, 40, 2), seq(37, 45, 1), rep(45, 13))
   }
   tibble::tibble(
-    min_second = as.integer(min_second),
-    max_second = as.integer(max_second)
+    min_second = min_second,
+    max_second = max_second
   )
 }
 
@@ -31,7 +31,7 @@ get_all_features <- function(is_pre_plant, named = FALSE) {
     'opponent_diff' = 'integer',
     # 'is_offense' = 'binary',
     'is_kill_on_attempted_clinch' = 'binary',
-    'is_attempted_clinch' = 'binary',
+    'has_started_clinch' = 'binary',
     'is_initial_bomb_carrier_killed' = 'binary'
   )
   
@@ -159,14 +159,14 @@ generate_pred_grid <- function(is_pre_plant) {
   tidyr::crossing(
     'side' = c('o', 'd'),
     'is_pre_plant' = is_pre_plant,
-    'model_seconds_elapsed' = 0L:(max_second - 1L),
+    'model_seconds_elapsed' = seq(0L, (max_second - 1L), by = 0.5),
     'n_team_remaining' = 1L:max_players,
     'n_opponent_remaining' = 1L:max_players,
     'is_kill_on_attempted_clinch' = binary_values,
-    'is_attempted_clinch' = binary_values,
+    'has_started_clinch' = binary_values,
     'is_initial_bomb_carrier_killed' = is_initial_bomb_carrier_killed
   ) |> 
-    mutate(
+    dplyr::mutate(
       'is_offense' = .data[['side']] == 'o',
       'opponent_diff' = .data[['n_team_remaining']] - .data[['n_opponent_remaining']],
       'model_seconds_remaining' = ifelse(
@@ -240,8 +240,14 @@ predict.wp_model <- function(object, new_data, ...) {
   
   pred <- ifelse(
     new_data[['is_pre_plant']],
-    predict(object[['pre']], new_data, ...),
-    predict(object[['post']], new_data, ...)
+    predict(object[['pre']], new_data),
+    predict(object[['post']], new_data)
+  )
+  
+  pred <- ifelse(
+    new_data[['side']] == 'o',
+    pred,
+    1 - pred
   )
   
   ifelse(

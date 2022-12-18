@@ -33,7 +33,7 @@ init_model_pbp <- both_pbp |>
         is_offense,
         is_initial_bomb_carrier_killed, 
         is_kill_on_attempted_clinch,
-        is_attempted_clinch
+        has_started_clinch
       ), 
       as.integer
     ),
@@ -60,7 +60,7 @@ init_model_pbp <- both_pbp |>
     is_offense,
     is_initial_bomb_carrier_killed,
     is_kill_on_attempted_clinch,
-    is_attempted_clinch,
+    has_started_clinch,
     
     ## outcome
     win_round,
@@ -133,7 +133,7 @@ ggsave(
 
 plot_and_save_wp_by_feature <- function(model, feature_name = NULL) {
   p <- autoplot(model, type = 'grid', feature_name = feature_name)
-
+  
   if (is.null(feature_name)) {
     feature_name <- ''
   }
@@ -149,7 +149,7 @@ plot_and_save_wp_by_feature <- function(model, feature_name = NULL) {
 
 c(
   'is_kill_on_attempted_clinch',
-  'is_attempted_clinch',
+  'has_started_clinch',
   'is_initial_bomb_carrier_killed'
 ) |> 
   set_names() |> 
@@ -162,4 +162,31 @@ c(
 
 plot_and_save_wp_by_feature(
   model = model
+)
+
+new_data <- tibble::tibble(
+  'side' = c('d', 'o'),
+  'is_pre_plant' = TRUE,
+  'model_seconds_elapsed' = 84,
+  'n_team_remaining' = 3,
+  'n_opponent_remaining' = 2,
+  'is_kill_on_attempted_clinch' = 0,
+  'has_started_clinch' = 0,
+  'is_initial_bomb_carrier_killed' = 0,
+  'activity' = 'Start Plant'
+) |> 
+  dplyr::mutate(
+    # 'is_offense' = .data[['side']] == 'o',
+    'opponent_diff' = .data[['n_team_remaining']] - .data[['n_opponent_remaining']],
+    'model_seconds_remaining' = ifelse(
+      .data[['is_pre_plant']],
+      max_pre_plant_second - .data[['model_seconds_elapsed']],
+      max_post_plant_second - .data[['model_seconds_elapsed']]
+    )
+  ) |> 
+  add_hardcoded_wp_cols()
+
+predict(
+  model,
+  new_data
 )

@@ -562,7 +562,7 @@ one_pbp_start_events <-  bind_rows(
       
       is_post_plant = FALSE,
       is_kill_on_attempted_clinch = FALSE,
-      is_attempted_clinch = TRUE,
+      has_started_clinch = TRUE,
       is_negative_action = FALSE
     ),
   one_pbp |>
@@ -588,7 +588,7 @@ one_pbp_start_events <-  bind_rows(
       
       is_post_plant = FALSE,
       is_kill_on_attempted_clinch = FALSE,
-      is_attempted_clinch = TRUE,
+      has_started_clinch = TRUE,
       is_negative_action = FALSE
     ),
   one_pbp |>
@@ -615,7 +615,7 @@ one_pbp_start_events <-  bind_rows(
       
       is_post_plant = TRUE,
       is_kill_on_attempted_clinch = FALSE,
-      is_attempted_clinch = TRUE,
+      has_started_clinch = TRUE,
       is_initial_bomb_carrier_killed = FALSE,
       is_negative_action = FALSE
     ),
@@ -645,7 +645,7 @@ one_pbp_start_events <-  bind_rows(
       
       is_post_plant = TRUE,
       is_kill_on_attempted_clinch = FALSE,
-      is_attempted_clinch = TRUE,
+      has_started_clinch = TRUE,
       is_initial_bomb_carrier_killed = FALSE,
       is_negative_action = FALSE
     )
@@ -665,7 +665,7 @@ padded_one_pbp <- bind_rows(
   fill(n_team_remaining, n_opponent_remaining, is_initial_bomb_carrier_killed) |> 
   ungroup() |> 
   mutate(
-    across(is_attempted_clinch, ~coalesce(.x, FALSE))
+    across(has_started_clinch, ~coalesce(.x, FALSE))
   ) |> 
   ungroup() |> 
   group_by(round_id) |> 
