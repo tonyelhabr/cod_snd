@@ -1,2 +1,9 @@
 **qs
-*wp-coefs-*.csv
+
+!wp_model.qs
+!wp_model_data.qs
+
+!cod_snd_pbp.qs
+!cod_snd_round_records.qs
+!cod_snd_participation.qs
+!cod_snd_chains.qs
