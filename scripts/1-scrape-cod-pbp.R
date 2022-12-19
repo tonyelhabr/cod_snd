@@ -1,4 +1,3 @@
-
 library(tidyverse)
 library(googlesheets4)
 library(qs)
@@ -53,9 +52,9 @@ team_mapping <- c(
   'LDN' = 'LDN',
   'LON' = 'LDN',
   'MIN' = 'MIN',
-  'NYSL' = 'NYSL',
-  'OC' = 'OPTX',
-  'OPTX' = 'OPTX',
+  'NYSL' = 'NYS',
+  'OC' = 'OPT',
+  'OPTX' = 'OPT',
   'PAR' = 'PAR',
   'SEA' = 'SEA',
   'TOR' = 'TOR'
@@ -393,7 +392,6 @@ one_pbp_teams <- one_pbp |>
     round_has_plant
   )
 
-
 ## Create all_players to use for the dummy starting events. This helps a lot when
 ##   it comes to participation, since it helps identify players in rounds when
 ##   one side eliminates all opponent players without being eliminated themselves
@@ -693,7 +691,6 @@ padded_one_pbp <- bind_rows(
   select(
     -matches('(lag1)$')
   )
-
 
 ## interesting rounds to check a varity of activities
 # padded_one_pbp |> 
