@@ -5,7 +5,8 @@ library(broom)
 library(tidyr)
 library(purrr)
 
-data_dir <- 'data'
+pkgload::load_all('../snd')
+data_dir <- getOption('snd.dir.data')
 
 all_model_pbp <- qs::qread(file.path(data_dir, 'wp_model_data.qs')) |> 
   add_aesthetic_cols()

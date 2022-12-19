@@ -3,12 +3,13 @@ library(googlesheets4)
 library(qs)
 library(janitor)
 
-dir_data <- 'data'
-dir.create(dir_data, showWarnings = FALSE)
+pkgload::load_all('../snd')
+data_dir <- getOption('snd.dir.data')
+dir.create(data_dir, showWarnings = FALSE)
 
 read_snd_logs_sheet <- function(year, overwrite = FALSE) {
   
-  path <- file.path(dir_data, sprintf('snd-pbp-%s.qs', year))
+  path <- file.path(data_dir, sprintf('snd-pbp-%s.qs', year))
   if(file.exists(path) & !overwrite) {
     return(qs::qread(path))
   }
@@ -137,6 +138,12 @@ changes <- list(
     seconds_elapsed = 70.8,
     ## guessing that it's shotzzy who planted... mack couldn't be the planter since he's on the other team
     initiating_player = 'Shotzzy' 
+  ),
+  ## BOS can't be the round winner
+  tibble(
+    round_id = '2022-SND-004-01',
+    seconds_elapsed = c(24L, 39L, 44L, 47L, 51L, 56L),
+    round_winner = 'SEA' 
   )
 )
 
@@ -533,7 +540,7 @@ round_records <- one_pbp_round_begin_events |>
   ) |> 
   ungroup() |> 
   select(-c(map_id, round, win_round, lose_round))
-qs::qsave(round_records, file.path('data', 'cod_snd_round_records.qs'))
+qs::qsave(round_records, file.path(data_dir, 'cod_snd_round_records.qs'))
 
 one_pbp_start_events <-  bind_rows(
   one_pbp |>
@@ -898,144 +905,134 @@ long_participation <- grid_participation |>
 #   arrange(desc(wt)) |>
 #   # filter(wt == 1) |>
 #   mutate(across(wt, round, 2))
-qs::qsave(long_participation, file.path('data', 'cod_snd_participation.qs'))
+qs::qsave(long_participation, file.path(data_dir, 'cod_snd_participation.qs'))
 
 ## timing ----
-kill_death_activities <- both_pbp |> 
-  ## i think this only works when viewing things from one side
-  # filter(pbp_side == 'a') |> 
-  filter(
-    (activity == 'Kill') |
-      (activity |> str_detect('Kill (Planter|Defuser)'))
-  ) |> 
-  select(pbp_side, round_id, engagement_id, seconds_elapsed, activity_player, activity_opposer, weapon_or_bomb_site)
-
-# https://doug-liebe.medium.com/exploring-win-probability-added-a-framework-for-measuring-impact-in-call-of-duty-d360f733ff6
-init_candidate_chain_engagements <- kill_death_activities |> 
-  inner_join(
-    kill_death_activities |> 
-      transmute(
+if (FALSE) {
+  kill_death_activities <- both_pbp |> 
+    ## i think this only works when viewing things from one side
+    # filter(pbp_side == 'a') |> 
+    filter(
+      (activity == 'Kill') |
+        (activity |> str_detect('Kill (Planter|Defuser)'))
+    ) |> 
+    select(pbp_side, round_id, engagement_id, seconds_elapsed, activity_player, activity_opposer, weapon_or_bomb_site)
+  
+  # https://doug-liebe.medium.com/exploring-win-probability-added-a-framework-for-measuring-impact-in-call-of-duty-d360f733ff6
+  init_candidate_chain_engagements <- kill_death_activities |> 
+    inner_join(
+      kill_death_activities |> 
+        transmute(
+          pbp_side,
+          round_id, 
+          past_engagement_id = engagement_id,
+          past_seconds_elapsed = seconds_elapsed,
+          next_seconds_elapsed = seconds_elapsed + 5,
+          past_activity_player = activity_player,
+          past_activity_opposer = activity_opposer
+        ),
+      join_by(
+        round_id,
         pbp_side,
-        round_id, 
-        past_engagement_id = engagement_id,
-        past_seconds_elapsed = seconds_elapsed,
-        next_seconds_elapsed = seconds_elapsed + 5,
-        past_activity_player = activity_player,
-        past_activity_opposer = activity_opposer
-      ),
-    join_by(
-      round_id,
-      pbp_side,
-      seconds_elapsed > past_seconds_elapsed,
-      seconds_elapsed <= next_seconds_elapsed
-    )
-  ) |> 
-  filter(
-    engagement_id != past_engagement_id
-  ) |> 
-  select(-next_seconds_elapsed)
-
-candidate_chain_engagements <- bind_rows(
-  init_candidate_chain_engagements |> distinct(engagement_id),
-  init_candidate_chain_engagements |> distinct(engagement_id = past_engagement_id)
-) |> 
-  distinct(engagement_id) |> 
-  inner_join(
-    kill_death_activities,
-    by = 'engagement_id'
-  )
-
-get_chain_engagement_ids <- function(candidate_chain_engagements, engagement_ids) {
-  
-  most_recent_engagement_id <- engagement_ids[1]
-  n_engagement_ids <- length(engagement_ids)
-  
-  if (n_engagement_ids > 20) {
-    stop('Infinite loop')
-  }
-  
-  # message(
-  #   sprintf(
-  #     'Searching for %s.%s',
-  #     most_recent_engagement_id,
-  #     ifelse(
-  #       n_engagement_ids > 1L,
-  #       sprintf(' (First engagement_id: %s. Chain length: %s.)', rev(engagement_ids)[1], n_engagement_ids),
-  #       ''
-  #     )
-  #   )
-  # )
-  
-  most_recent_engagement <- candidate_chain_engagements |>
-    filter(
-      engagement_id == most_recent_engagement_id
-    )
-  
-  min_seconds_elapsed <- min(most_recent_engagement$seconds_elapsed)
-  
-  init_candidates <- candidate_chain_engagements |> 
-    filter(
-      seconds_elapsed <= min_seconds_elapsed & 
-        seconds_elapsed >= (min_seconds_elapsed - 5) & 
-        !(engagement_id %in% most_recent_engagement_id)
-    )
-  
-  if (n_engagement_ids > 1L) {
-    init_candidates <- init_candidates |> 
-      filter(
-        !(engagement_id %in% setdiff(engagement_ids, most_recent_engagement_id))
+        seconds_elapsed > past_seconds_elapsed,
+        seconds_elapsed <= next_seconds_elapsed
       )
-  }
-  
-  candidates <- init_candidates |> 
+    ) |> 
     filter(
-      (activity_opposer == most_recent_engagement$activity_player) |
-        (activity_player == most_recent_engagement$activity_opposer)
+      engagement_id != past_engagement_id
+    ) |> 
+    select(-next_seconds_elapsed)
+  
+  candidate_chain_engagements <- bind_rows(
+    init_candidate_chain_engagements |> distinct(engagement_id),
+    init_candidate_chain_engagements |> distinct(engagement_id = past_engagement_id)
+  ) |> 
+    distinct(engagement_id) |> 
+    inner_join(
+      kill_death_activities,
+      by = 'engagement_id'
     )
   
-  n_row <- nrow(candidates)
-  if (n_row == 0L) {
-    return(engagement_ids)
-  } else if (n_row == 1L) {
-    return(
+  get_chain_engagement_ids <- function(candidate_chain_engagements, engagement_ids) {
+    
+    most_recent_engagement_id <- engagement_ids[1]
+    n_engagement_ids <- length(engagement_ids)
+    
+    if (n_engagement_ids > 20) {
+      stop('Infinite loop')
+    }
+    
+    most_recent_engagement <- candidate_chain_engagements |>
+      filter(
+        engagement_id == most_recent_engagement_id
+      )
+    
+    min_seconds_elapsed <- min(most_recent_engagement$seconds_elapsed)
+    
+    init_candidates <- candidate_chain_engagements |> 
+      filter(
+        seconds_elapsed <= min_seconds_elapsed & 
+          seconds_elapsed >= (min_seconds_elapsed - 5) & 
+          !(engagement_id %in% most_recent_engagement_id)
+      )
+    
+    if (n_engagement_ids > 1L) {
+      init_candidates <- init_candidates |> 
+        filter(
+          !(engagement_id %in% setdiff(engagement_ids, most_recent_engagement_id))
+        )
+    }
+    
+    candidates <- init_candidates |> 
+      filter(
+        (activity_opposer == most_recent_engagement$activity_player) |
+          (activity_player == most_recent_engagement$activity_opposer)
+      )
+    
+    n_row <- nrow(candidates)
+    if (n_row == 0L) {
+      return(engagement_ids)
+    } else if (n_row == 1L) {
+      return(
+        get_chain_engagement_ids(
+          init_candidates,
+          c(candidates$engagement_id, engagement_ids)
+        )
+      )
+    } else if (n_row > 1L) {
+      warning(sprintf('More than 1 row for %s.', most_recent_engagement_id))
       get_chain_engagement_ids(
         init_candidates,
         c(candidates$engagement_id, engagement_ids)
       )
-    )
-  } else if (n_row > 1L) {
-    warning(sprintf('More than 1 row for %s.', most_recent_engagement_id))
-    get_chain_engagement_ids(
-      init_candidates,
-      c(candidates$engagement_id, engagement_ids)
-    )
+    }
   }
-}
-
-## about 2 hours
-chain_engagement_ids <- candidate_chain_engagements |> 
-  nest(data = -c(round_id, pbp_side)) |> 
-  mutate(
-    data = map(
-      data, function(d) {
-        engagement_ids <- d$engagement_id
-        res <- map(
-          set_names(engagement_ids),
-          ~get_chain_engagement_ids(
-            d,
-            .x
+  
+  ## about 2 hours
+  chain_engagement_ids <- candidate_chain_engagements |> 
+    nest(data = -c(round_id, pbp_side)) |> 
+    mutate(
+      data = map(
+        data, function(d) {
+          engagement_ids <- d$engagement_id
+          res <- map(
+            set_names(engagement_ids),
+            ~get_chain_engagement_ids(
+              d,
+              .x
+            )
           )
-        )
-        
-        res |> 
-          enframe(
-            'engagement_id',
-            'past_engagement_id'
-          ) |> 
-          unnest(past_engagement_id) |> 
-          filter(engagement_id != past_engagement_id) 
-      }
-    )
-  ) |> 
-  unnest(data)
-qs::qsave(chain_engagement_ids, file.path('data', 'cod_snd_chains.qs'))
+          
+          res |> 
+            enframe(
+              'engagement_id',
+              'past_engagement_id'
+            ) |> 
+            unnest(past_engagement_id) |> 
+            filter(engagement_id != past_engagement_id) 
+        }
+      )
+    ) |> 
+    unnest(data)
+  qs::qsave(chain_engagement_ids, file.path(data_dir, 'cod_snd_chains.qs'))
+}
