@@ -6,13 +6,12 @@ library(ggplot2)
 library(scales)
 library(broom)
 library(qs)
+pkgload::load_all('../snd')
 
 ## TODO: 
 ##   1. Possibly try features for number of ARs and SMGs left on each side.
 ##   2. Try terms for the game (e.g. "Cold War" or "Vanguard") and the map. (mixed-effects?)
 
-source('scripts/helpers-plot.R')
-source('scripts/helpers-wp.R')
 
 both_pbp <- qs::qread('data/cod_snd_pbp.qs')
 

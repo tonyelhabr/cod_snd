@@ -5,19 +5,17 @@ library(broom)
 library(tidyr)
 library(purrr)
 
-source('scripts/helpers-wp.R')
-source('scripts/helpers-plot.R')
 data_dir <- 'data'
 
 all_model_pbp <- qs::qread(file.path(data_dir, 'wp_model_data.qs')) |> 
   add_aesthetic_cols()
 
-model_lb <- qs::qread(file.path(data_dir, 'wp_model-lb.qs'))
+model <- qs::qread(file.path(data_dir, 'wp_model.qs'))
 long_participation <- qs::qread(file.path(data_dir, 'cod_snd_participation.qs'))
 chains <- qs::qread(file.path('data', 'cod_snd_chains.qs'))
 
 all_model_pbp <- augment(
-  model_lb,
+  model,
   data = all_model_pbp
 )
 
@@ -41,12 +39,7 @@ long_participation |>
     player,
     indicator,
     wt
-  ) # |> 
-# left_join(
-#   chains,
-#   by = 'engagement_id',
-#   multiple = 'all'
-# )
+  )
 
 long_wpa <- team_wpa |> 
   left_join(
@@ -135,7 +128,7 @@ stats_by_player |>
 example_round_id <- '2022-SND-177-01'
 
 autoplot(
-  model_lb,
+  model,
   type = 'round',
   data = all_model_pbp,
   round_id = example_round_id,
@@ -146,7 +139,7 @@ autoplot(
 
 ## missing end
 autoplot(
-  model_lb,
+  model,
   type = 'round',
   data = all_model_pbp,
   round_id = '2022-SND-177-02',
@@ -157,7 +150,7 @@ autoplot(
 
 ## missing end
 autoplot(
-  model_lb,
+  model,
   type = 'round',
   data = all_model_pbp,
   round_id = '2022-SND-177-03',
@@ -168,7 +161,7 @@ autoplot(
 
 ## missing end
 autoplot(
-  model_lb,
+  model,
   type = 'round',
   data = all_model_pbp,
   round_id = '2022-SND-177-04',
@@ -179,7 +172,7 @@ autoplot(
 
 ## some text is removed?
 autoplot(
-  model_lb,
+  model,
   type = 'round',
   data = all_model_pbp,
   round_id = '2022-SND-177-05',
@@ -190,7 +183,7 @@ autoplot(
 
 ## last point is off here
 autoplot(
-  model_lb,
+  model,
   type = 'round',
   data = all_model_pbp,
   round_id = '2022-SND-177-06',
@@ -201,7 +194,7 @@ autoplot(
 
 ## missing end
 autoplot(
-  model_lb,
+  model,
   type = 'round',
   data = all_model_pbp,
   round_id = '2022-SND-177-07',
