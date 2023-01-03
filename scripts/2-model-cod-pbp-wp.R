@@ -160,55 +160,12 @@ stopifnot(1 == (all_model_pbp |> filter(is_pre_plant, is_post_plant) |> count(ac
 all_model_pbp |> filter(model_seconds_remaining < 0)
 qs::qsave(all_model_pbp, file.path(data_dir, 'wp_model_data.qs'))
 
-
-## win props ----
-all_model_pbp |> 
-  distinct(side, round_id, win_round) |> 
-  count(side, win_round) |> 
-  group_by(side) |> 
-  mutate(
-    total = sum(n)
-  ) |> 
-  ungroup() |> 
-  mutate(
-    prop = n / total
-  )
-
-round_win_prop_by_xvy <- all_model_pbp |>
-  # filter(activity != 'Plant')
-  # filter(n_team_pre_activity > 0L, n_opponent_pre_activity > 0L) |> 
-  count(side, is_post_plant, n_team_pre_activity, n_opponent_pre_activity, win_round) |> 
-  right_join(
-    crossing(
-      side = c('o', 'd'),
-      is_post_plant = c(TRUE, FALSE),
-      n_team_pre_activity = 0L:4L, 
-      n_opponent_pre_activity = 0L:4L,
-      win_round = c('yes', 'no')
-    ), 
-    by = c('side', 'is_post_plant', 'n_team_pre_activity', 'n_opponent_pre_activity', 'win_round')
-  ) |> 
-  group_by(side, is_post_plant, n_team_pre_activity, n_opponent_pre_activity) |> 
-  mutate(
-    total = sum(n)
-  ) |> 
-  ungroup() |> 
-  mutate(
-    prop = n / total
-  ) |> 
-  arrange(desc(prop))
-
-round_win_prop_by_xvy |> 
-  filter(side == 'd', win_round) |> 
-  arrange(desc(prop)) |> 
-  select(-c(side, win_round))
-
-
 ## model ----
 model <- fit_wp_model(all_model_pbp)
 qs::qsave(model, file.path(data_dir, 'wp_model.qs'))
 
 naive_model <- fit_naive_wp_model(all_model_pbp)
+qs::qsave(naive_model, file.path(data_dir, 'naive_wp_model.qs'))
 
 coefs_plot <- autoplot(model, type = 'coefs')
 ggsave(

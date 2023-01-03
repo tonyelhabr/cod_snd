@@ -12,8 +12,9 @@ all_model_pbp <- qs::qread(file.path(data_dir, 'wp_model_data.qs')) |>
   add_aesthetic_cols()
 
 model <- qs::qread(file.path(data_dir, 'wp_model.qs'))
+model_naive <- qs::qread(file.path(data_dir, 'wp_model_naive.qs'))
 long_participation <- qs::qread(file.path(data_dir, 'cod_snd_participation.qs'))
-chains <- qs::qread(file.path('data', 'cod_snd_chains.qs'))
+chains <- qs::qread(file.path(data_dir, 'cod_snd_chains.qs'))
 
 all_model_pbp <- augment(
   model,
@@ -62,6 +63,7 @@ long_wpa <- team_wpa |>
   )
 
 long_wpa |> count(activity, sort = TRUE)
+
 kill_death_activities <- long_wpa |> 
   filter(
     activity %in% c('Kill', 'Kill Planter', 'Kill Defuser')
