@@ -2,17 +2,11 @@ library(readr)
 library(dplyr)
 library(tidyr)
 library(purrr)
-library(ggplot2)
 library(qs)
 
 pkgload::load_all('../snd')
 data_dir <- getOption('snd.dir.data')
-figs_dir <- getOption('snd.dir.figs')
-theme_set_snd()
 
-## TODO: 
-##   1. Possibly try features for number of ARs and SMGs left on each side.
-##   2. Try terms for the game (e.g. "Cold War" or "Vanguard") and the map. (mixed-effects?)
 both_pbp <- qs::qread(file.path(data_dir, 'cod_snd_pbp.qs'))
 
 ## model data prep ----
@@ -68,7 +62,6 @@ init_model_pbp <- both_pbp |>
     game,
     team_round_wins,
     opponent_round_wins,
-    
     n_team_pre_activity,
     n_opponent_pre_activity,
     n_team_remaining,
@@ -160,77 +153,3 @@ stopifnot(1 == (all_model_pbp |> filter(is_pre_plant, is_post_plant) |> count(ac
 all_model_pbp |> filter(model_seconds_remaining < 0)
 qs::qsave(all_model_pbp, file.path(data_dir, 'wp_model_data.qs'))
 
-## model ----
-model <- fit_wp_model(all_model_pbp)
-qs::qsave(model, file.path(data_dir, 'wp_model.qs'))
-
-naive_model <- fit_naive_wp_model(all_model_pbp)
-qs::qsave(naive_model, file.path(data_dir, 'naive_wp_model.qs'))
-
-coefs_plot <- autoplot(model, type = 'coefs')
-ggsave(
-  coefs_plot,
-  filename = file.path(figs_dir, 'wp_coefs.png'),
-  width = 12,
-  height = 8
-)
-
-plot_and_save_wp_by_feature <- function(model, feature_name = NULL) {
-  p <- autoplot(model, type = 'grid', feature_name = feature_name)
-  
-  if (is.null(feature_name)) {
-    feature_name <- ''
-  }
-  print(p)
-  ggsave(
-    p,
-    filename = file.path(figs_dir, sprintf('wp_grid-%s.png', feature_name)),
-    width = 12,
-    height = 8
-  )
-  invisible(p)
-}
-
-c(
-  'has_started_clinch',
-  'has_started_clinch',
-  'is_initial_bomb_carrier_killed'
-) |> 
-  set_names() |> 
-  walk(
-    ~plot_and_save_wp_by_feature(
-      model = model,
-      feature_name = .x
-    )
-  )
-
-plot_and_save_wp_by_feature(
-  model = model
-)
-
-new_data <- tibble::tibble(
-  'side' = c('d', 'o'),
-  'is_pre_plant' = TRUE,
-  'model_seconds_elapsed' = 84,
-  'n_team_remaining' = 3,
-  'n_opponent_remaining' = 2,
-  'has_started_clinch' = 0,
-  'has_started_clinch' = 0,
-  'is_initial_bomb_carrier_killed' = 0,
-  'activity' = 'Start Plant'
-) |> 
-  dplyr::mutate(
-    # 'is_offense' = side == 'o',
-    'opponent_diff' = n_team_remaining - n_opponent_remaining,
-    'model_seconds_remaining' = ifelse(
-      is_pre_plant,
-      max_pre_plant_second - .data[['model_seconds_elapsed']],
-      max_post_plant_second - .data[['model_seconds_elapsed']]
-    )
-  ) |> 
-  add_hardcoded_wp_cols()
-
-predict(
-  model,
-  new_data
-)

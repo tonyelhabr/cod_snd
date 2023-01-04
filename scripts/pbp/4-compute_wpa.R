@@ -12,7 +12,7 @@ all_model_pbp <- qs::qread(file.path(data_dir, 'wp_model_data.qs')) |>
   add_aesthetic_cols()
 
 model <- qs::qread(file.path(data_dir, 'wp_model.qs'))
-model_naive <- qs::qread(file.path(data_dir, 'wp_model_naive.qs'))
+naive_model <- qs::qread(file.path(data_dir, 'naive_wp_model.qs'))
 long_participation <- qs::qread(file.path(data_dir, 'cod_snd_participation.qs'))
 chains <- qs::qread(file.path(data_dir, 'cod_snd_chains.qs'))
 
